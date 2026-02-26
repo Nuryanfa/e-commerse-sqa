@@ -14,6 +14,7 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/config"
 	deliveryHTTP "github.com/nuryanfa/e-commerse-sqa/internal/delivery/http"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 	"github.com/nuryanfa/e-commerse-sqa/internal/repository"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
 )
@@ -23,7 +24,14 @@ func main() {
 	db := config.InitDB()
 
 	// Auto Migrate the database structures
-	err := db.AutoMigrate(&domain.User{}, &domain.Category{}, &domain.Product{})
+	err := db.AutoMigrate(
+		&domain.User{},
+		&domain.Category{},
+		&domain.Product{},
+		&domain.CartItem{},
+		&domain.Order{},
+		&domain.OrderItem{},
+	)
 	if err != nil {
 		log.Fatalf("Gagal melakukan migrasi database: %v", err)
 	}
@@ -64,6 +72,22 @@ func main() {
 	productRepo := repository.NewProductRepository(db)
 	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo)
 	deliveryHTTP.NewProductHandler(router, productUsecase)
+
+	// Shopping Cart and Orders
+	cartRepo := repository.NewCartRepository(db)
+	cartUsecase := usecase.NewCartUsecase(cartRepo, productRepo)
+	
+	orderRepo := repository.NewOrderRepository(db)
+	orderUsecase := usecase.NewOrderUsecase(orderRepo, cartRepo)
+
+	// 4. Protected Routes
+	// Group /api yang diwajibkan menggunakan Header JWT Authorization
+	protectedRoutes := router.Group("/api")
+	protectedRoutes.Use(middleware.AuthMiddleware())
+	{
+		deliveryHTTP.NewCartHandler(protectedRoutes, cartUsecase)
+		deliveryHTTP.NewOrderHandler(protectedRoutes, orderUsecase)
+	}
 
 	// 4. Setup Server with Graceful Shutdown
 	srv := &http.Server{
