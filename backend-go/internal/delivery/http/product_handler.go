@@ -11,18 +11,27 @@ type ProductHandler struct {
 	productUsecase domain.ProductUsecase
 }
 
-func NewProductHandler(r *gin.Engine, uc domain.ProductUsecase) {
+// NewProductHandler registers routes.
+// Public routes (GET) are on the main router.
+// Admin routes (POST/PUT/DELETE) are on the protected admin router group.
+func NewProductHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, uc domain.ProductUsecase) {
 	handler := &ProductHandler{
 		productUsecase: uc,
 	}
 
-	productGroup := r.Group("/api/products")
+	// Public routes — tanpa login
+	publicGroup := publicRouter.Group("/api/products")
 	{
-		productGroup.POST("", handler.Create)
-		productGroup.GET("", handler.FindAll)
-		productGroup.GET("/:id", handler.FindByID)
-		productGroup.PUT("/:id", handler.Update)
-		productGroup.DELETE("/:id", handler.Delete)
+		publicGroup.GET("", handler.FindAll)
+		publicGroup.GET("/:id", handler.FindByID)
+	}
+
+	// Admin-only routes — butuh JWT + role "admin"
+	adminGroup := adminRouter.Group("/products")
+	{
+		adminGroup.POST("", handler.Create)
+		adminGroup.PUT("/:id", handler.Update)
+		adminGroup.DELETE("/:id", handler.Delete)
 	}
 }
 

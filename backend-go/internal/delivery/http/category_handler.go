@@ -11,18 +11,27 @@ type CategoryHandler struct {
 	categoryUsecase domain.CategoryUsecase
 }
 
-func NewCategoryHandler(r *gin.Engine, uc domain.CategoryUsecase) {
+// NewCategoryHandler registers routes.
+// Public routes (GET) are on the main router.
+// Admin routes (POST/PUT/DELETE) are on the protected admin router group.
+func NewCategoryHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, uc domain.CategoryUsecase) {
 	handler := &CategoryHandler{
 		categoryUsecase: uc,
 	}
 
-	categoryGroup := r.Group("/api/categories")
+	// Public routes — tanpa login
+	publicGroup := publicRouter.Group("/api/categories")
 	{
-		categoryGroup.POST("", handler.Create)
-		categoryGroup.GET("", handler.FindAll)
-		categoryGroup.GET("/:id", handler.FindByID)
-		categoryGroup.PUT("/:id", handler.Update)
-		categoryGroup.DELETE("/:id", handler.Delete)
+		publicGroup.GET("", handler.FindAll)
+		publicGroup.GET("/:id", handler.FindByID)
+	}
+
+	// Admin-only routes — butuh JWT + role "admin"
+	adminGroup := adminRouter.Group("/categories")
+	{
+		adminGroup.POST("", handler.Create)
+		adminGroup.PUT("/:id", handler.Update)
+		adminGroup.DELETE("/:id", handler.Delete)
 	}
 }
 

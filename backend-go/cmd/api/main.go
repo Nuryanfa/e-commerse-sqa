@@ -59,34 +59,43 @@ func main() {
 	})
 
 	// 3. Dependency Injection for Clean Architecture
-	// Users
+	// Users (public — register & login)
 	userRepo := repository.NewUserRepository(db)
 	userUsecase := usecase.NewUserUsecase(userRepo)
 	deliveryHTTP.NewUserHandler(router, userUsecase)
 
-	// Catalog (Category & Product)
+	// Repositories for Catalog
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
-	deliveryHTTP.NewCategoryHandler(router, categoryUsecase)
 
 	productRepo := repository.NewProductRepository(db)
 	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo)
-	deliveryHTTP.NewProductHandler(router, productUsecase)
 
 	// Shopping Cart and Orders
 	cartRepo := repository.NewCartRepository(db)
 	cartUsecase := usecase.NewCartUsecase(cartRepo, productRepo)
-	
+
 	orderRepo := repository.NewOrderRepository(db)
 	orderUsecase := usecase.NewOrderUsecase(orderRepo, cartRepo)
 
 	// 4. Protected Routes
-	// Group /api yang diwajibkan menggunakan Header JWT Authorization
-	protectedRoutes := router.Group("/api")
-	protectedRoutes.Use(middleware.AuthMiddleware())
+
+	// 4a. Admin-only routes (JWT + Role "admin")
+	// Digunakan untuk manipulasi Katalog (Create/Update/Delete Produk & Kategori)
+	adminRoutes := router.Group("/api")
+	adminRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("admin"))
 	{
-		deliveryHTTP.NewCartHandler(protectedRoutes, cartUsecase)
-		deliveryHTTP.NewOrderHandler(protectedRoutes, orderUsecase)
+		deliveryHTTP.NewCategoryHandler(router, adminRoutes, categoryUsecase)
+		deliveryHTTP.NewProductHandler(router, adminRoutes, productUsecase)
+	}
+
+	// 4b. Auth-only routes (JWT — semua role: pembeli, admin, dll)
+	// Digunakan untuk Keranjang Belanja, Checkout, dan Riwayat Pesanan
+	authRoutes := router.Group("/api")
+	authRoutes.Use(middleware.AuthMiddleware())
+	{
+		deliveryHTTP.NewCartHandler(authRoutes, cartUsecase)
+		deliveryHTTP.NewOrderHandler(authRoutes, orderUsecase)
 	}
 
 	// 4. Setup Server with Graceful Shutdown
