@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,9 +28,20 @@ func (u *cartUsecase) AddToCart(userID string, req *domain.CartItem) error {
 		return errors.New("produk tidak valid atau tidak ditemukan")
 	}
 
-	// SQA Check 2: Pastikan stok yang ada cukup untuk menutupi request kuantitas
-	if product.Stock < req.Quantity {
-		return errors.New("kuantitas melebihi stok yang tersedia saat ini")
+	// SQA Check 2: Hitung kuantitas yang SUDAH ada di keranjang untuk produk ini
+	// agar kita bisa memvalidasi total terhadap stok, bukan hanya yang baru ditambahkan.
+	existingCartItems, _ := u.cartRepo.FindByUserID(userID)
+	var alreadyInCart int
+	for _, item := range existingCartItems {
+		if item.ProductID == req.ProductID {
+			alreadyInCart = item.Quantity
+			break
+		}
+	}
+
+	if product.Stock < (alreadyInCart + req.Quantity) {
+		return fmt.Errorf("tidak bisa menambah %d unit. Stok tersisa: %d, sudah di keranjang: %d",
+			req.Quantity, product.Stock, alreadyInCart)
 	}
 
 	req.ID = uuid.New().String()

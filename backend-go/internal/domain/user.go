@@ -4,13 +4,13 @@ import "time"
 
 
 type User struct {
-	ID        string    `json:"id_user" db:"id_user"`
-	Nama      string    `json:"nama" db:"nama" binding:"required,min=3,max=100"`
-	Email     string    `json:"email" db:"email" binding:"required,email"`
-	Password  string    `json:"-" db:"password" binding:"required,min=8"` // json:"-" Mencegah password bocor ke respons API
-	Role      string    `json:"role" db:"role" binding:"required,oneof=pembeli admin suplier kurir"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID        string    `json:"id_user" gorm:"column:id_user;primaryKey"`
+	Nama      string    `json:"nama" gorm:"column:nama" binding:"required,min=3,max=100"`
+	Email     string    `json:"email" gorm:"column:email" binding:"required,email"`
+	Password  string    `json:"-" gorm:"column:password" binding:"required,min=8"` // json:"-" Mencegah password bocor ke respons API
+	Role      string    `json:"role" gorm:"column:role"`                           // Tidak di-bind dari JSON — hanya di-set server-side (di Usecase)
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 

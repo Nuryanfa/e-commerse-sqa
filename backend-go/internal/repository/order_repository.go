@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,7 +39,7 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 
 			// PENTING SQA: Race condition check. Pastikan stok tidak minus saat di checkout bersamaan
 			if product.Stock < item.Quantity {
-				return errors.New("stok produk " + product.Name + " tidak mencukupi. Sisa: " + string(rune(product.Stock))) // Simple error formatting
+				return fmt.Errorf("stok produk '%s' tidak mencukupi. Stok tersisa: %d", product.Name, product.Stock)
 			}
 
 			// Potong Stok

@@ -41,7 +41,7 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Barang berhasi ditambahkan ke keranjang"})
+	c.JSON(http.StatusOK, gin.H{"message": "Barang berhasil ditambahkan ke keranjang"})
 }
 
 func (h *CartHandler) ViewCart(c *gin.Context) {
