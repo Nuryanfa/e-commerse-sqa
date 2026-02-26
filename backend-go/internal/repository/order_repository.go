@@ -83,7 +83,7 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 		}
 
 		// 4. Kosongkan keranjang belanja user ini
-		if err := tx.Where("user_id = ?", userID).Delete(&domain.CartItem{}).Error; err != nil {
+		if err := tx.Where("id_user = ?", userID).Delete(&domain.CartItem{}).Error; err != nil {
 			return err
 		}
 
@@ -101,7 +101,7 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 func (r *orderRepository) FindByUserID(userID string) ([]domain.Order, error) {
 	var orders []domain.Order
 	// Tampilkan history tanpa perlu load detail item (untuk efisiensi listing)
-	err := r.db.Where("user_id = ?", userID).Order("created_at desc").Find(&orders).Error
+	err := r.db.Where("id_user = ?", userID).Order("created_at desc").Find(&orders).Error
 	return orders, err
 }
 

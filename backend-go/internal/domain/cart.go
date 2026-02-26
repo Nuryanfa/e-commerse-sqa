@@ -3,13 +3,13 @@ package domain
 import "time"
 
 type CartItem struct {
-	ID        string    `json:"id_cart_item" db:"id_cart_item"`
-	UserID    string    `json:"id_user" db:"id_user" binding:"required"`
-	ProductID string    `json:"id_product" db:"id_product" binding:"required"`
-	Product   *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID"` // Belongs To Product
-	Quantity  int       `json:"quantity" db:"quantity" binding:"required,gt=0"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID        string    `json:"id_cart_item" gorm:"column:id_cart_item;primaryKey"`
+	UserID    string    `json:"id_user" gorm:"column:id_user"` // Di-set server-side dari JWT, bukan dari body
+	ProductID string    `json:"id_product" gorm:"column:id_product" binding:"required"`
+	Product   *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+	Quantity  int       `json:"quantity" gorm:"column:quantity" binding:"required,gt=0"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type CartRepository interface {

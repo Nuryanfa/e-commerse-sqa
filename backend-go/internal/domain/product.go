@@ -3,16 +3,16 @@ package domain
 import "time"
 
 type Product struct {
-	ID          string    `json:"id_product" db:"id_product"`
-	Name        string    `json:"name" db:"name" binding:"required,min=3"`
-	Description string    `json:"description" db:"description"`
-	Price       float64   `json:"price" db:"price" binding:"required,gt=0"`
-	Stock       int       `json:"stock" db:"stock" binding:"required,gte=0"`
-	CategoryID  string    `json:"id_category" db:"id_category" binding:"required"`
-	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID"` // Belongs To Category
-	ImageURL    string    `json:"image_url" db:"image_url"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          string    `json:"id_product" gorm:"column:id_product;primaryKey"`
+	Name        string    `json:"name" gorm:"column:name" binding:"required,min=3"`
+	Description string    `json:"description" gorm:"column:description"`
+	Price       float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
+	Stock       int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
+	CategoryID  string    `json:"id_category" gorm:"column:id_category" binding:"required"`
+	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
+	ImageURL    string    `json:"image_url" gorm:"column:image_url"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type ProductRepository interface {

@@ -3,24 +3,24 @@ package domain
 import "time"
 
 type Order struct {
-	ID          string      `json:"id_order" db:"id_order"`
-	UserID      string      `json:"id_user" db:"id_user" binding:"required"`
-	TotalAmount float64     `json:"total_amount" db:"total_amount"`
-	Status      string      `json:"status" db:"status"` // PENDING, PAID, CANCELLED
-	Items       []OrderItem `json:"items" gorm:"foreignKey:OrderID"`
-	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at" db:"updated_at"`
+	ID          string      `json:"id_order" gorm:"column:id_order;primaryKey"`
+	UserID      string      `json:"id_user" gorm:"column:id_user" binding:"required"`
+	TotalAmount float64     `json:"total_amount" gorm:"column:total_amount"`
+	Status      string      `json:"status" gorm:"column:status"`
+	Items       []OrderItem `json:"items" gorm:"foreignKey:OrderID;references:ID"`
+	CreatedAt   time.Time   `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time   `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type OrderItem struct {
-	ID              string    `json:"id_order_item" db:"id_order_item"`
-	OrderID         string    `json:"id_order" db:"id_order" binding:"required"`
-	ProductID       string    `json:"id_product" db:"id_product" binding:"required"`
-	Product         *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID"` // Belongs To Product
-	Quantity        int       `json:"quantity" db:"quantity" binding:"required,gt=0"`
-	PriceAtPurchase float64   `json:"price_at_purchase" db:"price_at_purchase" binding:"required,gt=0"`
-	CreatedAt       time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
+	ID              string    `json:"id_order_item" gorm:"column:id_order_item;primaryKey"`
+	OrderID         string    `json:"id_order" gorm:"column:id_order" binding:"required"`
+	ProductID       string    `json:"id_product" gorm:"column:id_product" binding:"required"`
+	Product         *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+	Quantity        int       `json:"quantity" gorm:"column:quantity" binding:"required,gt=0"`
+	PriceAtPurchase float64   `json:"price_at_purchase" gorm:"column:price_at_purchase" binding:"required,gt=0"`
+	CreatedAt       time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt       time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type OrderRepository interface {

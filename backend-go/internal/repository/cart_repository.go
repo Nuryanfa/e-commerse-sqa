@@ -17,7 +17,7 @@ func NewCartRepository(db *gorm.DB) domain.CartRepository {
 
 func (r *cartRepository) UpsertItem(item *domain.CartItem) error {
 	var existingItem domain.CartItem
-	err := r.db.Where("user_id = ? AND product_id = ?", item.UserID, item.ProductID).First(&existingItem).Error
+	err := r.db.Where("id_user = ? AND id_product = ?", item.UserID, item.ProductID).First(&existingItem).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -36,7 +36,7 @@ func (r *cartRepository) UpsertItem(item *domain.CartItem) error {
 func (r *cartRepository) FindByUserID(userID string) ([]domain.CartItem, error) {
 	var items []domain.CartItem
 	// Preload Product and its Category to show complete details in Cart
-	err := r.db.Preload("Product.Category").Where("user_id = ?", userID).Find(&items).Error
+	err := r.db.Preload("Product.Category").Where("id_user = ?", userID).Find(&items).Error
 	return items, err
 }
 
@@ -53,10 +53,10 @@ func (r *cartRepository) FindByID(itemID string) (*domain.CartItem, error) {
 }
 
 func (r *cartRepository) DeleteByUserID(userID string) error {
-	return r.db.Where("user_id = ?", userID).Delete(&domain.CartItem{}).Error
+	return r.db.Where("id_user = ?", userID).Delete(&domain.CartItem{}).Error
 }
 
 func (r *cartRepository) RemoveItem(itemID string, userID string) error {
 	// Pastikan user hanya menghapus miliknya sendiri
-	return r.db.Where("id_cart_item = ? AND user_id = ?", itemID, userID).Delete(&domain.CartItem{}).Error
+	return r.db.Where("id_cart_item = ? AND id_user = ?", itemID, userID).Delete(&domain.CartItem{}).Error
 }

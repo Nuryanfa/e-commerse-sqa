@@ -3,11 +3,11 @@ package domain
 import "time"
 
 type Category struct {
-	ID          string    `json:"id_category" db:"id_category"`
-	Name        string    `json:"name" db:"name" binding:"required,min=3"`
-	Description string    `json:"description" db:"description"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          string    `json:"id_category" gorm:"column:id_category;primaryKey"`
+	Name        string    `json:"name" gorm:"column:name" binding:"required,min=3"`
+	Description string    `json:"description" gorm:"column:description"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type CategoryRepository interface {
