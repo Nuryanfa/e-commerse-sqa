@@ -37,8 +37,10 @@ func main() {
 	}
 	log.Println("Database migration berhasil.")
 
-	// 2. Setup Gin Router
-	router := gin.Default()
+	// 2. Setup Gin Router with Custom Middleware
+	router := gin.New() // Menggunakan gin.New() alih-alih Default() agar middleware terkontrol penuh
+	router.Use(middleware.RecoveryMiddleware()) // Menangkap panic agar server tidak crash
+	router.Use(middleware.LoggerMiddleware())   // Logging terstruktur untuk setiap request
 
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{
