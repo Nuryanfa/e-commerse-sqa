@@ -1,0 +1,270 @@
+# 📋 Review Lengkap: E-Commerce SQA Backend (Phase 1–6)
+
+## 1. Ringkasan Proyek
+
+| Item | Detail |
+|------|--------|
+| **Bahasa** | Golang (Go) |
+| **Framework** | Gin Web Framework |
+| **Database** | PostgreSQL + GORM (ORM) |
+| **Arsitektur** | Clean Architecture (Domain → Repository → Usecase → Delivery) |
+| **Autentikasi** | JWT (HS256, 24 jam expiry) |
+| **Hashing** | bcrypt (cost 14) |
+| **Version Control** | Git — Feature Branch Workflow |
+
+---
+
+## 2. Arsitektur Clean Architecture
+
+```mermaid
+graph LR
+    subgraph "HTTP Layer (Delivery)"
+        H1[UserHandler]
+        H2[CategoryHandler]
+        H3[ProductHandler]
+        H4[CartHandler]
+        H5[OrderHandler]
+    end
+    subgraph "Business Logic (Usecase)"
+        U1[UserUsecase]
+        U2[CategoryUsecase]
+        U3[ProductUsecase]
+        U4[CartUsecase]
+        U5[OrderUsecase]
+    end
+    subgraph "Data Access (Repository)"
+        R1[UserRepository]
+        R2[CategoryRepository]
+        R3[ProductRepository]
+        R4[CartRepository]
+        R5[OrderRepository]
+    end
+    subgraph "Database"
+        DB[(PostgreSQL)]
+    end
+    H1 --> U1 --> R1 --> DB
+    H2 --> U2 --> R2 --> DB
+    H3 --> U3 --> R3 --> DB
+    H4 --> U4 --> R4 --> DB
+    H5 --> U5 --> R5 --> DB
+```
+
+### Middleware Pipeline
+
+```mermaid
+graph LR
+    A[Request] --> B[RecoveryMiddleware]
+    B --> C[LoggerMiddleware]
+    C --> D[CORS]
+    D --> E{Route Type}
+    E -->|Public| F[Handler]
+    E -->|Auth| G[AuthMiddleware] --> F
+    E -->|Admin| H[AuthMiddleware] --> I[RoleMiddleware] --> F
+```
+
+---
+
+## 3. Struktur File
+
+```
+backend-go/
+├── cmd/
+│   ├── api/main.go          # Entry point server
+│   ├── seed/main.go         # Database seeder (dummy data)
+│   └── reset/main.go        # Database reset utility
+├── config/
+│   └── database.go          # Konfigurasi PostgreSQL
+├── internal/
+│   ├── domain/              # Struct & Interface (kontrak)
+│   │   ├── user.go
+│   │   ├── category.go
+│   │   ├── product.go
+│   │   ├── cart.go
+│   │   └── order.go
+│   ├── repository/          # Akses database (GORM)
+│   │   ├── user_repository.go
+│   │   ├── category_repository.go
+│   │   ├── product_repository.go
+│   │   ├── cart_repository.go
+│   │   └── order_repository.go
+│   ├── usecase/             # Logika bisnis
+│   │   ├── user_usecase.go
+│   │   ├── category_usecase.go
+│   │   ├── product_usecase.go
+│   │   ├── cart_usecase.go
+│   │   ├── order_usecase.go
+│   │   ├── user_usecase_test.go
+│   │   ├── product_usecase_test.go
+│   │   ├── cart_usecase_test.go
+│   │   └── order_usecase_test.go
+│   ├── delivery/http/       # HTTP Handler (endpoint)
+│   │   ├── user_handler.go
+│   │   ├── category_handler.go
+│   │   ├── product_handler.go
+│   │   ├── cart_handler.go
+│   │   └── order_handler.go
+│   └── middleware/
+│       ├── auth_middleware.go
+│       └── logger_middleware.go
+├── pkg/
+│   ├── jwt/jwt.go
+│   ├── password/password.go
+│   └── response/response.go
+└── .env
+```
+
+---
+
+## 4. Detail Per Phase
+
+### Phase 1: Foundation & Authentication ✅
+- Setup project Go + Gin + GORM + PostgreSQL.
+- User struct dengan validasi `binding` (min password 8 char, email format).
+- Password di-hash dengan **bcrypt** — tidak pernah tersimpan plaintext.
+- Login mengembalikan **JWT token** (24 jam expiry, HS256).
+- Graceful Shutdown agar request yang sedang diproses tidak terputus saat server dimatikan.
+
+### Phase 2: Product Catalog Management ✅
+- **Category** dan **Product** CRUD lengkap.
+- Relasi `Product → Category` (BelongsTo) dengan `Preload` otomatis.
+- Validasi: Harga harus > 0 (`gt=0`), Stok harus ≥ 0 (`gte=0`).
+- CategoryID divalidasi keberadaannya sebelum produk dibuat.
+
+### Phase 3: Shopping Cart ✅
+- **Upsert Logic**: Jika produk yang sama ditambahkan, kuantitas ditambahkan (bukan duplikat).
+- **Stock Check**: Validasi stok gabungan (yang sudah di keranjang + yang baru ditambahkan) terhadap stok gudang.
+- **Ownership Protection**: User hanya bisa memanipulasi keranjang miliknya sendiri.
+
+### Phase 4: Order & Checkout (ACID Transaction) ✅
+> [!IMPORTANT]
+> Ini adalah fitur SQA paling krusial di seluruh backend.
+
+- Checkout menggunakan **GORM `db.Transaction()`** untuk menjamin **ACID Compliance**:
+  1. **Atomicity** — Semua langkah sukses atau semua di-rollback.
+  2. **Consistency** — Stok tidak pernah negatif.
+  3. **Isolation** — Data dibaca dalam konteks transaksi.
+  4. **Durability** — Setelah commit, data persisten.
+
+- **PriceAtPurchase** — Harga disnapshot saat checkout, sehingga perubahan harga produk di masa depan tidak mempengaruhi riwayat pesanan.
+
+### Phase 5: Security Middleware ✅
+- **AuthMiddleware** — Validasi JWT dari header `Authorization: Bearer <token>`.
+- **RoleMiddleware** — Memeriksa role user (hanya `admin` yang bisa CUD produk/kategori).
+- Endpoint displit menjadi 3 tier akses:
+
+| Tier | Endpoint | Proteksi |
+|------|----------|----------|
+| 🌐 Public | `GET /api/products`, `GET /api/categories`, Login, Register | Tidak ada |
+| 🔒 Auth | Cart, Checkout, Orders | JWT Token |
+| 🛡️ Admin | CUD Categories, CUD Products | JWT + Role "admin" |
+
+### Phase 6: Testing & Error Handling ✅
+- **Centralized Response** — `pkg/response/response.go` dengan format JSON standar.
+- **Logger Middleware** — Mencatat method, path, status, latency, dan IP.
+- **Recovery Middleware** — Menangkap panic, mencegah server crash.
+- **15 Unit Tests (White Box)** — Semua PASS.
+
+---
+
+## 5. Bug yang Ditemukan & Diperbaiki
+
+Selama proses code review dan manual testing, kami menemukan **7 bug**:
+
+| # | Severity | File | Bug | Fix |
+|---|----------|------|-----|-----|
+| 1 | 🔴 Critical | `order_repository.go` | `string(rune(stock))` mengkonversi int ke Unicode char, bukan string angka | `fmt.Errorf("%d", stock)` |
+| 2 | 🔴 Critical | `domain/user.go` | `binding:"required,oneof=admin..."` memungkinkan **Privilege Escalation** — user bisa daftar sebagai admin | Hapus binding dari Role, set server-side |
+| 3 | 🟡 Medium | `cart_usecase.go` | Stock check hanya memeriksa quantity baru, mengabaikan unit yang sudah ada di keranjang | Validasi terhadap `existingInCart + newQty` |
+| 4 | 🟢 Low | `cart_handler.go` | Typo: "berhasi" → "berhasil" | Perbaikan teks |
+| 5 | 🔴 Critical | Semua domain structs | Tag `db:""` tidak dibaca GORM → kolom database salah nama | Ganti dengan `gorm:"column:xxx"` |
+| 6 | 🔴 Critical | `cart_repository.go` | Query `WHERE user_id` salah karena kolom bernama `id_user` | Sesuaikan nama kolom |
+| 7 | 🟡 Medium | `domain/cart.go` | `binding:"required"` pada UserID menyebabkan 400 padahal diisi dari JWT | Hapus binding dari UserID |
+
+---
+
+## 6. Hasil Unit Testing (White Box)
+
+```
+$ go test ./... -v
+=== RUN   TestRegister_Success          → PASS
+=== RUN   TestRegister_DuplicateEmail   → PASS
+=== RUN   TestLogin_Success             → PASS
+=== RUN   TestLogin_WrongPassword       → PASS
+=== RUN   TestProductCreate_Success     → PASS
+=== RUN   TestProductCreate_InvalidCat  → PASS
+=== RUN   TestProductUpdate_Success     → PASS
+=== RUN   TestProductUpdate_NotFound    → PASS
+=== RUN   TestProductDelete_NotFound    → PASS
+=== RUN   TestAddToCart_Success         → PASS
+=== RUN   TestAddToCart_ProductNotFound → PASS
+=== RUN   TestAddToCart_ExceedsStock    → PASS
+=== RUN   TestUpdateQuantity_Success    → PASS
+=== RUN   TestUpdateQuantity_NotOwned   → PASS
+=== RUN   TestRemoveFromCart_Success    → PASS
+=== RUN   TestCheckout_Success          → PASS
+=== RUN   TestCheckout_EmptyCart        → PASS
+
+ok  github.com/nuryanfa/e-commerse-sqa/internal/usecase  PASS
+```
+
+> **17 test cases, 0 failures.**
+
+---
+
+## 7. Hasil Manual Testing (Black Box)
+
+| Test | Endpoint | Expected | Actual |
+|------|----------|----------|--------|
+| Login pembeli | `POST /api/users/login` | 200 + JWT | ✅ 200 |
+| Lihat produk | `GET /api/products` | 200 + data | ✅ 200 |
+| Tambah ke cart | `POST /api/cart` | 200 | ✅ 200 |
+| Checkout | `POST /api/orders/checkout` | 201 + order | ✅ 201 |
+| Bayar | `POST /api/orders/:id/pay` | 200 PAID | ✅ 200 |
+| RBAC — pembeli buat kategori | `POST /api/categories` | 403 Forbidden | ✅ 403 |
+
+---
+
+## 8. Git Branch History
+
+```
+main
+ ├── chore/backend-structure     → Setup awal project
+ ├── feat: implement auth...     → Phase 1 (Authentication)
+ ├── feat: implement category... → Phase 2 (Catalog)
+ ├── feature/shopping-cart       → Phase 3 & 4 (Cart + Checkout)
+ ├── fix/code-review-bugs        → Bug fixes dari code review
+ ├── feature/security-middleware → Phase 5 (RBAC)
+ ├── feature/sqa-testing...      → Phase 6 (Testing)
+ └── fix: GORM column mappings  → Bug fixes dari manual testing
+```
+
+---
+
+## 9. Fitur Keamanan (SQA Security Checklist)
+
+| Fitur | Status | Detail |
+|-------|--------|--------|
+| Password Hashing | ✅ | bcrypt cost 14 |
+| JWT Authentication | ✅ | HS256, 24h expiry |
+| RBAC (Role-Based Access) | ✅ | Admin-only CUD endpoints |
+| IDOR Prevention | ✅ | Cart/Order ownership check |
+| Privilege Escalation Prevention | ✅ | Role diset server-side |
+| SQL Injection Prevention | ✅ | GORM parameterized queries |
+| CORS | ✅ | Restricted origins |
+| Panic Recovery | ✅ | Server tidak crash |
+| Graceful Shutdown | ✅ | Request aktif diselesaikan |
+| ACID Transactions | ✅ | Checkout atomik |
+
+---
+
+## 10. Kesimpulan
+
+Backend E-Commerce ini telah dibangun secara **bertahap dan terstruktur** selama 6 phase, mengikuti prinsip **Clean Architecture** dengan pemisahan yang jelas antara Domain, Repository, Usecase, dan Delivery layer. Setiap fitur dikembangkan dalam **feature branch** terpisah, di-review, dan di-merge ke main — sesuai best practice Version Control.
+
+Dari sisi **SQA**, backend ini telah melalui:
+- **White Box Testing** — 17 unit test dengan mock repository (100% pass)
+- **Black Box Testing** — Manual API testing melalui Thunder Client
+- **Code Review** — 7 bug ditemukan dan diperbaiki sebelum production
+- **Security Audit** — 10 checklist keamanan terpenuhi
+
+Backend ini siap untuk tahap selanjutnya: **integrasi dengan Frontend React** dan **pengujian oleh dosen penguji SQA**.
