@@ -1,40 +1,71 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { ModalProvider } from './context/ModalContext';
+import { ThemeProvider } from './context/ThemeContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+
+// Public Pages
+import Home from './pages/Home';
+import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+// Buyer Pages
+import Cart from './pages/Cart';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+
+// Role Dashboards
+import SupplierDashboard from './pages/supplier/Dashboard';
+import CourierDashboard from './pages/courier/Dashboard';
+import AdminDashboard from './pages/admin/Dashboard';
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Simple Navbar */}
-        <nav className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
-                  <Link to="/" className="text-xl font-bold text-blue-600">
-                    E-Commerce SQA
-                  </Link>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                 <Link to="/login" className="text-gray-700 hover:text-blue-600">Login</Link>
-                 <Link to="/register" className="bg-blue-600 text-white px-3 py-2 rounded-md font-medium hover:bg-blue-700">Daftar</Link>
-              </div>
-            </div>
-          </div>
-        </nav>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ModalProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-1">
+                <Routes>
+                  {/* Public */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/products/:id" element={<ProductDetail />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
 
-        {/* Main Content Area */}
-        <main className="flex-grow flex flex-col items-center justify-center">
-          <Routes>
-            <Route path="/" element={<div className="text-center p-8"><h1 className="text-4xl font-bold mb-4">Selamat Datang</h1><p>Silahkan Login atau Daftar untuk mulai berbelanja.</p></div>} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Routes>
-        </main>
-      </div>
+                  {/* Buyer */}
+                  <Route path="/cart" element={<ProtectedRoute roles={['pembeli']}><Cart /></ProtectedRoute>} />
+                  <Route path="/orders" element={<ProtectedRoute roles={['pembeli']}><Orders /></ProtectedRoute>} />
+                  <Route path="/orders/:id" element={<ProtectedRoute roles={['pembeli']}><OrderDetail /></ProtectedRoute>} />
+
+                  {/* Supplier */}
+                  <Route path="/supplier" element={<ProtectedRoute roles={['supplier']}><SupplierDashboard /></ProtectedRoute>} />
+
+                  {/* Courier */}
+                  <Route path="/courier" element={<ProtectedRoute roles={['courier']}><CourierDashboard /></ProtectedRoute>} />
+
+                  {/* Admin */}
+                  <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+                  {/* 404 */}
+                  <Route path="*" element={<div className="p-10 text-center text-red-500 font-bold">404 - Halaman tidak ditemukan</div>} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </ModalProvider>
+        </ToastProvider>
+      </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

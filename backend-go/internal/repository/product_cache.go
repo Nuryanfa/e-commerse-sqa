@@ -130,6 +130,11 @@ func (r *cachedProductRepository) Search(keyword string, categoryID string) ([]d
 	return r.base.Search(keyword, categoryID)
 }
 
+// FindBySupplierID langsung ke base repository (query spesifik per supplier)
+func (r *cachedProductRepository) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	return r.base.FindBySupplierID(supplierID)
+}
+
 // invalidateCache menghapus semua cache produk dari Redis.
 // Dipanggil setiap kali ada Create/Update/Delete yang mengubah data.
 func (r *cachedProductRepository) invalidateCache() {

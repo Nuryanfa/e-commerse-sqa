@@ -29,6 +29,9 @@ func (m *MockProductRepoForCart) Delete(id string) error          { return nil }
 func (m *MockProductRepoForCart) Search(keyword string, categoryID string) ([]domain.Product, error) {
 	return nil, nil
 }
+func (m *MockProductRepoForCart) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	return nil, nil
+}
 
 type MockCartRepo struct {
 	items map[string]*domain.CartItem // Key: id_cart_item
@@ -80,7 +83,7 @@ func (m *MockCartRepo) FindByID(itemID string) (*domain.CartItem, error) {
 func TestAddToCart_Success(t *testing.T) {
 	productRepo := &MockProductRepoForCart{
 		products: map[string]*domain.Product{
-			"prod-1": {ID: "prod-1", Name: "Laptop", Stock: 10, Price: 5000000},
+			"prod-1": {ID: "prod-1", Name: "Kangkung", Stock: 10, Price: 5000000},
 		},
 	}
 	cartRepo := NewMockCartRepo()
@@ -113,7 +116,7 @@ func TestAddToCart_ProductNotFound(t *testing.T) {
 func TestAddToCart_ExceedsStock(t *testing.T) {
 	productRepo := &MockProductRepoForCart{
 		products: map[string]*domain.Product{
-			"prod-1": {ID: "prod-1", Name: "Mouse", Stock: 3, Price: 100000},
+			"prod-1": {ID: "prod-1", Name: "Bayam", Stock: 3, Price: 100000},
 		},
 	}
 	cartRepo := NewMockCartRepo()
@@ -140,7 +143,7 @@ func TestAddToCart_ExceedsStock(t *testing.T) {
 func TestUpdateQuantity_Success(t *testing.T) {
 	productRepo := &MockProductRepoForCart{
 		products: map[string]*domain.Product{
-			"prod-1": {ID: "prod-1", Name: "Keyboard", Stock: 10, Price: 200000},
+			"prod-1": {ID: "prod-1", Name: "Tomat", Stock: 10, Price: 200000},
 		},
 	}
 	cartRepo := NewMockCartRepo()

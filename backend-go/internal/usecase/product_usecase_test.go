@@ -62,6 +62,15 @@ func (m *MockProductRepository) Search(keyword string, categoryID string) ([]dom
 	}
 	return result, nil
 }
+func (m *MockProductRepository) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	var result []domain.Product
+	for _, p := range m.products {
+		if p.SupplierID == supplierID {
+			result = append(result, *p)
+		}
+	}
+	return result, nil
+}
 
 // --- Mock Category Repository ---
 type MockCategoryRepositoryForProduct struct {
@@ -99,7 +108,7 @@ func TestProductCreate_Success(t *testing.T) {
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
 	product := &domain.Product{
-		Name:        "Laptop Gaming",
+		Name:        "Kangkung Segar",
 		Description: "RTX 4060",
 		Price:       15000000,
 		Stock:       10,
@@ -144,7 +153,7 @@ func TestProductUpdate_Success(t *testing.T) {
 
 	mockProductRepo.products["prod-1"] = &domain.Product{
 		ID:         "prod-1",
-		Name:       "Laptop Lama",
+		Name:       "Bayam Hijau",
 		Price:      10000000,
 		Stock:      5,
 		CategoryID: "cat-1",
@@ -202,22 +211,22 @@ func TestProductDelete_NotFound(t *testing.T) {
 func TestProductSearch_ByKeyword(t *testing.T) {
 	mockProductRepo := NewMockProductRepository()
 	mockCategoryRepo := NewMockCategoryRepositoryForProduct()
-	mockCategoryRepo.categories["cat-1"] = &domain.Category{ID: "cat-1", Name: "Elektronik"}
-	mockCategoryRepo.categories["cat-2"] = &domain.Category{ID: "cat-2", Name: "Aksesoris"}
+	mockCategoryRepo.categories["cat-1"] = &domain.Category{ID: "cat-1", Name: "Sayuran Daun"}
+	mockCategoryRepo.categories["cat-2"] = &domain.Category{ID: "cat-2", Name: "Umbi-umbian"}
 
 	// Seed products
-	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Laptop Gaming", CategoryID: "cat-1", Price: 15000000}
-	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Mouse Wireless", CategoryID: "cat-2", Price: 250000}
-	mockProductRepo.products["p3"] = &domain.Product{ID: "p3", Name: "Laptop Kerja", CategoryID: "cat-1", Price: 10000000}
+	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Kangkung Segar", CategoryID: "cat-1", Price: 5000}
+	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Wortel Organik", CategoryID: "cat-2", Price: 12000}
+	mockProductRepo.products["p3"] = &domain.Product{ID: "p3", Name: "Kangkung Organik", CategoryID: "cat-1", Price: 7000}
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
-	results, err := uc.Search("Laptop", "")
+	results, err := uc.Search("Kangkung", "")
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 	if len(results) != 2 {
-		t.Errorf("Expected 2 results for 'Laptop', got %d", len(results))
+		t.Errorf("Expected 2 results for 'Kangkung', got %d", len(results))
 	}
 }
 
@@ -225,18 +234,18 @@ func TestProductSearch_ByKeywordAndCategory(t *testing.T) {
 	mockProductRepo := NewMockProductRepository()
 	mockCategoryRepo := NewMockCategoryRepositoryForProduct()
 
-	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Laptop Gaming", CategoryID: "cat-1"}
-	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Laptop Kerja", CategoryID: "cat-2"}
-	mockProductRepo.products["p3"] = &domain.Product{ID: "p3", Name: "Mouse", CategoryID: "cat-1"}
+	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Kangkung Segar", CategoryID: "cat-1"}
+	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Bayam Hijau", CategoryID: "cat-2"}
+	mockProductRepo.products["p3"] = &domain.Product{ID: "p3", Name: "Wortel", CategoryID: "cat-1"}
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
-	results, err := uc.Search("Laptop", "cat-1")
+	results, err := uc.Search("Kangkung", "cat-1")
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 	if len(results) != 1 {
-		t.Errorf("Expected 1 result for 'Laptop' in cat-1, got %d", len(results))
+		t.Errorf("Expected 1 result for 'Kangkung' in cat-1, got %d", len(results))
 	}
 }
 
@@ -244,8 +253,8 @@ func TestProductSearch_EmptyKeyword_ReturnsAll(t *testing.T) {
 	mockProductRepo := NewMockProductRepository()
 	mockCategoryRepo := NewMockCategoryRepositoryForProduct()
 
-	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Laptop"}
-	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Mouse"}
+	mockProductRepo.products["p1"] = &domain.Product{ID: "p1", Name: "Kangkung"}
+	mockProductRepo.products["p2"] = &domain.Product{ID: "p2", Name: "Wortel"}
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 

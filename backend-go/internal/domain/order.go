@@ -7,6 +7,9 @@ type Order struct {
 	UserID      string      `json:"id_user" gorm:"column:id_user" binding:"required"`
 	TotalAmount float64     `json:"total_amount" gorm:"column:total_amount"`
 	Status      string      `json:"status" gorm:"column:status"`
+	CourierID   *string     `json:"courier_id" gorm:"column:courier_id"`
+	ShippedAt   *time.Time  `json:"shipped_at" gorm:"column:shipped_at"`
+	DeliveredAt *time.Time  `json:"delivered_at" gorm:"column:delivered_at"`
 	Items       []OrderItem `json:"items" gorm:"foreignKey:OrderID;references:ID"`
 	CreatedAt   time.Time   `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   time.Time   `json:"updated_at" gorm:"column:updated_at"`
@@ -28,11 +31,22 @@ type OrderRepository interface {
 	FindByUserID(userID string) ([]Order, error)
 	FindByID(orderID string) (*Order, error)
 	UpdateStatus(orderID string, status string) error
+	FindPaidOrders() ([]Order, error)
+	AssignCourier(orderID string, courierID string) error
+	FindByCourierID(courierID string) ([]Order, error)
+	FindByProductSupplier(supplierID string) ([]Order, error)
 }
 
 type OrderUsecase interface {
 	Checkout(userID string) (*Order, error)
 	GetMyOrders(userID string) ([]Order, error)
 	GetOrderDetail(userID string, orderID string) (*Order, error)
-	PayOrder(orderID string) error // Simulasi webhook/pembayaran
+	PayOrder(orderID string) error
+	// Courier methods
+	GetPaidOrders() ([]Order, error)
+	AssignAndShip(orderID string, courierID string) error
+	MarkDelivered(orderID string, courierID string) error
+	GetCourierOrders(courierID string) ([]Order, error)
+	// Supplier methods
+	GetSupplierOrders(supplierID string) ([]Order, error)
 }

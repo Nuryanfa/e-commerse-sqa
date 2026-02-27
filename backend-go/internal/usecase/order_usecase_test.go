@@ -42,6 +42,14 @@ func (m *MockOrderRepository) CheckoutTransaction(userID string, cartItems []dom
 func (m *MockOrderRepository) FindByUserID(userID string) ([]domain.Order, error) { return nil, nil }
 func (m *MockOrderRepository) FindByID(orderID string) (*domain.Order, error) { return nil, nil }
 func (m *MockOrderRepository) UpdateStatus(orderID string, status string) error { return nil }
+func (m *MockOrderRepository) FindPaidOrders() ([]domain.Order, error)          { return nil, nil }
+func (m *MockOrderRepository) AssignCourier(orderID string, courierID string) error { return nil }
+func (m *MockOrderRepository) FindByCourierID(courierID string) ([]domain.Order, error) {
+	return nil, nil
+}
+func (m *MockOrderRepository) FindByProductSupplier(supplierID string) ([]domain.Order, error) {
+	return nil, nil
+}
 
 // --- TESTS ---
 

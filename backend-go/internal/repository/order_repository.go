@@ -120,3 +120,41 @@ func (r *orderRepository) FindByID(orderID string) (*domain.Order, error) {
 func (r *orderRepository) UpdateStatus(orderID string, status string) error {
 	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Update("status", status).Error
 }
+
+// FindPaidOrders mengembalikan pesanan dengan status PAID (siap diambil kurir)
+func (r *orderRepository) FindPaidOrders() ([]domain.Order, error) {
+	var orders []domain.Order
+	err := r.db.Preload("Items.Product").Where("status = ?", "PAID").Order("created_at asc").Find(&orders).Error
+	return orders, err
+}
+
+// AssignCourier meng-assign kurir ke pesanan dan set status SHIPPED
+func (r *orderRepository) AssignCourier(orderID string, courierID string) error {
+	now := time.Now()
+	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Updates(map[string]interface{}{
+		"courier_id": courierID,
+		"status":     "SHIPPED",
+		"shipped_at": now,
+		"updated_at": now,
+	}).Error
+}
+
+// FindByCourierID mengembalikan pesanan milik kurir tertentu
+func (r *orderRepository) FindByCourierID(courierID string) ([]domain.Order, error) {
+	var orders []domain.Order
+	err := r.db.Preload("Items.Product").Where("courier_id = ?", courierID).Order("created_at desc").Find(&orders).Error
+	return orders, err
+}
+
+// FindByProductSupplier mengembalikan pesanan yang mengandung produk milik supplier
+func (r *orderRepository) FindByProductSupplier(supplierID string) ([]domain.Order, error) {
+	var orders []domain.Order
+	err := r.db.Preload("Items.Product").
+		Joins("JOIN order_items ON order_items.id_order = orders.id_order").
+		Joins("JOIN products ON products.id_product = order_items.id_product").
+		Where("products.supplier_id = ?", supplierID).
+		Group("orders.id_order").
+		Order("orders.created_at desc").
+		Find(&orders).Error
+	return orders, err
+}

@@ -73,6 +73,17 @@ func (m *mockProductRepoForCache) Search(keyword string, categoryID string) ([]d
 	return result, nil
 }
 
+func (m *mockProductRepoForCache) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	m.callCount["FindBySupplierID"]++
+	var result []domain.Product
+	for _, p := range m.products {
+		if p.SupplierID == supplierID {
+			result = append(result, *p)
+		}
+	}
+	return result, nil
+}
+
 // --- Tests: Cache tanpa Redis (nil client fallback) ---
 
 // TestCachedRepo_FallbackWithoutRedis — Tanpa Redis, harus tetap bekerja via base repository
@@ -81,7 +92,7 @@ func TestCachedRepo_FallbackWithoutRedis(t *testing.T) {
 	cachedRepo := NewCachedProductRepository(baseRepo, nil) // nil = Redis tidak tersedia
 
 	// Create product
-	product := &domain.Product{ID: "prod-1", Name: "Laptop Gaming", Price: 15000000, Stock: 10, CategoryID: "cat-1"}
+	product := &domain.Product{ID: "prod-1", Name: "Kangkung Segar", Price: 15000000, Stock: 10, CategoryID: "cat-1"}
 	err := cachedRepo.Create(product)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -107,14 +118,14 @@ func TestCachedRepo_FindByID_FallbackWithoutRedis(t *testing.T) {
 	baseRepo := newMockProductRepoForCache()
 	cachedRepo := NewCachedProductRepository(baseRepo, nil)
 
-	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Mouse", Price: 250000}
+	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Bayam Hijau", Price: 250000}
 
 	product, err := cachedRepo.FindByID("prod-1")
 	if err != nil {
 		t.Fatalf("FindByID failed: %v", err)
 	}
-	if product.Name != "Mouse" {
-		t.Errorf("Expected 'Mouse', got '%s'", product.Name)
+	if product.Name != "Bayam Hijau" {
+		t.Errorf("Expected 'Bayam Hijau', got '%s'", product.Name)
 	}
 
 	if baseRepo.callCount["FindByID"] != 1 {
@@ -138,16 +149,16 @@ func TestCachedRepo_Update_Delegates(t *testing.T) {
 	baseRepo := newMockProductRepoForCache()
 	cachedRepo := NewCachedProductRepository(baseRepo, nil)
 
-	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Keyboard Lama", Price: 500000}
+	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Wortel Biasa", Price: 500000}
 
-	updated := &domain.Product{ID: "prod-1", Name: "Keyboard Baru", Price: 750000}
+	updated := &domain.Product{ID: "prod-1", Name: "Wortel Organik", Price: 750000}
 	err := cachedRepo.Update(updated)
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
 
-	if baseRepo.products["prod-1"].Name != "Keyboard Baru" {
-		t.Errorf("Expected name 'Keyboard Baru', got '%s'", baseRepo.products["prod-1"].Name)
+	if baseRepo.products["prod-1"].Name != "Wortel Organik" {
+		t.Errorf("Expected name 'Wortel Organik', got '%s'", baseRepo.products["prod-1"].Name)
 	}
 	if baseRepo.callCount["Update"] != 1 {
 		t.Errorf("Expected 1 call to base Update, got %d", baseRepo.callCount["Update"])
@@ -159,7 +170,7 @@ func TestCachedRepo_Delete_Delegates(t *testing.T) {
 	baseRepo := newMockProductRepoForCache()
 	cachedRepo := NewCachedProductRepository(baseRepo, nil)
 
-	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Headset"}
+	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Sawi Putih"}
 
 	err := cachedRepo.Delete("prod-1")
 	if err != nil {
@@ -179,26 +190,26 @@ func TestCachedRepo_Search_BypassesCache(t *testing.T) {
 	baseRepo := newMockProductRepoForCache()
 	cachedRepo := NewCachedProductRepository(baseRepo, nil)
 
-	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Laptop Gaming", CategoryID: "cat-1"}
-	baseRepo.products["prod-2"] = &domain.Product{ID: "prod-2", Name: "Mouse Wireless", CategoryID: "cat-2"}
-	baseRepo.products["prod-3"] = &domain.Product{ID: "prod-3", Name: "Laptop Kerja", CategoryID: "cat-1"}
+	baseRepo.products["prod-1"] = &domain.Product{ID: "prod-1", Name: "Kangkung Segar", CategoryID: "cat-1"}
+	baseRepo.products["prod-2"] = &domain.Product{ID: "prod-2", Name: "Tomat Merah", CategoryID: "cat-2"}
+	baseRepo.products["prod-3"] = &domain.Product{ID: "prod-3", Name: "Kangkung Organik", CategoryID: "cat-1"}
 
-	// Search by keyword "Laptop"
-	results, err := cachedRepo.Search("Laptop", "")
+	// Search by keyword "Kangkung"
+	results, err := cachedRepo.Search("Kangkung", "")
 	if err != nil {
 		t.Fatalf("Search failed: %v", err)
 	}
 	if len(results) != 2 {
-		t.Errorf("Expected 2 results for 'Laptop', got %d", len(results))
+		t.Errorf("Expected 2 results for 'Kangkung', got %d", len(results))
 	}
 
 	// Search by keyword + categoryID
-	results, err = cachedRepo.Search("Laptop", "cat-1")
+	results, err = cachedRepo.Search("Kangkung", "cat-1")
 	if err != nil {
 		t.Fatalf("Search with category failed: %v", err)
 	}
 	if len(results) != 2 {
-		t.Errorf("Expected 2 results for 'Laptop' in cat-1, got %d", len(results))
+		t.Errorf("Expected 2 results for 'Kangkung' in cat-1, got %d", len(results))
 	}
 
 	// Pastikan semua panggilan masuk ke base repo
@@ -213,7 +224,7 @@ func TestCachedRepo_MultipleOperations_Flow(t *testing.T) {
 	cachedRepo := NewCachedProductRepository(baseRepo, nil)
 
 	// 1. Create
-	p := &domain.Product{ID: "flow-1", Name: "SSD 1TB", Price: 1500000, Stock: 50, CategoryID: "cat-storage"}
+	p := &domain.Product{ID: "flow-1", Name: "Brokoli Premium", Price: 1500000, Stock: 50, CategoryID: "cat-daun"}
 	err := cachedRepo.Create(p)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -233,8 +244,8 @@ func TestCachedRepo_MultipleOperations_Flow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("FindByID failed: %v", err)
 	}
-	if found.Name != "SSD 1TB" {
-		t.Errorf("Expected 'SSD 1TB', got '%s'", found.Name)
+	if found.Name != "Brokoli Premium" {
+		t.Errorf("Expected 'Brokoli Premium', got '%s'", found.Name)
 	}
 
 	// 4. Update

@@ -40,9 +40,13 @@ func (u *userUsecase) Register(user *domain.User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
-	// Set default role if not provided
+	// Validate and set role
+	validRoles := map[string]bool{"pembeli": true, "supplier": true, "courier": true}
 	if user.Role == "" {
 		user.Role = "pembeli" // Default
+	}
+	if !validRoles[user.Role] {
+		return errors.New("role tidak valid. Pilih: pembeli, supplier, atau courier")
 	}
 
 	// 4. Save to database

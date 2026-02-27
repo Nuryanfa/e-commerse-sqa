@@ -63,3 +63,10 @@ func (r *productRepository) Search(keyword string, categoryID string) ([]domain.
 	err := query.Find(&products).Error
 	return products, err
 }
+
+// FindBySupplierID mengembalikan produk milik supplier tertentu
+func (r *productRepository) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	var products []domain.Product
+	err := r.db.Preload("Category").Where("supplier_id = ?", supplierID).Find(&products).Error
+	return products, err
+}

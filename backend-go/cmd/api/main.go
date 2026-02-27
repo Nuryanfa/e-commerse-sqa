@@ -109,6 +109,20 @@ func main() {
 		deliveryHTTP.NewOrderHandler(authRoutes, orderUsecase)
 	}
 
+	// 4c. Supplier-only routes (JWT + Role "supplier")
+	supplierRoutes := router.Group("/api/supplier")
+	supplierRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("supplier"))
+	{
+		deliveryHTTP.NewSupplierHandler(supplierRoutes, productUsecase, orderUsecase)
+	}
+
+	// 4d. Courier-only routes (JWT + Role "courier")
+	courierRoutes := router.Group("/api/courier")
+	courierRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("courier"))
+	{
+		deliveryHTTP.NewCourierHandler(courierRoutes, orderUsecase)
+	}
+
 	// 5. Setup Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:    ":8080",
