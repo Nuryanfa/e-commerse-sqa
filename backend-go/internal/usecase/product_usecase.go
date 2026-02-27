@@ -84,3 +84,8 @@ func (u *productUsecase) Delete(id string) error {
 	}
 	return u.productRepo.Delete(id)
 }
+
+// Search mencari produk berdasarkan keyword dan/atau filter kategori.
+func (u *productUsecase) Search(keyword string, categoryID string) ([]domain.Product, error) {
+	return u.productRepo.Search(keyword, categoryID)
+}

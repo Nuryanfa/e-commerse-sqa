@@ -12,7 +12,8 @@ type UserHandler struct {
 }
 
 // NewUserHandler initialize user routing
-func NewUserHandler(r *gin.Engine, us domain.UserUsecase) {
+// loginRateLimiter: middleware rate limiter khusus untuk endpoint login (SQA: Brute Force Prevention)
+func NewUserHandler(r *gin.Engine, us domain.UserUsecase, loginRateLimiter gin.HandlerFunc) {
 	handler := &UserHandler{
 		userUsecase: us,
 	}
@@ -20,7 +21,7 @@ func NewUserHandler(r *gin.Engine, us domain.UserUsecase) {
 	userGroup := r.Group("/api/users")
 	{
 		userGroup.POST("/register", handler.Register)
-		userGroup.POST("/login", handler.Login)
+		userGroup.POST("/login", loginRateLimiter, handler.Login) // Rate limited
 	}
 }
 

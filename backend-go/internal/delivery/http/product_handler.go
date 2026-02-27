@@ -23,6 +23,7 @@ func NewProductHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, u
 	publicGroup := publicRouter.Group("/api/products")
 	{
 		publicGroup.GET("", handler.FindAll)
+		publicGroup.GET("/search", handler.Search) // Harus sebelum /:id agar tidak tertangkap wildcard
 		publicGroup.GET("/:id", handler.FindByID)
 	}
 
@@ -93,4 +94,17 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil dihapus"})
+}
+
+func (h *ProductHandler) Search(c *gin.Context) {
+	keyword := c.Query("q")        // Query parameter: ?q=laptop
+	categoryID := c.Query("category") // Optional filter: ?category=uuid
+
+	products, err := h.productUsecase.Search(keyword, categoryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": products, "total": len(products)})
 }

@@ -17,11 +17,15 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 	"github.com/nuryanfa/e-commerse-sqa/internal/repository"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
+	"golang.org/x/time/rate"
 )
 
 func main() {
 	// 1. Init Database
 	db := config.InitDB()
+
+	// 1b. Init Redis (opsional — graceful degradation jika tidak tersedia)
+	redisClient := config.InitRedis()
 
 	// Auto Migrate the database structures
 	err := db.AutoMigrate(
@@ -61,16 +65,21 @@ func main() {
 	})
 
 	// 3. Dependency Injection for Clean Architecture
+
 	// Users (public — register & login)
+	// SQA Security: Rate limiter diterapkan pada endpoint login
+	// Konfigurasi: rate.Every(12*time.Second) = ~5 request/menit, burst 5
 	userRepo := repository.NewUserRepository(db)
 	userUsecase := usecase.NewUserUsecase(userRepo)
-	deliveryHTTP.NewUserHandler(router, userUsecase)
+	deliveryHTTP.NewUserHandler(router, userUsecase, middleware.RateLimitMiddleware(rate.Every(12*time.Second), 5))
 
 	// Repositories for Catalog
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
 
-	productRepo := repository.NewProductRepository(db)
+	// SQA Performance: Product repository dibungkus dengan Redis caching
+	baseProductRepo := repository.NewProductRepository(db)
+	productRepo := repository.NewCachedProductRepository(baseProductRepo, redisClient)
 	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo)
 
 	// Shopping Cart and Orders
@@ -100,7 +109,7 @@ func main() {
 		deliveryHTTP.NewOrderHandler(authRoutes, orderUsecase)
 	}
 
-	// 4. Setup Server with Graceful Shutdown
+	// 5. Setup Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router,

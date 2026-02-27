@@ -45,3 +45,21 @@ func (r *productRepository) Update(product *domain.Product) error {
 func (r *productRepository) Delete(id string) error {
 	return r.db.Where("id_product = ?", id).Delete(&domain.Product{}).Error
 }
+
+// Search mencari produk berdasarkan keyword (nama) dan/atau filter kategori.
+// Menggunakan ILIKE untuk pencarian case-insensitive di PostgreSQL.
+func (r *productRepository) Search(keyword string, categoryID string) ([]domain.Product, error) {
+	var products []domain.Product
+	query := r.db.Preload("Category")
+
+	if keyword != "" {
+		query = query.Where("name ILIKE ?", "%"+keyword+"%")
+	}
+
+	if categoryID != "" {
+		query = query.Where("id_category = ?", categoryID)
+	}
+
+	err := query.Find(&products).Error
+	return products, err
+}

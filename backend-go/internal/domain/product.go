@@ -21,6 +21,7 @@ type ProductRepository interface {
 	FindByID(id string) (*Product, error)
 	Update(product *Product) error
 	Delete(id string) error
+	Search(keyword string, categoryID string) ([]Product, error)
 }
 
 type ProductUsecase interface {
@@ -29,4 +30,5 @@ type ProductUsecase interface {
 	FindByID(id string) (*Product, error)
 	Update(id string, product *Product) error
 	Delete(id string) error
+	Search(keyword string, categoryID string) ([]Product, error)
 }
