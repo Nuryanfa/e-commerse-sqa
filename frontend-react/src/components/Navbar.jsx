@@ -1,120 +1,178 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ShoppingCart, User, Package, LogOut, Leaf, Home, LayoutGrid } from 'lucide-react';
+import CommandPalette from './CommandPalette';
+import MegaMenu from './MegaMenu';
+import MiniCartPreview from './MiniCartPreview';
 
-export default function Navbar() {
+export default function Navbar({ onToggleSidebar }) {
   const { user, isAuthenticated, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cartCount] = useState(0);
+  const [cartHover, setCartHover] = useState(false);
+  const [megaMenuHover, setMegaMenuHover] = useState(false);
+  const dropdownRef = useRef(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    setMobileOpen(false);
-  };
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
-  const getDashboardLink = () => {
-    if (!user) return '/';
-    switch (user.role) {
-      case 'admin': return '/admin';
-      case 'supplier': return '/supplier';
-      case 'courier': return '/courier';
-      default: return '/orders';
-    }
-  };
+  // Hotkey pencarian Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-  const getRoleLabel = () => {
-    if (!user) return '';
-    const labels = { admin: 'Admin', supplier: 'Supplier', courier: 'Kurir', pembeli: 'Pembeli' };
-    return labels[user.role] || user.role;
-  };
-
-  const getRoleIcon = () => {
-    if (!user) return '';
-    const icons = { admin: '🛡️', supplier: '🧑‍🌾', courier: '🚚', pembeli: '🛒' };
-    return icons[user.role] || '👤';
-  };
+  // Breadcrumb
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const breadcrumbs = pathParts.map((part, i) => ({
+    label: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' '),
+    path: '/' + pathParts.slice(0, i + 1).join('/'),
+    isLast: i === pathParts.length - 1,
+  }));
 
   return (
-    <nav className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50 animate-fade-in-down border-b border-gray-100/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2 group">
-              <span className="text-2xl group-hover:animate-bounce-in transition-transform">🥬</span>
-              <span className="text-xl font-bold gradient-text">SayurSehat</span>
-            </Link>
-          </div>
+    <>
+    <header className="sticky top-0 z-40 glass animate-fade-in-down" style={{ borderBottom: '1px solid var(--border-light)' }}>
+      <div className="flex items-center h-14 px-4 gap-3">
+        {/* Mobile hamburger */}
+        <button onClick={onToggleSidebar} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl cursor-pointer transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" style={{ color: 'var(--text-secondary)' }}>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-gray-600 hover:text-primary-600 font-medium transition-all duration-200 hover:-translate-y-0.5">Beranda</Link>
-            <Link to="/products" className="text-gray-600 hover:text-primary-600 font-medium transition-all duration-200 hover:-translate-y-0.5">Produk</Link>
-
-            {isAuthenticated ? (
-              <>
-                {user.role === 'pembeli' && (
-                  <Link to="/cart" className="relative text-gray-600 hover:text-primary-600 transition-all duration-200 hover:scale-110 text-xl">
-                    🛒
-                  </Link>
-                )}
-                <Link to={getDashboardLink()} className="text-gray-600 dark:text-gray-300 hover:text-primary-600 font-medium transition-all duration-200 hover:-translate-y-0.5">
-                  {user.role === 'pembeli' ? 'Pesanan' : 'Dashboard'}
-                </Link>
-                <span className="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700 px-3 py-1.5 rounded-full font-medium border border-primary-100 animate-scale-in">
-                  {getRoleIcon()} {getRoleLabel()}
-                </span>
-                <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 font-medium transition-all duration-200 hover:scale-105 cursor-pointer text-sm">Logout</button>
-                <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
-                <button onClick={toggleTheme} className="text-xl hover:scale-110 transition-transform cursor-pointer" title="Toggle Dark Mode">
-                  {theme === 'light' ? '🌙' : '☀️'}
-                </button>
-              </>
-            ) : (
-              <>
-                <button onClick={toggleTheme} className="text-xl hover:scale-110 transition-transform cursor-pointer mr-2" title="Toggle Dark Mode">
-                  {theme === 'light' ? '🌙' : '☀️'}
-                </button>
-                <Link to="/login" className="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg hover:shadow-primary-200 transition-all duration-300 hover:-translate-y-0.5">
-                  Login / Daftar
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile hamburger */}
-          <div className="md:hidden flex items-center gap-2">
-            <button onClick={toggleTheme} className="p-2 text-xl hover:scale-110 transition-transform cursor-pointer">
-              {theme === 'light' ? '🌙' : '☀️'}
+        {/* Categories Mega Menu Trigger & Breadcrumb Wrapper */}
+        <nav className="hidden sm:flex items-center gap-1.5 text-sm flex-1 min-w-0">
+          <div 
+            className="hidden lg:block relative mr-2"
+            onMouseEnter={() => setMegaMenuHover(true)}
+            onMouseLeave={() => setMegaMenuHover(false)}
+          >
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 transition-colors border border-transparent hover:border-emerald-200 dark:hover:border-slate-700">
+              <LayoutGrid className="w-4 h-4" /> Kategori Belanja
             </button>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="text-gray-600 dark:text-gray-300 p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
-              <svg className="w-6 h-6 transition-transform duration-300" style={{ transform: mobileOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
+            <MegaMenu isOpen={megaMenuHover} />
+          </div>
+
+          <Link to="/" className="flex items-center gap-1 transition-colors hover:text-emerald-600" style={{ color: 'var(--text-muted)' }}>
+            <Home className="w-4 h-4" />
+          </Link>
+          {breadcrumbs.map((b, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <span style={{ color: 'var(--text-muted)' }}>/</span>
+              {b.isLast ? (
+                <span className="font-medium truncate" style={{ color: 'var(--text-heading)' }}>{b.label}</span>
+              ) : (
+                <Link to={b.path} className="hover:text-emerald-600 transition-colors truncate" style={{ color: 'var(--text-muted)' }}>{b.label}</Link>
+              )}
+            </span>
+          ))}
+          {breadcrumbs.length === 0 && <span className="font-medium" style={{ color: 'var(--text-heading)' }}>Beranda</span>}
+        </nav>
+
+        {/* Mobile logo */}
+        <Link to="/" className="sm:hidden flex items-center gap-1.5 flex-1 text-emerald-600 dark:text-emerald-400">
+          <Leaf className="w-5 h-5" />
+          <span className="font-bold text-sm gradient-text">SayurSehat</span>
+        </Link>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          {/* Search Trigger */}
+          <div className="hidden sm:flex items-center">
+            <button 
+              onClick={() => setSearchOpen(true)}
+              className="group flex items-center justify-between w-60 px-3 py-2 rounded-xl text-sm border focus:outline-none transition-all duration-300 hover:border-emerald-400 cursor-text"
+              style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-primary)', color: 'var(--text-muted)' }}
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                <span className="font-medium">Cari sayur, buah...</span>
+              </div>
+              <div className="flex items-center gap-1 font-sans text-[10px] font-bold">
+                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">K</kbd>
+              </div>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Mobile menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="bg-white border-t px-4 pb-4 space-y-1">
-          <Link to="/" onClick={() => setMobileOpen(false)} className="block py-2.5 px-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">Beranda</Link>
-          <Link to="/products" onClick={() => setMobileOpen(false)} className="block py-2.5 px-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all">Produk</Link>
+          <button 
+             onClick={() => setSearchOpen(true)} 
+             className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
+             style={{ color: 'var(--text-secondary)' }}
+          >
+             <Search className="w-[18px] h-[18px]" />
+          </button>
+
+          {/* Cart (pembeli only) */}
+          {isAuthenticated && user?.role === 'pembeli' && (
+            <div className="relative" onMouseEnter={() => setCartHover(true)} onMouseLeave={() => setCartHover(false)}>
+              <Link to="/cart" className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" style={{ color: 'var(--text-secondary)' }}>
+                <ShoppingCart className="w-[18px] h-[18px]" />
+                {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center badge-stock">{cartCount}</span>}
+              </Link>
+              <MiniCartPreview isOpen={cartHover} />
+            </div>
+          )}
+
+          {/* User avatar / Login */}
           {isAuthenticated ? (
-            <>
-              {user.role === 'pembeli' && <Link to="/cart" onClick={() => setMobileOpen(false)} className="block py-2.5 px-3 text-gray-600 hover:bg-primary-50 rounded-lg transition-all">🛒 Keranjang</Link>}
-              <Link to={getDashboardLink()} onClick={() => setMobileOpen(false)} className="block py-2.5 px-3 text-gray-600 hover:bg-primary-50 rounded-lg transition-all">{user.role === 'pembeli' ? '📦 Pesanan Saya' : '📊 Dashboard'}</Link>
-              <button onClick={handleLogout} className="block w-full text-left py-2.5 px-3 text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer">🚪 Logout</button>
-            </>
+            <div className="relative" ref={dropdownRef}>
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200/40 dark:hover:shadow-emerald-900/30 hover:scale-105">
+                {user?.nama?.charAt(0)?.toUpperCase() || '?'}
+              </button>
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden shadow-2xl origin-top-right"
+                    style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--border-primary)' }}
+                  >
+                    <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-heading)' }}>{user?.nama}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <Link to="/profile" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                        <User className="w-4 h-4" /> Profil Saya
+                      </Link>
+                      {user?.role === 'pembeli' && (
+                        <Link to="/orders" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                          <Package className="w-4 h-4" /> Pesanan
+                        </Link>
+                      )}
+                      <button onClick={() => { logout(); setDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
+                        <LogOut className="w-4 h-4" /> Keluar
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
-            <Link to="/login" onClick={() => setMobileOpen(false)} className="block py-2.5 px-3 text-primary-600 font-medium hover:bg-primary-50 rounded-lg transition-all">Login / Daftar</Link>
+            <Link to="/login" className="btn-primary px-5 py-2 text-sm">Masuk</Link>
           )}
         </div>
       </div>
-    </nav>
+    </header>
+      <CommandPalette isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   );
 }

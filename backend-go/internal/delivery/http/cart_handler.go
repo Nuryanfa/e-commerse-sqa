@@ -27,8 +27,12 @@ func NewCartHandler(r *gin.RouterGroup, uc domain.CartUsecase) {
 }
 
 func (h *CartHandler) AddToCart(c *gin.Context) {
-	// Ambil userID dari payload set oleh Middleware JWT
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 
 	var req domain.CartItem
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -36,7 +40,7 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	if err := h.cartUsecase.AddToCart(userID.(string), &req); err != nil {
+	if err := h.cartUsecase.AddToCart(uid, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -45,9 +49,14 @@ func (h *CartHandler) AddToCart(c *gin.Context) {
 }
 
 func (h *CartHandler) ViewCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 
-	items, err := h.cartUsecase.ViewCart(userID.(string))
+	items, err := h.cartUsecase.ViewCart(uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal merender keranjang", "detail": err.Error()})
 		return
@@ -57,7 +66,12 @@ func (h *CartHandler) ViewCart(c *gin.Context) {
 }
 
 func (h *CartHandler) UpdateQuantity(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 	itemID := c.Param("id")
 
 	var req struct {
@@ -69,7 +83,7 @@ func (h *CartHandler) UpdateQuantity(c *gin.Context) {
 		return
 	}
 
-	if err := h.cartUsecase.UpdateQuantity(userID.(string), itemID, req.Quantity); err != nil {
+	if err := h.cartUsecase.UpdateQuantity(uid, itemID, req.Quantity); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -78,10 +92,15 @@ func (h *CartHandler) UpdateQuantity(c *gin.Context) {
 }
 
 func (h *CartHandler) RemoveFromCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 	itemID := c.Param("id")
 
-	if err := h.cartUsecase.RemoveFromCart(userID.(string), itemID); err != nil {
+	if err := h.cartUsecase.RemoveFromCart(uid, itemID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

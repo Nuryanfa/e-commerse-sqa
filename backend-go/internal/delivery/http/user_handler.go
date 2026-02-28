@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 )
 
 type UserHandler struct {
@@ -22,6 +23,12 @@ func NewUserHandler(r *gin.Engine, us domain.UserUsecase, loginRateLimiter gin.H
 	{
 		userGroup.POST("/register", handler.Register)
 		userGroup.POST("/login", loginRateLimiter, handler.Login) // Rate limited
+	}
+
+	protected := r.Group("/api/users")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.PUT("/profile", handler.UpdateProfile)
 	}
 }
 
@@ -59,7 +66,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.userUsecase.Login(loginReq.Email, loginReq.Password)
+	token, role, err := h.userUsecase.Login(loginReq.Email, loginReq.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -68,5 +75,35 @@ func (h *UserHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login berhasil",
 		"token":   token,
+		"role":    role,
+	})
+}
+
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
+
+	var req struct {
+		Name    string `json:"name" binding:"required"`
+		Phone   string `json:"phone"`
+		Address string `json:"address"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid: Nama diwajibkan"})
+		return
+	}
+
+	if err := h.userUsecase.UpdateProfile(uid, req.Name, req.Phone, req.Address); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profil berhasil diperbarui",
 	})
 }

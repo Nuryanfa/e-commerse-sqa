@@ -28,9 +28,14 @@ func NewOrderHandler(r *gin.RouterGroup, uc domain.OrderUsecase) {
 
 func (h *OrderHandler) Checkout(c *gin.Context) {
 	// Di-set oleh Auth Middleware
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 
-	order, err := h.orderUsecase.Checkout(userID.(string))
+	order, err := h.orderUsecase.Checkout(uid)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
@@ -43,9 +48,14 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 }
 
 func (h *OrderHandler) GetMyOrders(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 	
-	orders, err := h.orderUsecase.GetMyOrders(userID.(string))
+	orders, err := h.orderUsecase.GetMyOrders(uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -55,10 +65,15 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 }
 
 func (h *OrderHandler) GetOrderDetail(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
 	orderID := c.Param("id")
 
-	order, err := h.orderUsecase.GetOrderDetail(userID.(string), orderID)
+	order, err := h.orderUsecase.GetOrderDetail(uid, orderID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return

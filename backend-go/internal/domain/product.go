@@ -16,6 +16,27 @@ type Product struct {
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
+type Review struct {
+	ID        string    `json:"id_review" gorm:"column:id_review;primaryKey"`
+	ProductID string    `json:"id_product" gorm:"column:id_product"`
+	UserID    string    `json:"id_user" gorm:"column:id_user"`
+	Rating    int       `json:"rating" gorm:"column:rating" binding:"required,min=1,max=5"`
+	Comment   string    `json:"comment" gorm:"column:comment"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
+	Product   *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+	User      *User     `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
+}
+
+type Wishlist struct {
+	ID        string    `json:"id_wishlist" gorm:"column:id_wishlist;primaryKey"`
+	UserID    string    `json:"id_user" gorm:"column:id_user"`
+	ProductID string    `json:"id_product" gorm:"column:id_product"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	User      *User     `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
+	Product   *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+}
+
 type ProductRepository interface {
 	Create(product *Product) error
 	FindAll() ([]Product, error)

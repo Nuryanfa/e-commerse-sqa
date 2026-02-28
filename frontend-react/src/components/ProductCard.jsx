@@ -1,36 +1,79 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import api from '../services/api';
+import { Leaf, Plus } from 'lucide-react';
 
 export default function ProductCard({ product, index = 0 }) {
-  const stockColor = product.stock > 10 ? 'text-green-600 bg-green-50' : product.stock > 0 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
-  const stockLabel = product.stock > 10 ? 'Tersedia' : product.stock > 0 ? `Sisa ${product.stock}` : 'Habis';
+  const { user } = useAuth();
+  const toast = useToast();
+  const stockLow = product.stock > 0 && product.stock < 5;
+  const outOfStock = product.stock === 0;
+
+  const addToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.info('Silakan login untuk berbelanja');
+      return;
+    }
+    try {
+      await api.post('/cart', { id_product: product.id_product, quantity: 1 });
+      toast.success(`${product.name} ditambahkan ke keranjang!`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal menambahkan');
+    }
+  };
 
   return (
     <Link
       to={`/products/${product.id_product}`}
-      className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 card-hover animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
+      className={`group block card-organic overflow-hidden animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
     >
-      <div className="aspect-[4/3] bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center overflow-hidden relative">
+      {/* Image area */}
+      <div className="aspect-square relative overflow-hidden flex items-center justify-center" style={{ background: 'var(--surface-muted)' }}>
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out" />
         ) : (
-          <span className="text-5xl group-hover:animate-float transition-transform">🥬</span>
+          <Leaf className="w-16 h-16 text-emerald-500 opacity-50 group-hover:scale-110 transition-transform duration-500" />
         )}
-        {product.stock === 0 && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white font-bold text-sm bg-red-500 px-3 py-1 rounded-full">Habis</span>
+
+        {/* Low stock pulse badge */}
+        {stockLow && (
+          <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full badge-stock flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse-soft" />
+            Sisa {product.stock} kg!
           </div>
         )}
+        {outOfStock && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="text-white font-bold text-sm px-4 py-1.5 rounded-full bg-red-500/90">Habis</span>
+          </div>
+        )}
+
+        {/* Add to cart circular button */}
+        {!outOfStock && user?.role !== 'admin' && user?.role !== 'supplier' && user?.role !== 'courier' && (
+          <button
+            onClick={addToCart}
+            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out cursor-pointer hover:bg-emerald-700 hover:scale-110 hover:shadow-emerald-200/50 active:scale-95"
+            title="Tambah ke Keranjang"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        )}
       </div>
+
+      {/* Info */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-gray-800 group-hover:text-primary-600 transition-colors duration-200 line-clamp-1">{product.name}</h3>
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${stockColor} transition-colors`}>{stockLabel}</span>
-        </div>
-        {product.category && <p className="text-xs text-gray-400 mb-2">{product.category.name}</p>}
-        <div className="flex items-center justify-between">
-          <p className="text-primary-700 font-bold text-lg">Rp {product.price?.toLocaleString('id-ID')}</p>
-          <span className="text-xs text-gray-300 group-hover:text-primary-400 transition-colors duration-300">Lihat →</span>
-        </div>
+        {product.category && (
+          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-accent)' }}>{product.category.name}</span>
+        )}
+        <h3 className="text-base font-bold mt-0.5 mb-1.5 truncate group-hover:text-emerald-600 transition-colors duration-300" style={{ color: 'var(--text-heading)' }}>
+          {product.name}
+        </h3>
+        <p className="text-xl font-black" style={{ color: 'var(--text-accent)' }}>
+          Rp {product.price?.toLocaleString('id-ID')}
+        </p>
       </div>
     </Link>
   );

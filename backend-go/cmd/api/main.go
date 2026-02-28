@@ -35,6 +35,8 @@ func main() {
 		&domain.CartItem{},
 		&domain.Order{},
 		&domain.OrderItem{},
+		&domain.Review{},
+		&domain.Wishlist{},
 	)
 	if err != nil {
 		log.Fatalf("Gagal melakukan migrasi database: %v", err)
@@ -48,12 +50,10 @@ func main() {
 
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Alamat Vite Default
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
 	}))
 
 	// Health Check
@@ -63,6 +63,9 @@ func main() {
 			"message": "Server berjalan dan siap!",
 		})
 	})
+
+	// Serve Static Files for Uploads
+	router.Static("/uploads", "./uploads")
 
 	// 3. Dependency Injection for Clean Architecture
 
@@ -81,6 +84,12 @@ func main() {
 	baseProductRepo := repository.NewProductRepository(db)
 	productRepo := repository.NewCachedProductRepository(baseProductRepo, redisClient)
 	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo)
+
+	reviewRepo := repository.NewReviewRepository(db)
+	reviewUsecase := usecase.NewReviewUsecase(reviewRepo, productRepo)
+
+	wishlistRepo := repository.NewWishlistRepository(db)
+	wishlistUsecase := usecase.NewWishlistUsecase(wishlistRepo, productRepo)
 
 	// Shopping Cart and Orders
 	cartRepo := repository.NewCartRepository(db)
@@ -108,6 +117,10 @@ func main() {
 		deliveryHTTP.NewCartHandler(authRoutes, cartUsecase)
 		deliveryHTTP.NewOrderHandler(authRoutes, orderUsecase)
 	}
+
+	// Open endpoints that also have protected childs
+	deliveryHTTP.NewReviewHandler(router.Group("/api"), reviewUsecase)
+	deliveryHTTP.NewWishlistHandler(router.Group("/api"), wishlistUsecase)
 
 	// 4c. Supplier-only routes (JWT + Role "supplier")
 	supplierRoutes := router.Group("/api/supplier")

@@ -1,61 +1,57 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Footer() {
+  const { isAuthenticated } = useAuth();
+
   return (
-    <footer className="bg-gradient-to-br from-primary-900 to-primary-800 text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer style={{ background: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #065f46 100%)' }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl">🥬</span>
-              <span className="text-xl font-bold">SayurSehat</span>
+              <span className="text-lg font-black text-white">SayurSehat</span>
             </div>
-            <p className="text-primary-200 text-sm leading-relaxed">Marketplace sayur segar langsung dari petani lokal pilihan. Kualitas premium, harga terjangkau.</p>
-            <div className="flex gap-3 mt-5">
+            <p className="text-emerald-200/70 text-xs leading-relaxed">Marketplace sayur segar langsung dari petani lokal pilihan. Kualitas premium, harga terjangkau.</p>
+            <div className="flex gap-2 mt-4">
               {['📘', '📸', '🐦'].map((e, i) => (
-                <div key={i} className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-all duration-300 cursor-pointer hover:scale-110">{e}</div>
-              ))}
-            </div>
-          </div>
-
-          {/* Links */}
-          <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-200">Navigasi</h4>
-            <div className="space-y-2.5">
-              {[
-                { to: '/', label: 'Beranda' },
-                { to: '/products', label: 'Produk' },
-                { to: '/register', label: 'Daftar' },
-                { to: '/login', label: 'Login' },
-              ].map(l => (
-                <Link key={l.to} to={l.to} className="block text-primary-300 hover:text-white text-sm transition-all duration-200 hover:translate-x-1">{l.label}</Link>
+                <span key={i} className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm hover:bg-white/20 transition-colors cursor-pointer">{e}</span>
               ))}
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-200">Kategori</h4>
-            <div className="space-y-2.5">
+            <h4 className="font-bold text-xs text-white uppercase tracking-wider mb-3">Navigasi</h4>
+            <div className="space-y-2">
+              {[{ to: '/', label: 'Beranda' }, { to: '/products', label: 'Produk' }, ...(!isAuthenticated ? [{ to: '/register', label: 'Daftar' }, { to: '/login', label: 'Login' }] : [])].map(l => (
+                <Link key={l.to} to={l.to} className="block text-emerald-200/60 text-xs hover:text-emerald-300 transition-colors">{l.label}</Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-bold text-xs text-white uppercase tracking-wider mb-3">Kategori</h4>
+            <div className="space-y-2">
               {['Sayuran Daun', 'Sayuran Buah', 'Umbi-umbian', 'Bumbu Dapur'].map(c => (
-                <span key={c} className="block text-primary-300 text-sm">{c}</span>
+                <span key={c} className="block text-emerald-200/60 text-xs">{c}</span>
               ))}
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4 text-primary-200">Kontak</h4>
-            <div className="space-y-2.5 text-primary-300 text-sm">
-              <p className="flex items-center gap-2">📧 halo@sayursehat.id</p>
-              <p className="flex items-center gap-2">📞 +62 812-3456-7890</p>
-              <p className="flex items-center gap-2">📍 Bandung, Indonesia</p>
+            <h4 className="font-bold text-xs text-white uppercase tracking-wider mb-3">Kontak</h4>
+            <div className="space-y-2 text-emerald-200/60 text-xs">
+              <p>📧 halo@sayursehat.id</p>
+              <p>📞 +62 812-3456-7890</p>
+              <p>📍 Bandung, Indonesia</p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-primary-700/50 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-primary-400 text-xs">&copy; 2026 SayurSehat. All rights reserved.</p>
-          <p className="text-primary-400 text-xs">Made with 💚 for fresh vegetables</p>
+        <div className="border-t border-emerald-800/50 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+          <p className="text-emerald-300/40 text-[10px]">© 2026 SayurSehat. All rights reserved.</p>
+          <p className="text-emerald-300/40 text-[10px]">Made with 💚 for fresh vegetables</p>
         </div>
       </div>
     </footer>

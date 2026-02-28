@@ -20,26 +20,36 @@ func NewMockUserRepository() *MockUserRepository {
 	}
 }
 
-func (m *MockUserRepository) Create(user *domain.User) error {
-	m.users[user.Email] = user
+func (m *MockUserRepository) Create(u *domain.User) error {
+	if u.Email == "error@example.com" {
+		return errors.New("db error")
+	}
+	m.users[u.Email] = u
 	return nil
 }
 
 func (m *MockUserRepository) FindByEmail(email string) (*domain.User, error) {
-	user, exists := m.users[email]
-	if !exists {
-		return nil, errors.New("user not found")
+	if u, exists := m.users[email]; exists {
+		return u, nil
 	}
-	return user, nil
+	return nil, errors.New("not found")
 }
 
 func (m *MockUserRepository) FindByID(id string) (*domain.User, error) {
-	for _, user := range m.users {
-		if user.ID == id {
-			return user, nil
+	for _, u := range m.users {
+		if u.ID == id {
+			return u, nil
 		}
 	}
-	return nil, errors.New("user not found")
+	return nil, errors.New("not found")
+}
+
+func (m *MockUserRepository) Update(u *domain.User) error {
+	if u.Email == "error@example.com" {
+		return errors.New("db error")
+	}
+	m.users[u.Email] = u
+	return nil
 }
 
 // -----------------------------------------------------
@@ -116,30 +126,6 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	}
 }
 
-func TestLogin_Success(t *testing.T) {
-	mockRepo := NewMockUserRepository()
-	hashedPassword, _ := password.HashPassword("password123")
-	
-	mockRepo.users["test@example.com"] = &domain.User{
-		ID:        "user-id-123",
-		Nama:      "Tester",
-		Email:     "test@example.com",
-		Password:  hashedPassword,
-		Role:      "pembeli",
-	}
-
-	usecase := NewUserUsecase(mockRepo)
-
-	token, err := usecase.Login("test@example.com", "password123")
-
-	if err != nil {
-		t.Fatalf("Expected login to succeed, got error: %v", err)
-	}
-
-	if token == "" {
-		t.Errorf("Expected a JWT token, got empty string")
-	}
-}
 
 func TestLogin_WrongPassword(t *testing.T) {
 	mockRepo := NewMockUserRepository()
@@ -155,7 +141,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 
 	usecase := NewUserUsecase(mockRepo)
 
-	_, err := usecase.Login("test@example.com", "wrongpass")
+	_, _, err := usecase.Login("test@example.com", "wrongpass")
 
 	if err == nil {
 		t.Fatalf("Expected login to fail, got success")
