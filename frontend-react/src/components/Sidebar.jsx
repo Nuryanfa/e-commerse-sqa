@@ -112,13 +112,17 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3">
-          {/* Public */}
-          <p className="sidebar-section-title text-[10px] font-bold uppercase tracking-widest px-2.5 mb-1 mt-0.5" style={{ color: 'var(--sidebar-muted)' }}>
-            Menu
-          </p>
-          <div className="space-y-0.5 mb-3">
-            {publicLinks.map(l => <NavLink key={l.to} {...l} />)}
-          </div>
+          {/* Public - Hanya untuk Tamu dan Pembeli */}
+          {(!user || user.role === 'pembeli') && (
+            <>
+              <p className="sidebar-section-title text-[10px] font-bold uppercase tracking-widest px-2.5 mb-1 mt-0.5" style={{ color: 'var(--sidebar-muted)' }}>
+                Menu
+              </p>
+              <div className="space-y-0.5 mb-3">
+                {publicLinks.map(l => <NavLink key={l.to} {...l} />)}
+              </div>
+            </>
+          )}
 
           {/* Role links */}
           {isAuthenticated && currentRole && (

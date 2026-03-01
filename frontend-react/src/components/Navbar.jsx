@@ -45,6 +45,11 @@ export default function Navbar({ onToggleSidebar }) {
     isLast: i === pathParts.length - 1,
   }));
 
+  // Sembunyikan Navbar untuk Dasbor Aktor Internal
+  if (['/admin', '/supplier', '/courier'].some(route => location.pathname.startsWith(route))) {
+    return null;
+  }
+
   return (
     <>
     <header className="sticky top-0 z-40 glass animate-fade-in-down" style={{ borderBottom: '1px solid var(--border-light)' }}>

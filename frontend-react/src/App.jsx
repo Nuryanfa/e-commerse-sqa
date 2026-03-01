@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
+import StoreRoute from './components/StoreRoute';
 import PageWrapper from './components/PageWrapper';
 import SplashScreen from './components/SplashScreen';
 
@@ -60,16 +61,16 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
-        <Route path="/products" element={<PageWrapper><Products /></PageWrapper>} />
-        <Route path="/products/:id" element={<PageWrapper><ProductDetail /></PageWrapper>} />
-        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-        <Route path="/register" element={<PageWrapper><Register /></PageWrapper>} />
-        <Route path="/cart" element={<ProtectedRoute><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
-        <Route path="/orders/:id" element={<ProtectedRoute><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
-        <Route path="/wishlist" element={<PageWrapper><Wishlist /></PageWrapper>} />
-        <Route path="/profile" element={<ProtectedRoute><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
+        <Route path="/" element={<StoreRoute><PageWrapper><Home /></PageWrapper></StoreRoute>} />
+        <Route path="/products" element={<StoreRoute><PageWrapper><Products /></PageWrapper></StoreRoute>} />
+        <Route path="/products/:id" element={<StoreRoute><PageWrapper><ProductDetail /></PageWrapper></StoreRoute>} />
+        <Route path="/login" element={<StoreRoute><PageWrapper><Login /></PageWrapper></StoreRoute>} />
+        <Route path="/register" element={<StoreRoute><PageWrapper><Register /></PageWrapper></StoreRoute>} />
+        <Route path="/wishlist" element={<StoreRoute><PageWrapper><Wishlist /></PageWrapper></StoreRoute>} />
+        <Route path="/cart" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
+        <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/*" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
         <Route path="/supplier/*" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDashboard /></PageWrapper></ProtectedRoute>} />
         <Route path="/courier/*" element={<ProtectedRoute allowedRoles={['courier']}><PageWrapper><CourierDashboard /></PageWrapper></ProtectedRoute>} />
