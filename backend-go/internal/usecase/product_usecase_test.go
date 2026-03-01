@@ -44,7 +44,7 @@ func (m *MockProductRepository) Delete(id string) error {
 	delete(m.products, id)
 	return nil
 }
-func (m *MockProductRepository) Search(keyword string, categoryID string) ([]domain.Product, error) {
+func (m *MockProductRepository) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	var result []domain.Product
 	for _, p := range m.products {
 		// Simulasi pencarian case-insensitive
@@ -221,7 +221,7 @@ func TestProductSearch_ByKeyword(t *testing.T) {
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
-	results, err := uc.Search("Kangkung", "")
+	results, err := uc.Search("Kangkung", "", 10, 0)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestProductSearch_ByKeywordAndCategory(t *testing.T) {
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
-	results, err := uc.Search("Kangkung", "cat-1")
+	results, err := uc.Search("Kangkung", "cat-1", 10, 0)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
@@ -258,7 +258,7 @@ func TestProductSearch_EmptyKeyword_ReturnsAll(t *testing.T) {
 
 	uc := NewProductUsecase(mockProductRepo, mockCategoryRepo)
 
-	results, err := uc.Search("", "")
+	results, err := uc.Search("", "", 10, 0)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}

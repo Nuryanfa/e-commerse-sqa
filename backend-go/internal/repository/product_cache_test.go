@@ -58,7 +58,7 @@ func (m *mockProductRepoForCache) Delete(id string) error {
 	return nil
 }
 
-func (m *mockProductRepoForCache) Search(keyword string, categoryID string) ([]domain.Product, error) {
+func (m *mockProductRepoForCache) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	m.callCount["Search"]++
 	var result []domain.Product
 	for _, p := range m.products {
@@ -195,7 +195,7 @@ func TestCachedRepo_Search_BypassesCache(t *testing.T) {
 	baseRepo.products["prod-3"] = &domain.Product{ID: "prod-3", Name: "Kangkung Organik", CategoryID: "cat-1"}
 
 	// Search by keyword "Kangkung"
-	results, err := cachedRepo.Search("Kangkung", "")
+	results, err := cachedRepo.Search("Kangkung", "", 10, 0)
 	if err != nil {
 		t.Fatalf("Search failed: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestCachedRepo_Search_BypassesCache(t *testing.T) {
 	}
 
 	// Search by keyword + categoryID
-	results, err = cachedRepo.Search("Kangkung", "cat-1")
+	results, err = cachedRepo.Search("Kangkung", "cat-1", 10, 0)
 	if err != nil {
 		t.Fatalf("Search with category failed: %v", err)
 	}

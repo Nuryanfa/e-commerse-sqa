@@ -126,8 +126,8 @@ func (r *cachedProductRepository) Delete(id string) error {
 }
 
 // Search langsung diteruskan ke base repository (tidak di-cache karena query dinamis)
-func (r *cachedProductRepository) Search(keyword string, categoryID string) ([]domain.Product, error) {
-	return r.base.Search(keyword, categoryID)
+func (r *cachedProductRepository) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
+	return r.base.Search(keyword, categoryID, limit, offset)
 }
 
 // FindBySupplierID langsung ke base repository (query spesifik per supplier)
