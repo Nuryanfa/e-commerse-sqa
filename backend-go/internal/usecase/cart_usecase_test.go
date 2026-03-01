@@ -26,7 +26,7 @@ func (m *MockProductRepoForCart) FindByID(id string) (*domain.Product, error) {
 }
 func (m *MockProductRepoForCart) Update(p *domain.Product) error { return nil }
 func (m *MockProductRepoForCart) Delete(id string) error          { return nil }
-func (m *MockProductRepoForCart) Search(keyword string, categoryID string) ([]domain.Product, error) {
+func (m *MockProductRepoForCart) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	return nil, nil
 }
 func (m *MockProductRepoForCart) FindBySupplierID(supplierID string) ([]domain.Product, error) {

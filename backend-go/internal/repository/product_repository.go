@@ -46,9 +46,9 @@ func (r *productRepository) Delete(id string) error {
 	return r.db.Where("id_product = ?", id).Delete(&domain.Product{}).Error
 }
 
-// Search mencari produk berdasarkan keyword (nama) dan/atau filter kategori.
+// Search mencari produk berdasarkan keyword (nama) dan/atau filter kategori dengan Limit & Offset
 // Menggunakan ILIKE untuk pencarian case-insensitive di PostgreSQL.
-func (r *productRepository) Search(keyword string, categoryID string) ([]domain.Product, error) {
+func (r *productRepository) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	var products []domain.Product
 	query := r.db.Preload("Category")
 
@@ -58,6 +58,13 @@ func (r *productRepository) Search(keyword string, categoryID string) ([]domain.
 
 	if categoryID != "" {
 		query = query.Where("id_category = ?", categoryID)
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
 	}
 
 	err := query.Find(&products).Error

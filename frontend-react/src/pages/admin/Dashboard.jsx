@@ -179,18 +179,45 @@ export default function AdminDashboard() {
             </button>
           </div>
           {showProdForm && (
-            <form onSubmit={submitProd} className="p-5 border-b border-gray-50 flex flex-col gap-4 animate-fade-in-down">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input required placeholder="Nama produk" value={prodForm.name} onChange={e => setProdForm({ ...prodForm, name: e.target.value })} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all font-medium" style={{ color: 'var(--text-heading)' }} />
-                <select required value={prodForm.id_category} onChange={e => setProdForm({ ...prodForm, id_category: e.target.value })} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white cursor-pointer focus:ring-2 focus:ring-primary-400 transition-all font-medium" style={{ color: 'var(--text-heading)' }}>
-                  <option value="">Pilih Kategori</option>{categories.map(c => <option key={c.id_category} value={c.id_category}>{c.name}</option>)}
-                </select>
-                <input required type="number" min="1" placeholder="Harga (Rp)" value={prodForm.price} onChange={e => setProdForm({ ...prodForm, price: e.target.value })} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all font-medium" style={{ color: 'var(--text-heading)' }} />
-                <input required type="number" min="0" placeholder="Stok" value={prodForm.stock} onChange={e => setProdForm({ ...prodForm, stock: e.target.value })} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all font-medium" style={{ color: 'var(--text-heading)' }} />
-                <textarea placeholder="Deskripsi produk" value={prodForm.description} onChange={e => setProdForm({ ...prodForm, description: e.target.value })} className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 md:col-span-2 transition-all font-medium" rows={2} style={{ color: 'var(--text-heading)' }} />
-                <ImageDropzone valueUrl={prodForm.image_url} onImageChange={setImageFile} />
+            <form onSubmit={submitProd} className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col gap-5 animate-fade-in-down">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5 focus-within:text-emerald-500 group">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Nama Produk</label>
+                  <input required placeholder="Contoh: Kemeja Formal" value={prodForm.name} onChange={e => setProdForm({ ...prodForm, name: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
+                </div>
+                
+                <div className="space-y-1.5 focus-within:text-emerald-500 group">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Kategori</label>
+                  <div className="relative">
+                    <select required value={prodForm.id_category} onChange={e => setProdForm({ ...prodForm, id_category: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white appearance-none">
+                      <option value="" className="dark:bg-slate-800 text-gray-500">Pilih Kategori</option>
+                      {categories.map(c => <option key={c.id_category} value={c.id_category} className="dark:bg-slate-800">{c.name}</option>)}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 focus-within:text-emerald-500 group">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Harga (Rp)</label>
+                  <input required type="number" min="1" placeholder="250000" value={prodForm.price} onChange={e => setProdForm({ ...prodForm, price: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
+                </div>
+
+                <div className="space-y-1.5 focus-within:text-emerald-500 group">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Stok Tersedia</label>
+                  <input required type="number" min="0" placeholder="50" value={prodForm.stock} onChange={e => setProdForm({ ...prodForm, stock: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2 focus-within:text-emerald-500 group">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Deskripsi Produk</label>
+                  <textarea placeholder="Tulis deskripsi detail produk..." value={prodForm.description} onChange={e => setProdForm({ ...prodForm, description: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" rows={3} />
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Foto Produk</label>
+                  <ImageDropzone valueUrl={prodForm.image_url} onImageChange={setImageFile} />
+                </div>
               </div>
-              <button type="submit" className="w-full bg-gradient-to-r from-primary-600 to-accent-600 text-white px-5 py-3 rounded-xl text-sm font-bold cursor-pointer hover:shadow-lg transition-all mt-2">{editingProd ? '💾 Update Produk' : '✅ Simpan Produk'}</button>
+              <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 shadow-[0_4px_20px_rgba(16,185,129,0.25)] text-white px-5 py-3.5 rounded-xl text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-all mt-2">{editingProd ? '💾 Update Produk' : '✅ Simpan Produk'}</button>
             </form>
           )}
           {products.length === 0 ? (
@@ -231,9 +258,12 @@ export default function AdminDashboard() {
             </button>
           </div>
           {showForm && (
-            <form onSubmit={submitCat} className="p-5 border-b border-gray-50 flex gap-3 animate-fade-in-down">
-              <input required placeholder="Nama kategori baru" value={form.name} onChange={e => setForm({ name: e.target.value })} className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all" />
-              <button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm cursor-pointer hover:shadow-lg transition-all">{editing ? '💾 Update' : '✅ Simpan'}</button>
+            <form onSubmit={submitCat} className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-end gap-3 animate-fade-in-down">
+              <div className="flex-1 w-full space-y-1.5 focus-within:text-blue-500 group">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">Nama Kategori</label>
+                <input required placeholder="Contoh: Sayuran Hijau" value={form.name} onChange={e => setForm({ name: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
+              </div>
+              <button type="submit" className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 shadow-[0_4px_20px_rgba(59,130,246,0.25)] text-white px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-all">{editing ? '💾 Update' : '✅ Simpan'}</button>
             </form>
           )}
           {categories.length === 0 ? (

@@ -81,8 +81,8 @@ func (u *productUsecase) Delete(id string) error {
 	return u.productRepo.Delete(id)
 }
 
-func (u *productUsecase) Search(keyword string, categoryID string) ([]domain.Product, error) {
-	return u.productRepo.Search(keyword, categoryID)
+func (u *productUsecase) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
+	return u.productRepo.Search(keyword, categoryID, limit, offset)
 }
 
 func (u *productUsecase) FindBySupplierID(supplierID string) ([]domain.Product, error) {

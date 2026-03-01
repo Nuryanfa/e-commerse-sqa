@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -142,12 +143,33 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 func (h *ProductHandler) Search(c *gin.Context) {
 	keyword := c.Query("q")
 	categoryID := c.Query("category")
+	
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "0") // 0 means no limit for backward compatibility
+	
+	page, _ := strconv.Atoi(pageStr)
+	limit, _ := strconv.Atoi(limitStr)
+	if page < 1 {
+		page = 1
+	}
+	
+	offset := (page - 1) * limit
+	if limit <= 0 {
+		offset = 0 // Ignore offset if no limit is applied
+	}
 
-	products, err := h.productUsecase.Search(keyword, categoryID)
+	products, err := h.productUsecase.Search(keyword, categoryID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": products, "total": len(products)})
+	// For infinite scroll, frontend might need 'has_more' flag or total products info.
+	// Since we don't have a Count query right now, returning current length is sufficient for basic next-page checks
+	c.JSON(http.StatusOK, gin.H{
+		"data": products, 
+		"total": len(products),
+		"page": page,
+		"limit": limit,
+	})
 }
