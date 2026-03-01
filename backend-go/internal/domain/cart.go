@@ -14,6 +14,7 @@ type CartItem struct {
 
 type CartRepository interface {
 	UpsertItem(item *CartItem) error // Create or Update quantity if exists
+	UpdateItem(item *CartItem) error // Override/Update cart item exactly
 	FindByUserID(userID string) ([]CartItem, error)
 	DeleteByUserID(userID string) error // Clear cart after checkout
 	RemoveItem(itemID string, userID string) error

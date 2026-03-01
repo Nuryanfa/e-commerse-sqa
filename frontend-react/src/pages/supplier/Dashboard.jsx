@@ -38,6 +38,26 @@ export default function SupplierDashboard() {
 
   const resetForm = () => { setForm({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' }); setEditing(null); setShowForm(false); setImageFile(null); };
 
+  const handleProcessOrder = (orderId) => {
+    modal.confirm({
+      title: 'Proses Pesanan',
+      message: 'Apakah pesanan ini siap untuk dipacking dan diserahkan ke kurir?',
+      type: 'warning',
+      confirmText: 'Ya, Proses Sekarang',
+      onConfirm: async () => {
+        try {
+          await api.put(`/supplier/orders/${orderId}/process`);
+          toast.success('Pesanan berhasil diproses menjadi PROCESSED!');
+          // Refresh order list smoothly
+          const { data } = await api.get('/supplier/orders');
+          setOrders(data.data || []);
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Gagal merubah status pesanan');
+        }
+      }
+    });
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -275,6 +295,15 @@ export default function SupplierDashboard() {
                   <div className="text-right">
                     <span className={`text-xs font-medium px-3 py-1.5 rounded-full border ${statusBadge(o.status)}`}>{o.status}</span>
                     <p className="text-xs text-gray-400 mt-2">{new Date(o.created_at).toLocaleDateString('id-ID')}</p>
+                    
+                    {o.status === 'PAID' && (
+                      <button 
+                        onClick={() => handleProcessOrder(o.id_order)}
+                        className="mt-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors inline-block w-full text-center"
+                      >
+                        📦 Proses Pesanan
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

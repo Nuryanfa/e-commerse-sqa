@@ -33,7 +33,7 @@ export default function Cart() {
 
   const updateQty = async (id, qty) => {
     if (qty < 1) return remove(id);
-    try { await api.post('/cart', { id_product: id, quantity: qty }); fetchCart(); }
+    try { await api.put(`/cart/${id}`, { quantity: qty }); fetchCart(); }
     catch (err) { toast.error(err.response?.data?.error || 'Gagal mengubah jumlah'); }
   };
 
@@ -65,8 +65,31 @@ export default function Cart() {
         shipping_address: checkoutData.address,
         payment_method: checkoutData.paymentMethod
       });
-      toast.success('Pesanan berhasil dibuat!');
-      navigate(`/orders/${res.data.id_order}`);
+      
+      const orderData = res.data.order;
+      if (orderData && orderData.payment_token) {
+         // Panggil Jendela Popup Midtrans
+         window.snap.pay(orderData.payment_token, {
+            onSuccess: function(result) {
+               toast.success('Pembayaran berhasil dikonfirmasi!');
+               navigate(`/orders/${orderData.id_order}`);
+            },
+            onPending: function(result) {
+               toast.info('Pesanan Dibuat! Menunggu Pelunasan.');
+               navigate(`/orders/${orderData.id_order}`);
+            },
+            onError: function(result) {
+               toast.error('Gagal memproses pembayaran Midtrans!');
+            },
+            onClose: function() {
+               toast.info('Popup ditutup sebelum pembayaran diselesaikan.');
+               navigate(`/orders/${orderData.id_order}`);
+            }
+         });
+      } else {
+         toast.success('Pesanan berhasil dibuat secara offline!');
+         navigate(`/orders/${orderData?.id_order || res.data.id_order}`);
+      }
     } catch (err) { 
       toast.error(err.response?.data?.error || 'Gagal checkout'); 
     }
@@ -309,8 +332,28 @@ export default function Cart() {
                               className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
                             />
                             <div>
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">Transfer Bank</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Verifikasi manual via WhatsApp</p>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">Transfer Manual</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Verifikasi via WhatsApp</p>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+
+                      {/* Midtrans Online Payment */}
+                      <label className={`block border-2 rounded-2xl p-4 cursor-pointer transition-all ${checkoutData.paymentMethod === 'midtrans' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300'}`}>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="radio" 
+                              name="payment" 
+                              value="midtrans" 
+                              checked={checkoutData.paymentMethod === 'midtrans'} 
+                              onChange={() => setCheckoutData({...checkoutData, paymentMethod: 'midtrans'})}
+                              className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <div>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">Pembayaran Online (Midtrans)</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Kartu Kredit, GoPay, QRIS, Virtual Account</p>
                             </div>
                           </div>
                         </div>

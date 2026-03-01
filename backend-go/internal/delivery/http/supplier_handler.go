@@ -1,7 +1,11 @@
 package http
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
@@ -24,6 +28,7 @@ func NewSupplierHandler(supplierRouter *gin.RouterGroup, puc domain.ProductUseca
 	supplierRouter.PUT("/products/:id", handler.UpdateProduct)
 	supplierRouter.DELETE("/products/:id", handler.DeleteProduct)
 	supplierRouter.GET("/orders", handler.MyOrders)
+	supplierRouter.PUT("/orders/:id/process", handler.ProcessOrder)
 }
 
 func (h *SupplierHandler) MyProducts(c *gin.Context) {
@@ -36,10 +41,49 @@ func (h *SupplierHandler) MyProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": products, "total": len(products)})
 }
 
+func (h *SupplierHandler) parseProductRequest(c *gin.Context, req *domain.Product) error {
+	contentType := c.GetHeader("Content-Type")
+	if len(contentType) >= 19 && contentType[:19] == "multipart/form-data" {
+		req.Name = c.PostForm("name")
+		req.Description = c.PostForm("description")
+		req.CategoryID = c.PostForm("id_category")
+		
+		if priceStr := c.PostForm("price"); priceStr != "" {
+			var price float64
+			fmt.Sscanf(priceStr, "%f", &price)
+			req.Price = price
+		}
+		if stockStr := c.PostForm("stock"); stockStr != "" {
+			var stock int
+			fmt.Sscanf(stockStr, "%d", &stock)
+			req.Stock = stock
+		}
+
+		file, err := c.FormFile("image")
+		if err == nil {
+			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+			filepath := filepath.Join("uploads", filename)
+			if err := c.SaveUploadedFile(file, filepath); err == nil {
+				req.ImageURL = "/uploads/" + filename
+			}
+		} else {
+			if existingImage := c.PostForm("image_url"); existingImage != "" {
+				req.ImageURL = existingImage
+			}
+		}
+
+		if req.Name == "" || req.CategoryID == "" || req.Price <= 0 || req.Stock < 0 {
+			return errors.New("validasi gagal: pastikan semua field wajib terisi dengan benar")
+		}
+		return nil
+	}
+	return c.ShouldBindJSON(req)
+}
+
 func (h *SupplierHandler) CreateProduct(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 	var req domain.Product
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := h.parseProductRequest(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -56,7 +100,7 @@ func (h *SupplierHandler) UpdateProduct(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 	productID := c.Param("id")
 	var req domain.Product
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := h.parseProductRequest(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -89,4 +133,16 @@ func (h *SupplierHandler) MyOrders(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": orders, "total": len(orders)})
+}
+
+func (h *SupplierHandler) ProcessOrder(c *gin.Context) {
+	supplierID := c.GetString("user_id")
+	orderID := c.Param("id")
+
+	if err := h.orderUsecase.ProcessSupplierOrder(supplierID, orderID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Pesanan berhasil diproses dan siap diserahkan ke kurir"})
 }

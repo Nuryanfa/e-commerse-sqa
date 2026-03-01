@@ -33,6 +33,10 @@ func (r *cartRepository) UpsertItem(item *domain.CartItem) error {
 	return r.db.Save(&existingItem).Error
 }
 
+func (r *cartRepository) UpdateItem(item *domain.CartItem) error {
+	return r.db.Save(item).Error
+}
+
 func (r *cartRepository) FindByUserID(userID string) ([]domain.CartItem, error) {
 	var items []domain.CartItem
 	// Preload Product and its Category to show complete details in Cart

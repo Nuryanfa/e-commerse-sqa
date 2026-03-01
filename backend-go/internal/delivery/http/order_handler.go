@@ -35,7 +35,13 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	}
 	uid := userID.(string)
 
-	order, err := h.orderUsecase.Checkout(uid)
+	var req struct {
+		VoucherCode string `json:"voucher_code"`
+	}
+	// Bind JSON dapat gagal jika tidak ada body, yang mana tidak masalah (voucherCode opsional)
+	_ = c.ShouldBindJSON(&req)
+
+	order, err := h.orderUsecase.Checkout(uid, req.VoucherCode)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return

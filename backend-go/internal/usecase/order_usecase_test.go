@@ -15,6 +15,7 @@ type MockCartRepository struct {
 	items []domain.CartItem
 }
 func (m *MockCartRepository) UpsertItem(item *domain.CartItem) error { return nil }
+func (m *MockCartRepository) UpdateItem(item *domain.CartItem) error { return nil }
 func (m *MockCartRepository) FindByUserID(userID string) ([]domain.CartItem, error) { return m.items, nil }
 func (m *MockCartRepository) DeleteByUserID(userID string) error { return nil }
 func (m *MockCartRepository) RemoveItem(itemID string, userID string) error { return nil }
@@ -23,7 +24,7 @@ func (m *MockCartRepository) FindByID(itemID string) (*domain.CartItem, error) {
 type MockOrderRepository struct {
 	Checkouts []*domain.Order
 }
-func (m *MockOrderRepository) CheckoutTransaction(userID string, cartItems []domain.CartItem) (*domain.Order, error) {
+func (m *MockOrderRepository) CheckoutTransaction(userID string, cartItems []domain.CartItem, voucherCode string) (*domain.Order, error) {
 	// Simulate Transaction logic for Test
 	if len(cartItems) == 0 {
 		return nil, errors.New("cart empty")
@@ -43,12 +44,16 @@ func (m *MockOrderRepository) FindByUserID(userID string) ([]domain.Order, error
 func (m *MockOrderRepository) FindByID(orderID string) (*domain.Order, error) { return nil, nil }
 func (m *MockOrderRepository) UpdateStatus(orderID string, status string) error { return nil }
 func (m *MockOrderRepository) FindPaidOrders() ([]domain.Order, error)          { return nil, nil }
+func (m *MockOrderRepository) FindProcessedOrders() ([]domain.Order, error)     { return nil, nil }
 func (m *MockOrderRepository) AssignCourier(orderID string, courierID string) error { return nil }
 func (m *MockOrderRepository) FindByCourierID(courierID string) ([]domain.Order, error) {
 	return nil, nil
 }
 func (m *MockOrderRepository) FindByProductSupplier(supplierID string) ([]domain.Order, error) {
 	return nil, nil
+}
+func (m *MockOrderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error) {
+	return 0, nil
 }
 
 // --- TESTS ---
@@ -61,9 +66,9 @@ func TestCheckout_Success(t *testing.T) {
 	}
 	mockOrderRepo := &MockOrderRepository{}
 	
-	usecase := NewOrderUsecase(mockOrderRepo, mockCartRepo)
+	usecase := NewOrderUsecase(mockOrderRepo, mockCartRepo, nil, nil, nil)
 
-	order, err := usecase.Checkout("user-1")
+	order, err := usecase.Checkout("user-1", "")
 
 	if err != nil {
 		t.Fatalf("Expected successful checkout, got error: %v", err)
@@ -84,9 +89,9 @@ func TestCheckout_EmptyCart(t *testing.T) {
 	}
 	mockOrderRepo := &MockOrderRepository{}
 	
-	usecase := NewOrderUsecase(mockOrderRepo, mockCartRepo)
+	usecase := NewOrderUsecase(mockOrderRepo, mockCartRepo, nil, nil, nil)
 
-	_, err := usecase.Checkout("user-1")
+	_, err := usecase.Checkout("user-1", "")
 
 	if err == nil {
 		t.Fatalf("Expected error for empty cart, got success")

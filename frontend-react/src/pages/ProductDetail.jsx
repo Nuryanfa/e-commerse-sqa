@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus, MessageSquare, Box, Leaf } from 'lucide-react';
+import { ShoppingCart, Heart, Star, ArrowLeft, Minus, Plus, MessageSquare, Box, Leaf, Loader2 } from 'lucide-react';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -160,6 +160,28 @@ export default function ProductDetail() {
               <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-400 mb-8 whitespace-pre-wrap">
                 {product.description || 'Sayur segar berkualitas tinggi yang dipanen langsung dari kebun petani lokal.'}
               </p>
+
+              {/* Fitur Gamifikasi Reputasi Supplier */}
+              {product.supplier && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-8 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xl shadow-inner">
+                      {product.supplier.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-gray-900 dark:text-white">{product.supplier.name}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                        <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                        <span className="font-bold text-gray-900 dark:text-white">{product.supplier_rating > 0 ? product.supplier_rating.toFixed(1) : 'Baru'}</span>
+                        <span className="text-xs">&bull; Rating Toko</span>
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold rounded-lg flex items-center gap-1">
+                    ✓ Mitra Resmi
+                  </span>
+                </motion.div>
+              )}
 
               {/* Form Interaksi - Desktop Only (Mobile dipindah ke bottom bar) */}
               <div className="hidden lg:block space-y-6 bg-gray-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-gray-100 dark:border-slate-700/50">

@@ -32,6 +32,7 @@ func (m *MockProductRepoForCart) Search(keyword string, categoryID string, limit
 func (m *MockProductRepoForCart) FindBySupplierID(supplierID string) ([]domain.Product, error) {
 	return nil, nil
 }
+func (m *MockProductRepoForCart) GetSupplierRating(supplierID string) float64 { return 0 }
 
 type MockCartRepo struct {
 	items map[string]*domain.CartItem // Key: id_cart_item
@@ -42,6 +43,10 @@ func NewMockCartRepo() *MockCartRepo {
 }
 
 func (m *MockCartRepo) UpsertItem(item *domain.CartItem) error {
+	m.items[item.ID] = item
+	return nil
+}
+func (m *MockCartRepo) UpdateItem(item *domain.CartItem) error {
 	m.items[item.ID] = item
 	return nil
 }

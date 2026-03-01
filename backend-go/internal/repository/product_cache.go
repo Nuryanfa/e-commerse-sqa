@@ -132,7 +132,13 @@ func (r *cachedProductRepository) Search(keyword string, categoryID string, limi
 
 // FindBySupplierID langsung ke base repository (query spesifik per supplier)
 func (r *cachedProductRepository) FindBySupplierID(supplierID string) ([]domain.Product, error) {
+	log.Printf("[CACHE BYPASS] FindBySupplierID")
 	return r.base.FindBySupplierID(supplierID)
+}
+
+func (r *cachedProductRepository) GetSupplierRating(supplierID string) float64 {
+	// Metrik rating tidak perlu dicache agar halaman detail produk selalu akurat memuat reputasi toko terbaru.
+	return r.base.GetSupplierRating(supplierID)
 }
 
 // invalidateCache menghapus semua cache produk dari Redis.

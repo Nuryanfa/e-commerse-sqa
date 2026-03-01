@@ -28,7 +28,7 @@ func (r *productRepository) FindAll() ([]domain.Product, error) {
 
 func (r *productRepository) FindByID(id string) (*domain.Product, error) {
 	var product domain.Product
-	err := r.db.Preload("Category").Where("id_product = ?", id).First(&product).Error
+	err := r.db.Preload("Category").Preload("Supplier").Where("id_product = ?", id).First(&product).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("produk tidak ditemukan")
@@ -44,6 +44,17 @@ func (r *productRepository) Update(product *domain.Product) error {
 
 func (r *productRepository) Delete(id string) error {
 	return r.db.Where("id_product = ?", id).Delete(&domain.Product{}).Error
+}
+
+// Fitur Gamifikasi 40: Mengkalkulasi rata-rata skor performa toko/supplier
+func (r *productRepository) GetSupplierRating(supplierID string) float64 {
+	var avgRating float64
+	r.db.Table("reviews").
+		Joins("JOIN products ON reviews.id_product = products.id_product").
+		Where("products.supplier_id = ?", supplierID).
+		Select("COALESCE(AVG(reviews.rating), 0)").
+		Row().Scan(&avgRating)
+	return avgRating
 }
 
 // Search mencari produk berdasarkan keyword (nama) dan/atau filter kategori dengan Limit & Offset

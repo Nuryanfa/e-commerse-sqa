@@ -83,6 +83,7 @@ func (m *mockProductRepoForCache) FindBySupplierID(supplierID string) ([]domain.
 	}
 	return result, nil
 }
+func (m *mockProductRepoForCache) GetSupplierRating(supplierID string) float64 { return 0 }
 
 // --- Tests: Cache tanpa Redis (nil client fallback) ---
 

@@ -80,7 +80,7 @@ func (u *cartUsecase) UpdateQuantity(userID string, itemID string, quantity int)
 	// 3. Update quantity jika lolos validasi
 	cartItem.Quantity = quantity
 	cartItem.UpdatedAt = time.Now()
-	return u.cartRepo.UpsertItem(cartItem)
+	return u.cartRepo.UpdateItem(cartItem)
 }
 
 func (u *cartUsecase) RemoveFromCart(userID string, itemID string) error {

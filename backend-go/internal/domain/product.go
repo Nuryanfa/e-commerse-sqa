@@ -10,9 +10,11 @@ type Product struct {
 	Stock       int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
 	CategoryID  string    `json:"id_category" gorm:"column:id_category" binding:"required"`
 	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
-	SupplierID  string    `json:"supplier_id" gorm:"column:supplier_id"`
-	ImageURL    string    `json:"image_url" gorm:"column:image_url"`
-	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
+	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id"`
+	Supplier       *User     `json:"supplier,omitempty" gorm:"foreignKey:SupplierID;references:ID"`
+	SupplierRating float64   `json:"supplier_rating,omitempty" gorm:"-"` // Dihitung run-time
+	ImageURL       string    `json:"image_url" gorm:"column:image_url"`
+	CreatedAt      time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
@@ -45,6 +47,7 @@ type ProductRepository interface {
 	Delete(id string) error
 	Search(keyword string, categoryID string, limit int, offset int) ([]Product, error)
 	FindBySupplierID(supplierID string) ([]Product, error)
+	GetSupplierRating(supplierID string) float64
 }
 
 type ProductUsecase interface {

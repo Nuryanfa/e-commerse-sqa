@@ -60,7 +60,7 @@ export default function CourierDashboard() {
   };
 
   const statusConfig = {
-    PAID: { bg: 'bg-blue-100 text-blue-700 border-blue-200', icon: <CreditCard className="w-5 h-5" /> },
+    PROCESSED: { bg: 'bg-amber-100 text-amber-700 border-amber-200', icon: <Package className="w-5 h-5" /> },
     SHIPPED: { bg: 'bg-purple-100 text-purple-700 border-purple-200', icon: <Truck className="w-5 h-5" /> },
     DELIVERED: { bg: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle className="w-5 h-5" /> },
   };
@@ -143,7 +143,7 @@ export default function CourierDashboard() {
               <div key={o.id_order} className={`bg-white rounded-xl border border-gray-100 p-5 card-hover animate-fade-in-up stagger-${Math.min(i + 1, 8)} group`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"><CreditCard className="w-6 h-6 text-blue-500" /></div>
+                    <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"><Package className="w-6 h-6 text-amber-500" /></div>
                     <div>
                       <p className="text-sm font-mono text-gray-400">#{o.id_order?.slice(0, 8)}</p>
                       <p className="font-bold text-lg text-gray-800">Rp {o.total_amount?.toLocaleString('id-ID')}</p>

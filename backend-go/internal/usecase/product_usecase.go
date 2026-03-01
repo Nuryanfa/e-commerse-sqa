@@ -11,12 +11,14 @@ import (
 type productUsecase struct {
 	productRepo  domain.ProductRepository
 	categoryRepo domain.CategoryRepository
+	auditLogRepo domain.AuditLogRepository
 }
 
-func NewProductUsecase(pRepo domain.ProductRepository, cRepo domain.CategoryRepository) domain.ProductUsecase {
+func NewProductUsecase(pRepo domain.ProductRepository, cRepo domain.CategoryRepository, aRepo domain.AuditLogRepository) domain.ProductUsecase {
 	return &productUsecase{
 		productRepo:  pRepo,
 		categoryRepo: cRepo,
+		auditLogRepo: aRepo,
 	}
 }
 
@@ -38,7 +40,12 @@ func (u *productUsecase) FindAll() ([]domain.Product, error) {
 }
 
 func (u *productUsecase) FindByID(id string) (*domain.Product, error) {
-	return u.productRepo.FindByID(id)
+	product, err := u.productRepo.FindByID(id)
+	if err == nil && product != nil && product.SupplierID != "" {
+		// [Fitur 40] Gamifikasi: Sisipkan agregasi skor Bintang (*Rating*) dari Repositori
+		product.SupplierRating = u.productRepo.GetSupplierRating(product.SupplierID)
+	}
+	return product, err
 }
 
 func (u *productUsecase) Update(id string, updateData *domain.Product) error {

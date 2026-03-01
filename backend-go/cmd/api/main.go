@@ -14,6 +14,7 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/config"
 	deliveryHTTP "github.com/nuryanfa/e-commerse-sqa/internal/delivery/http"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/internal/infrastructure/email"
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 	"github.com/nuryanfa/e-commerse-sqa/internal/repository"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
@@ -37,6 +38,8 @@ func main() {
 		&domain.OrderItem{},
 		&domain.Review{},
 		&domain.Wishlist{},
+		&domain.Voucher{},
+		&domain.AuditLog{},
 	)
 	if err != nil {
 		log.Fatalf("Gagal melakukan migrasi database: %v", err)
@@ -83,7 +86,8 @@ func main() {
 	// SQA Performance: Product repository dibungkus dengan Redis caching
 	baseProductRepo := repository.NewProductRepository(db)
 	productRepo := repository.NewCachedProductRepository(baseProductRepo, redisClient)
-	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo)
+    auditLogRepo := repository.NewAuditLogRepository(db)
+	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo, auditLogRepo)
 
 	reviewRepo := repository.NewReviewRepository(db)
 	reviewUsecase := usecase.NewReviewUsecase(reviewRepo, productRepo)
@@ -95,8 +99,9 @@ func main() {
 	cartRepo := repository.NewCartRepository(db)
 	cartUsecase := usecase.NewCartUsecase(cartRepo, productRepo)
 
+	emailSvc := email.NewMockEmailService()
 	orderRepo := repository.NewOrderRepository(db)
-	orderUsecase := usecase.NewOrderUsecase(orderRepo, cartRepo)
+	orderUsecase := usecase.NewOrderUsecase(orderRepo, cartRepo, auditLogRepo, emailSvc, userRepo)
 
 	// 4. Protected Routes
 
@@ -136,7 +141,29 @@ func main() {
 		deliveryHTTP.NewCourierHandler(courierRoutes, orderUsecase)
 	}
 
-	// 5. Setup Server with Graceful Shutdown
+	// 4e. Webhook Public Endpoints (Tanpa Auth / Token JWT)
+	webhookRoutes := router.Group("/api/webhook")
+	{
+		deliveryHTTP.NewWebhookHandler(webhookRoutes, orderUsecase)
+	}
+
+	// 5. Setup Worker for Background Jobs (Cron)
+	go func() {
+		log.Println("[WORKER] Background Service untuk membatalkan pesanan kedaluwarsa telah aktif.")
+		// Jalankan setiap 1 jam
+		ticker := time.NewTicker(1 * time.Hour)
+		for {
+			<-ticker.C
+			canceled, err := orderUsecase.ProcessCancelExpiredJobs()
+			if err != nil {
+				log.Printf("[CRON ERROR] Gagal mengeksekusi cronjob pembatalan pesanan: %v", err)
+			} else if canceled > 0 {
+				log.Printf("[CRON SUCCESS] Membatalkan %d pesanan kedaluwarsa (Limit stok dikembalikan).", canceled)
+			}
+		}
+	}()
+
+	// 6. Setup Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
