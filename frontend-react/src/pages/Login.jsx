@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { Mail, Lock, ArrowRight, AlertCircle, Leaf } from 'lucide-react';
 
 export default function Login() {
@@ -11,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const controls = useAnimation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +22,11 @@ export default function Login() {
       navigate({ admin: '/admin', supplier: '/supplier', courier: '/courier' }[role] || '/');
     } catch (err) {
       setError(err.response?.data?.error || 'Email atau password salah.');
+      // Memicu form shake saat error
+      controls.start({
+        x: [0, -15, 15, -10, 10, -5, 5, 0],
+        transition: { duration: 0.5, ease: "easeInOut" }
+      });
     }
     setLoading(false);
   };
@@ -80,7 +86,14 @@ export default function Login() {
             </motion.div>
           )}
 
-          <motion.form onSubmit={handleSubmit} className="space-y-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1, duration: 0.5 }}>
+          <motion.form 
+             onSubmit={handleSubmit} 
+             className="space-y-5" 
+             initial={{ opacity: 0 }} 
+             animate={controls} 
+             whileInView={{ opacity: 1 }} 
+             transition={{ delay: 0.1, duration: 0.5 }}
+          >
             <div className="space-y-1.5 focus-within:text-emerald-600 dark:focus-within:text-emerald-400 group">
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-600 transition-colors">Alamat Email</label>
               <div className="relative">

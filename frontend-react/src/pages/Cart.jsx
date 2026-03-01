@@ -6,6 +6,7 @@ import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Box, Leaf, Loader2, CheckCircle, X, Truck, CreditCard } from 'lucide-react';
+import GamificationBanner from '../components/GamificationBanner';
 
 export default function Cart() {
   const { user } = useAuth();
@@ -108,6 +109,9 @@ export default function Cart() {
           
           {/* Bagian Kiri: List Cart Item */}
           <div className="w-full lg:w-2/3 space-y-4">
+            
+            <GamificationBanner currentAmount={total} targetAmount={150000} />
+
             <AnimatePresence mode="popLayout">
               {cart.map((item, i) => (
                 <motion.div 

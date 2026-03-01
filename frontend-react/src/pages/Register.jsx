@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useToast } from '../context/ToastContext';
-import { motion } from 'framer-motion';
-import { User, Mail, Lock, ShoppingCart, Tractor, Truck, ArrowRight, AlertCircle, Leaf } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { motion, useAnimation } from 'framer-motion';
+import { User, Mail, Lock, ArrowRight, AlertCircle, Leaf } from 'lucide-react';
 
 export default function Register() {
   const [nama, setNama] = useState('');
@@ -12,8 +12,9 @@ export default function Register() {
   const [role, setRole] = useState('pembeli');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
-  const toast = useToast();
+  const controls = useAnimation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,10 +22,17 @@ export default function Register() {
     setLoading(true);
     try {
       await api.post('/users/register', { name: nama, email, password, role });
-      toast.success('Pendaftaran berhasil! Silakan login.');
+      // Assuming 'register' from useAuth might handle toast or it's removed.
+      // If toast is still needed, useToast should be re-imported.
+      // For now, following the provided snippet which removes toast.success from here.
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.error || 'Pendaftaran gagal.');
+      setError(err.response?.data?.error || 'Pendaftaran gagal. Silakan coba lagi.');
+      // Goyangan memental ke kiri dan kanan cepat
+      controls.start({
+        x: [0, -15, 15, -10, 10, -5, 5, 0],
+        transition: { duration: 0.5, ease: "easeInOut" }
+      });
     }
     setLoading(false);
   };
@@ -90,7 +98,14 @@ export default function Register() {
             </motion.div>
           )}
 
-          <motion.form onSubmit={handleSubmit} className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1, duration: 0.5 }}>
+          <motion.form 
+            onSubmit={handleSubmit} 
+            className="space-y-4" 
+            initial={{ opacity: 0 }} 
+            animate={controls}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+          >
             
             {/* Roles Selection */}
             <div className="space-y-3">

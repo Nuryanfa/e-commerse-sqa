@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../services/api';
-import { Leaf, Plus } from 'lucide-react';
+import { Leaf, Plus, Eye } from 'lucide-react';
+import QuickViewModal from './QuickViewModal';
 
 export default function ProductCard({ product, index = 0 }) {
   const { user } = useAuth();
   const toast = useToast();
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const stockLow = product.stock > 0 && product.stock < 5;
   const outOfStock = product.stock === 0;
 
@@ -25,7 +28,14 @@ export default function ProductCard({ product, index = 0 }) {
     }
   };
 
+  const openQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsQuickViewOpen(true);
+  };
+
   return (
+    <>
     <Link
       to={`/products/${product.id_product}`}
       className={`group block card-organic overflow-hidden animate-fade-in-up stagger-${Math.min(index + 1, 8)}`}
@@ -51,15 +61,24 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
         )}
 
-        {/* Add to cart circular button */}
+        {/* Hover action buttons */}
         {!outOfStock && user?.role !== 'admin' && user?.role !== 'supplier' && user?.role !== 'courier' && (
-          <button
-            onClick={addToCart}
-            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out cursor-pointer hover:bg-emerald-700 hover:scale-110 hover:shadow-emerald-200/50 active:scale-95"
-            title="Tambah ke Keranjang"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="absolute bottom-3 right-3 flex flex-col gap-2 translate-y-[150%] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out z-10">
+            <button
+              onClick={openQuickView}
+              className="w-10 h-10 rounded-full bg-white text-gray-700 flex items-center justify-center shadow-lg hover:text-emerald-600 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              title="Lihat Cepat"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+            <button
+              onClick={addToCart}
+              className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:bg-emerald-700 hover:scale-110 hover:shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer"
+              title="Tambah ke Keranjang"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -76,5 +95,11 @@ export default function ProductCard({ product, index = 0 }) {
         </p>
       </div>
     </Link>
+    <QuickViewModal 
+      product={product} 
+      isOpen={isQuickViewOpen} 
+      onClose={() => setIsQuickViewOpen(false)} 
+    />
+    </>
   );
 }

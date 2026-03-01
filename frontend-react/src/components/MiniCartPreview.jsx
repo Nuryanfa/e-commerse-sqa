@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, ArrowRight, Loader2, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import GamificationBanner from './GamificationBanner';
 
 export default function MiniCartPreview({ isOpen }) {
   const [cartItems, setCartItems] = useState([]);
@@ -41,6 +42,10 @@ export default function MiniCartPreview({ isOpen }) {
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-200 dark:border-slate-700 shadow-sm">
               {cartItems.length} Item
             </span>
+          </div>
+
+          <div className="px-3 pt-3 pb-1 border-b border-gray-50 dark:border-slate-800">
+             <GamificationBanner currentAmount={total} targetAmount={150000} />
           </div>
 
           {/* Body */}
