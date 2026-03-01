@@ -50,69 +50,13 @@ npm run dev   # jalankan di http://localhost:5173
 
 ---
 
-## 👤 Akun Dummy
+## 🌟 Fitur Utama
 
-> Semua akun menggunakan password: **`password123`**
-
-| Role | Nama | Email | Akses |
-|------|------|-------|-------|
-| 🛡️ **Admin** | Admin SayurSehat | `admin@sayursehat.id` | Kelola produk & kategori |
-| 🧑‍🌾 **Supplier** | Pak Tani Segar | `supplier@sayursehat.id` | CRUD produk milik sendiri, lihat pesanan |
-| 🚚 **Courier** | Kurir Cepat | `kurir@sayursehat.id` | Ambil pesanan PAID, tandai delivered |
-| 🛒 **Pembeli** | Budi Pembeli | `pembeli@sayursehat.id` | Belanja, keranjang, checkout, bayar |
-
----
-
-## 📦 API Endpoints
-
-### Public
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| POST | `/api/users/register` | Registrasi (role: pembeli/supplier/courier) |
-| POST | `/api/users/login` | Login → JWT token |
-| GET | `/api/products` | Semua produk |
-| GET | `/api/products/:id` | Detail produk |
-| GET | `/api/products/search?q=&category=` | Cari produk |
-| GET | `/api/categories` | Semua kategori |
-
-### Pembeli (JWT Required)
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/cart` | Lihat keranjang |
-| POST | `/api/cart` | Tambah ke keranjang |
-| PUT | `/api/cart/:id` | Update jumlah |
-| DELETE | `/api/cart/:id` | Hapus item |
-| POST | `/api/orders/checkout` | Checkout |
-| GET | `/api/orders` | Riwayat pesanan |
-| GET | `/api/orders/:id` | Detail pesanan |
-| PATCH | `/api/orders/:id/pay` | Bayar pesanan |
-
-### Supplier (JWT + Role)
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/supplier/products` | Produk saya |
-| POST | `/api/supplier/products` | Tambah produk |
-| PUT | `/api/supplier/products/:id` | Update produk |
-| DELETE | `/api/supplier/products/:id` | Hapus produk |
-| GET | `/api/supplier/orders` | Pesanan produk saya |
-
-### Courier (JWT + Role)
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/courier/available` | Pesanan PAID tersedia |
-| POST | `/api/courier/orders/:id/ship` | Ambil & kirim |
-| PATCH | `/api/courier/orders/:id/deliver` | Tandai terkirim |
-| GET | `/api/courier/my-orders` | Pesanan saya |
-
-### Admin (JWT + Role)
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| POST | `/api/products` | Tambah produk |
-| PUT | `/api/products/:id` | Update produk |
-| DELETE | `/api/products/:id` | Hapus produk |
-| POST | `/api/categories` | Tambah kategori |
-| PUT | `/api/categories/:id` | Update kategori |
-| DELETE | `/api/categories/:id` | Hapus kategori |
+- **Role-Based Access Control (RBAC)**: Terdapat sistem otentikasi berdasarkan _Role_ (Peran) yang memisahkan hak akses antara **Admin, Supplier, Courier,** dan **Pembeli**.
+- **Marketplace Multi-Pelapak**: Penjual (Supplier) dapat mengelola inventaris sayuran sendiri, serta memantau pesanan masuk secara _real-time_.
+- **Sistem Pengiriman Cepat**: Kurir dapat meninjau dan menerima tugas pengiriman pesanan yang telah dibayar oleh pembeli.
+- **Transaksi yang Aman**: Seluruh logika dan rute integrasi dirancang untuk mencegah eksploitasi transaksi yang sensitif.
+- **RESTful API**: Komunikasi _Frontend_ terintegrasi secara mulus melalui protokol HTTP menggunakan struktur *endpoints* mutakhir dan token otorisasi yang dienkripsi (JWT).
 
 ---
 
