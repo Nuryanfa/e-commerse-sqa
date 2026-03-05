@@ -33,6 +33,7 @@ func main() {
 		&domain.User{},
 		&domain.Category{},
 		&domain.Product{},
+		&domain.ProductVariant{},
 		&domain.CartItem{},
 		&domain.Order{},
 		&domain.OrderItem{},
@@ -40,6 +41,8 @@ func main() {
 		&domain.Wishlist{},
 		&domain.Voucher{},
 		&domain.AuditLog{},
+		&domain.Dispute{},
+		&domain.DisputeMessage{},
 	)
 	if err != nil {
 		log.Fatalf("Gagal melakukan migrasi database: %v", err)
@@ -103,6 +106,10 @@ func main() {
 	orderRepo := repository.NewOrderRepository(db)
 	orderUsecase := usecase.NewOrderUsecase(orderRepo, cartRepo, auditLogRepo, emailSvc, userRepo)
 
+	// Dispute / Pusat Resolusi
+	disputeRepo := repository.NewDisputeRepository(db)
+	disputeUsecase := usecase.NewDisputeUseCase(disputeRepo, orderRepo)
+
 	// 4. Protected Routes
 
 	// 4a. Admin-only routes (JWT + Role "admin")
@@ -139,6 +146,26 @@ func main() {
 	courierRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("courier"))
 	{
 		deliveryHTTP.NewCourierHandler(courierRoutes, orderUsecase)
+	}
+
+	// 4e. Dispute / Pusat Resolusi (Campuran Role)
+	disputeRoutes := router.Group("/api/disputes")
+	disputeRoutes.Use(middleware.AuthMiddleware()) // Harus login
+	{
+		disputeHandler := deliveryHTTP.NewDisputeHandler(disputeUsecase)
+
+		// Semua yang punya order bisa ajukan komplain, semua bisa lihat miliknya, dan tambah obrolan
+		disputeRoutes.POST("/:id", disputeHandler.OpenDispute) // :id here serves as order_id to prevent Gin router conflict
+		disputeRoutes.GET("", disputeHandler.GetMyDisputes)
+		disputeRoutes.GET("/:id", disputeHandler.GetDisputeDetail)
+		disputeRoutes.POST("/:id/reply", disputeHandler.ReplyDispute)
+
+		// Hanya Admin yang bisa mengetok palu penyelesaian mediasi sengketa
+		adminDispute := disputeRoutes.Group("")
+		adminDispute.Use(middleware.RoleMiddleware("admin"))
+		{
+			adminDispute.PUT("/:id/resolve", disputeHandler.ResolveDispute)
+		}
 	}
 
 	// 4e. Webhook Public Endpoints (Tanpa Auth / Token JWT)

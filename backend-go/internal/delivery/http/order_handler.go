@@ -20,6 +20,7 @@ func NewOrderHandler(r *gin.RouterGroup, uc domain.OrderUsecase) {
 	orderGroup := r.Group("/orders")
 	{
 		orderGroup.POST("/checkout", handler.Checkout)
+		orderGroup.POST("/instant-checkout", handler.InstantCheckout)
 		orderGroup.GET("", handler.GetMyOrders)
 		orderGroup.GET("/:id", handler.GetOrderDetail)
 		orderGroup.POST("/:id/pay", handler.SimulatePayment)
@@ -49,6 +50,38 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Checkout berhasil. Silakan lakukan pembayaran.",
+		"order":   order,
+	})
+}
+
+func (h *OrderHandler) InstantCheckout(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(string)
+
+	var req struct {
+		ProductID   string  `json:"product_id" binding:"required"`
+		VariantID   *string `json:"id_variant,omitempty"`
+		Quantity    int     `json:"quantity" binding:"required,min=1"`
+		VoucherCode string  `json:"voucher_code"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Validasi input gagal: pastikan format produk dan kuantitas valid"})
+		return
+	}
+
+	order, err := h.orderUsecase.InstantCheckout(uid, req.ProductID, req.VariantID, req.Quantity, req.VoucherCode)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Beli Langsung berhasil. Silakan bayar pesanan Anda.",
 		"order":   order,
 	})
 }

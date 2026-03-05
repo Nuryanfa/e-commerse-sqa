@@ -29,6 +29,7 @@ func NewSupplierHandler(supplierRouter *gin.RouterGroup, puc domain.ProductUseca
 	supplierRouter.DELETE("/products/:id", handler.DeleteProduct)
 	supplierRouter.GET("/orders", handler.MyOrders)
 	supplierRouter.PUT("/orders/:id/process", handler.ProcessOrder)
+	supplierRouter.POST("/orders/batch-process", handler.BatchProcessOrders)
 }
 
 func (h *SupplierHandler) MyProducts(c *gin.Context) {
@@ -145,4 +146,24 @@ func (h *SupplierHandler) ProcessOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Pesanan berhasil diproses dan siap diserahkan ke kurir"})
+}
+
+func (h *SupplierHandler) BatchProcessOrders(c *gin.Context) {
+	supplierID := c.GetString("user_id")
+
+	var req struct {
+		OrderIDs []string `json:"order_ids" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Daftar ID Pesanan (order_ids) tidak boleh kosong"})
+		return
+	}
+
+	if err := h.orderUsecase.BatchProcessSupplierOrders(supplierID, req.OrderIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("%d pesanan berhasil diproses serentak", len(req.OrderIDs))})
 }

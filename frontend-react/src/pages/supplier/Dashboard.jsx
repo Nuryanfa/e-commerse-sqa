@@ -5,7 +5,7 @@ import { useModal } from '../../context/ModalContext';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import ImageDropzone from '../../components/ImageDropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Store, Package, ClipboardList, TrendingUp, DollarSign, Plus, Edit, Trash2, Tag, Star } from 'lucide-react';
+import { Store, Package, ClipboardList, TrendingUp, DollarSign, Plus, Edit, Trash2, Tag, Star, CheckCircle } from 'lucide-react';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f43f5e'];
 
@@ -19,6 +19,7 @@ export default function SupplierDashboard() {
   const [form, setForm] = useState({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' });
   const [imageFile, setImageFile] = useState(null);
   const [tab, setTab] = useState('products');
+  const [selectedOrders, setSelectedOrders] = useState([]);
   const toast = useToast();
   const modal = useModal();
 
@@ -56,6 +57,40 @@ export default function SupplierDashboard() {
         }
       }
     });
+  };
+
+  const handleBulkProcess = () => {
+    if (selectedOrders.length === 0) return;
+    modal.confirm({
+      title: 'Proses Massal',
+      message: `Apakah Anda yakin memproses ${selectedOrders.length} pesanan sekaligus? Keputusan ini tidak dapat dibatalkan.`,
+      type: 'warning',
+      confirmText: 'Proses Semua',
+      onConfirm: async () => {
+        try {
+          await api.post('/supplier/orders/batch-process', { order_ids: selectedOrders });
+          toast.success(`${selectedOrders.length} pesanan berhasil diproses!`);
+          const { data } = await api.get('/supplier/orders');
+          setOrders(data.data || []);
+          setSelectedOrders([]);
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Gagal memproses massal');
+        }
+      }
+    });
+  };
+
+  const toggleSelectOrder = (id) => {
+    setSelectedOrders(prev => prev.includes(id) ? prev.filter(oId => oId !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    const processable = orders.filter(o => o.status === 'PAID').map(o => o.id_order);
+    if (selectedOrders.length === processable.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(processable);
+    }
   };
 
   const submit = async (e) => {
@@ -275,17 +310,53 @@ export default function SupplierDashboard() {
 
       {/* Orders Tab */}
       {tab === 'orders' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          
+          {/* Action Header for Bulk Processing */}
+          {orders.filter(o => o.status === 'PAID').length > 0 && (
+            <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-emerald-100">
+               <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedOrders.length === orders.filter(o => o.status === 'PAID').length && selectedOrders.length > 0 ? 'bg-emerald-600 border-emerald-600' : 'border-gray-300 group-hover:border-emerald-500'}`}>
+                    <input type="checkbox" className="hidden" 
+                      checked={selectedOrders.length === orders.filter(o => o.status === 'PAID').length && selectedOrders.length > 0} 
+                      onChange={toggleSelectAll} 
+                    />
+                    {selectedOrders.length > 0 && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                  <span className="text-sm select-none text-gray-700 font-bold group-hover:text-emerald-700">Pilih Semua Siap Proses</span>
+               </label>
+               
+               <button 
+                onClick={handleBulkProcess} 
+                disabled={selectedOrders.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+               >
+                 <ClipboardList className="w-4 h-4"/> Proses {selectedOrders.length > 0 ? `(${selectedOrders.length})` : ''} Pesanan
+               </button>
+            </div>
+          )}
+
           {orders.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center flex flex-col items-center">
               <ClipboardList className="w-16 h-16 text-gray-300 mb-4 animate-bounce-in" />
-              <p className="text-gray-400">Belum ada pesanan masuk</p>
+              <p className="text-gray-400">Toko Anda belum memiliki pesanan terbaru.</p>
             </div>
           ) : (
             orders.map((o, i) => (
-              <div key={o.id_order} className={`bg-white rounded-xl border border-gray-100 p-5 card-hover animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
+              <div key={o.id_order} className={`bg-white rounded-xl border ${selectedOrders.includes(o.id_order) ? 'border-emerald-400 ring-2 ring-emerald-50' : 'border-gray-100'} p-5 transition-all animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
+                    
+                    {/* Checkbox Individual */}
+                    {o.status === 'PAID' && (
+                       <label className="cursor-pointer mr-2">
+                         <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedOrders.includes(o.id_order) ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-emerald-400'}`}>
+                           <input type="checkbox" className="hidden" checked={selectedOrders.includes(o.id_order)} onChange={() => toggleSelectOrder(o.id_order)} />
+                           {selectedOrders.includes(o.id_order) && <CheckCircle className="w-3 h-3 text-white" />}
+                         </div>
+                       </label>
+                    )}
+
                     <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500"><ClipboardList className="w-5 h-5" /></div>
                     <div>
                       <p className="text-sm font-mono text-gray-400">#{o.id_order?.slice(0, 8)}</p>
@@ -301,7 +372,7 @@ export default function SupplierDashboard() {
                         onClick={() => handleProcessOrder(o.id_order)}
                         className="mt-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors inline-block w-full text-center"
                       >
-                        📦 Proses Pesanan
+                        📦 Proses Manual
                       </button>
                     )}
                   </div>

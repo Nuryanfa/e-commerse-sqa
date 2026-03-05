@@ -22,13 +22,13 @@ func (r *productRepository) Create(product *domain.Product) error {
 // FindAll automatically joins/preloads the relative Category
 func (r *productRepository) FindAll() ([]domain.Product, error) {
 	var products []domain.Product
-	err := r.db.Preload("Category").Find(&products).Error
+	err := r.db.Preload("Category").Preload("Variants").Find(&products).Error
 	return products, err
 }
 
 func (r *productRepository) FindByID(id string) (*domain.Product, error) {
 	var product domain.Product
-	err := r.db.Preload("Category").Preload("Supplier").Where("id_product = ?", id).First(&product).Error
+	err := r.db.Preload("Category").Preload("Supplier").Preload("Variants").Where("id_product = ?", id).First(&product).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("produk tidak ditemukan")
@@ -61,7 +61,7 @@ func (r *productRepository) GetSupplierRating(supplierID string) float64 {
 // Menggunakan ILIKE untuk pencarian case-insensitive di PostgreSQL.
 func (r *productRepository) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	var products []domain.Product
-	query := r.db.Preload("Category")
+	query := r.db.Preload("Category").Preload("Variants")
 
 	if keyword != "" {
 		query = query.Where("name ILIKE ?", "%"+keyword+"%")
@@ -85,6 +85,6 @@ func (r *productRepository) Search(keyword string, categoryID string, limit int,
 // FindBySupplierID mengembalikan produk milik supplier tertentu
 func (r *productRepository) FindBySupplierID(supplierID string) ([]domain.Product, error) {
 	var products []domain.Product
-	err := r.db.Preload("Category").Where("supplier_id = ?", supplierID).Find(&products).Error
+	err := r.db.Preload("Category").Preload("Variants").Where("supplier_id = ?", supplierID).Find(&products).Error
 	return products, err
 }

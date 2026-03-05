@@ -38,25 +38,41 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 				return errors.New("produk " + item.ProductID + " tidak ditemukan")
 			}
 
-			// PENTING SQA: Race condition check. Pastikan stok tidak minus saat di checkout bersamaan
-			if product.Stock < item.Quantity {
-				return fmt.Errorf("stok produk '%s' tidak mencukupi. Stok tersisa: %d", product.Name, product.Stock)
-			}
+			priceAtPurchase := product.Price
 
-			// Potong Stok
-			product.Stock -= item.Quantity
-			if err := tx.Save(&product).Error; err != nil {
-				return err
+			if item.VariantID != nil {
+				var variant domain.ProductVariant
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id_variant = ?", *item.VariantID).First(&variant).Error; err != nil {
+					return errors.New("varian produk tidak ditemukan")
+				}
+				if variant.Stock < item.Quantity {
+					return fmt.Errorf("stok varian '%s' tidak mencukupi. Stok tersisa: %d", variant.NameLabel, variant.Stock)
+				}
+				variant.Stock -= item.Quantity
+				if err := tx.Save(&variant).Error; err != nil {
+					return err
+				}
+				priceAtPurchase = variant.Price
+			} else {
+				// PENTING SQA: Race condition check. Pastikan stok tidak minus saat di checkout bersamaan
+				if product.Stock < item.Quantity {
+					return fmt.Errorf("stok produk '%s' tidak mencukupi. Stok tersisa: %d", product.Name, product.Stock)
+				}
+				// Potong Stok
+				product.Stock -= item.Quantity
+				if err := tx.Save(&product).Error; err != nil {
+					return err
+				}
 			}
 
 			// Hitung subtotal dan buat record Item Pesanan (Snapshot harga saat ini)
-			priceAtPurchase := product.Price
 			totalAmount += priceAtPurchase * float64(item.Quantity)
 
 			orderItems = append(orderItems, domain.OrderItem{
 				ID:              uuid.New().String(),
 				OrderID:         orderID,
 				ProductID:       product.ID,
+				VariantID:       item.VariantID,
 				Quantity:        item.Quantity,
 				PriceAtPurchase: priceAtPurchase,
 				CreatedAt:       time.Now(),
@@ -136,6 +152,131 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 		}
 
 		// Return nil akan otomatis me-COMMIT transaksi.
+		return nil
+	})
+
+	if err != nil {
+		return nil, err // Transaksi gagal dan telah di ROLLBACK secara otomatis oleh GORM
+	}
+
+	return &createdOrder, nil
+}
+
+// InstantCheckoutTransaction mengeksekusi perpindahan Direct Buy secara Atomik (ACID)
+func (r *orderRepository) InstantCheckoutTransaction(userID string, item domain.CartItem, voucherCode string) (*domain.Order, error) {
+	var createdOrder domain.Order
+
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		var totalAmount float64
+		var orderItem domain.OrderItem
+
+		orderID := uuid.New().String()
+
+		var product domain.Product
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id_product = ?", item.ProductID).First(&product).Error; err != nil {
+			return errors.New("produk tidak ditemukan")
+		}
+
+		priceAtPurchase := product.Price
+
+		if item.VariantID != nil {
+			var variant domain.ProductVariant
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id_variant = ?", *item.VariantID).First(&variant).Error; err != nil {
+				return errors.New("varian tidak ditemukan")
+			}
+			if variant.Stock < item.Quantity {
+				return fmt.Errorf("stok varian '%s' tidak mencukupi", variant.NameLabel)
+			}
+			variant.Stock -= item.Quantity
+			if err := tx.Save(&variant).Error; err != nil {
+				return err
+			}
+			priceAtPurchase = variant.Price
+		} else {
+			if product.Stock < item.Quantity {
+				return fmt.Errorf("stok produk '%s' tidak mencukupi", product.Name)
+			}
+			product.Stock -= item.Quantity
+			if err := tx.Save(&product).Error; err != nil {
+				return err
+			}
+		}
+
+		totalAmount = priceAtPurchase * float64(item.Quantity)
+
+		orderItem = domain.OrderItem{
+			ID:              uuid.New().String(),
+			OrderID:         orderID,
+			ProductID:       product.ID,
+			VariantID:       item.VariantID,
+			Quantity:        item.Quantity,
+			PriceAtPurchase: priceAtPurchase,
+		}
+
+		var discount float64
+		var appliedVoucher *string
+
+		if voucherCode != "" {
+			var voucher domain.Voucher
+			// Menggunakan Pessimistic Locking untuk mencegah Race Condition persediaan kuota Voucher
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("code = ? AND is_active = ?", voucherCode, true).First(&voucher).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New("kode kupon diskon tidak valid atau tidak aktif")
+				}
+				return err
+			}
+
+			// Limit Expiry
+			if voucher.ExpiryDate.Before(time.Now()) {
+				return errors.New("kupon diskon sudah kedaluwarsa")
+			}
+
+			// Limit Kuota (0 = bebas pakai, >0 = berbatas kuota)
+			if voucher.UsageLimit > 0 && voucher.UsedCount >= voucher.UsageLimit {
+				return errors.New("kuota batas pemakaian kupon diskon ini telah habis")
+			}
+
+			// Minimum Belanja Keseluruhan
+			if totalAmount < voucher.MinPurchase {
+				return fmt.Errorf("minimal pembelian tidak mencukupi, minimum kereta Rp%.2f", voucher.MinPurchase)
+			}
+
+			discount = voucher.DiscountAmount
+			totalAmount -= discount
+			if totalAmount < 0 {
+				totalAmount = 0
+			}
+
+			vc := voucher.Code
+			appliedVoucher = &vc
+
+			// Tingkatkan catatan frekuensi pakai
+			voucher.UsedCount++
+			if err := tx.Save(&voucher).Error; err != nil {
+				return err
+			}
+		}
+
+		createdOrder = domain.Order{
+			ID:             orderID,
+			UserID:         userID,
+			TotalAmount:    totalAmount,
+			Status:         "PENDING",
+			DiscountAmount: discount,
+			VoucherCode:    appliedVoucher,
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
+		}
+
+		if err := tx.Create(&createdOrder).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Create(&orderItem).Error; err != nil {
+			return err
+		}
+
+		// TIDAK ada penghapusan dari keranjang (Bypass Cart)
 		return nil
 	})
 
@@ -244,4 +385,17 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 	})
 
 	return canceledCount, err
+}
+
+// BatchUpdateStatus memperbarui status lebih dari satu Order ID berbarengan (Bulk)
+func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) error {
+	// Memanfaatkan 'IN' operator untuk membungkus perintah SQL dalam sekali panggilan (jauh lebih lekas dibanding 'for loop')
+	err := r.db.Model(&domain.Order{}).
+		Where("id_order IN ?", orderIDs).
+		Update("status", status).Error
+	
+	if err != nil {
+		return err
+	}
+	return nil
 }

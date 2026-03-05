@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { ArrowLeft, ClipboardSignature, CreditCard, Truck, CheckCircle, Leaf, RefreshCw, Loader2, Clock } from 'lucide-react';
+import { ArrowLeft, ClipboardSignature, CreditCard, Truck, CheckCircle, Leaf, RefreshCw, Loader2, Clock, ShieldAlert } from 'lucide-react';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -21,6 +21,25 @@ export default function OrderDetail() {
     setPaying(true);
     try { await api.patch(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrder(); }
     catch (err) { toast.error(err.response?.data?.error || 'Gagal bayar'); }
+    setPaying(false);
+  };
+
+  const createDispute = async () => {
+    const reason = prompt("Sertakan alasan singkat mengapa Anda mengajukan klaim perbaikan / pembatalan pesanan ini:");
+    if (!reason) return;
+    
+    setPaying(true);
+    const formData = new FormData();
+    formData.append('reason', reason);
+    // TODO: integrasi form untuk unggah foto bukti
+    
+    try {
+      const res = await api.post(`/disputes/${id}`, formData);
+      toast.success(res.data.message);
+      navigate(`/disputes/${res.data.data.id_dispute}`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Gagal mengajukan komplain");
+    }
     setPaying(false);
   };
 
@@ -51,6 +70,11 @@ export default function OrderDetail() {
               <Clock className="w-3.5 h-3.5" /> {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
+          {order.status === 'DISPUTED' && (
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 font-mono tracking-widest flex items-center gap-1">
+              <ShieldAlert className="w-4 h-4" /> BERSENGKETA
+            </span>
+          )}
         </div>
 
         {/* Timeline */}
@@ -106,6 +130,13 @@ export default function OrderDetail() {
         <button onClick={pay} disabled={paying} className="w-full mt-6 btn-primary py-4 text-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-md">
           {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />} {paying ? 'Memproses...' : 'Bayar Sekarang'}
         </button>
+      )}
+
+      {/* Jika Pesanan Sudah Diterima / Dalam Pengiriman: Tombol Komplain */}
+      {(order.status === 'DELIVERED' || order.status === 'SHIPPED') && user?.role === 'pembeli' && (
+         <button onClick={createDispute} disabled={paying} className="w-full mt-6 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-bold py-3.5 rounded-2xl transition-all shadow-sm cursor-pointer hover:bg-amber-100 hover:text-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 text-sm">
+           {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />} {paying ? 'Menyambungkan ke Mediasi...' : 'Barang Rusak? Ajukan Komplain Sengketa'}
+         </button>
       )}
 
       {order.status === 'DELIVERED' && user?.role === 'pembeli' && (

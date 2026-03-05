@@ -13,9 +13,21 @@ type Product struct {
 	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id"`
 	Supplier       *User     `json:"supplier,omitempty" gorm:"foreignKey:SupplierID;references:ID"`
 	SupplierRating float64   `json:"supplier_rating,omitempty" gorm:"-"` // Dihitung run-time
-	ImageURL       string    `json:"image_url" gorm:"column:image_url"`
-	CreatedAt      time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
+	ImageURL       string           `json:"image_url" gorm:"column:image_url"`
+	CreatedAt      time.Time        `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt      time.Time        `json:"updated_at" gorm:"column:updated_at"`
+	Variants       []ProductVariant `json:"variants,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+}
+
+type ProductVariant struct {
+	ID        string    `json:"id_variant" gorm:"column:id_variant;primaryKey"`
+	ProductID string    `json:"id_product" gorm:"column:id_product"`
+	NameLabel string    `json:"name_label" gorm:"column:name_label" binding:"required"` // Contoh: "250g", "1 Kg"
+	Price     float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
+	Stock     int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
+	SKUCode   string    `json:"sku_code" gorm:"column:sku_code"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 }
 
 type Review struct {

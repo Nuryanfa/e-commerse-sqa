@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
@@ -39,6 +40,8 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
+	user.Email = strings.ToLower(user.Email)
+
 	if err := h.userUsecase.Register(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -65,6 +68,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email dan Password tidak valid"})
 		return
 	}
+
+	loginReq.Email = strings.ToLower(loginReq.Email)
 
 	token, role, err := h.userUsecase.Login(loginReq.Email, loginReq.Password)
 	if err != nil {

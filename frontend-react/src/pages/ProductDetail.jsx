@@ -12,6 +12,7 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
@@ -34,6 +35,9 @@ export default function ProductDetail() {
     Promise.all(fetches).then(r => {
       const p = r[0].data.data;
       setProduct(p);
+      if (p.variants && p.variants.length > 0) {
+        setSelectedVariant(p.variants[0]);
+      }
       
       if (r[1].data.data) { setReviews(r[1].data.data.reviews || []); setAvgRating(r[1].data.data.average || 0); }
       
@@ -70,13 +74,32 @@ export default function ProductDetail() {
     if (!user) { toast.info('Login untuk berbelanja'); return navigate('/login'); }
     setAdding(true);
     try { 
-      await api.post('/cart', { id_product: id, quantity: qty }); 
+      await api.post('/cart', { id_product: id, quantity: qty, id_variant: selectedVariant?.id_variant }); 
       toast.success('Ditambahkan ke keranjang!', 4000, {
         label: 'Lihat Keranjang ➔',
         onClick: () => navigate('/cart')
       }); 
     }
     catch (err) { toast.error(err.response?.data?.error || 'Gagal menambahkan'); }
+    setAdding(false);
+  };
+
+  const instantBuy = async () => {
+    if (!user) { toast.info('Login untuk berbelanja'); return navigate('/login'); }
+    setAdding(true);
+    try {
+      const res = await api.post('/orders/instant-checkout', { product_id: id, quantity: qty, id_variant: selectedVariant?.id_variant });
+      toast.success('Pesanan Instan Dibuat! Mengalihkan ke pembayaran...');
+      setTimeout(() => {
+        if (res.data?.order?.payment_url) {
+          window.location.href = res.data.order.payment_url;
+        } else {
+          navigate('/orders');
+        }
+      }, 1500);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal memproses pembelian instan');
+    }
     setAdding(false);
   };
 
@@ -90,8 +113,11 @@ export default function ProductDetail() {
   );
   if (!product) return null;
 
-  const stockLow = product.stock > 0 && product.stock < 10;
-  const canBuy = product.stock > 0 && !['admin', 'supplier', 'courier'].includes(user?.role);
+  const currentStock = selectedVariant ? selectedVariant.stock : product.stock;
+  const currentPrice = selectedVariant ? selectedVariant.price : product.price;
+
+  const stockLow = currentStock > 0 && currentStock < 10;
+  const canBuy = currentStock > 0 && !['admin', 'supplier', 'courier'].includes(user?.role);
 
   return (
     <div className="bg-gray-50 dark:bg-slate-900 min-h-screen pb-24 lg:pb-8 transition-colors duration-300">
@@ -114,8 +140,8 @@ export default function ProductDetail() {
               
               {/* Badge Ketersediaan Stok */}
               <div className="absolute top-6 right-6 z-20 flex flex-col gap-2">
-                {stockLow && <span className="bg-amber-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg shadow-amber-500/20 animate-pulse">Sisa {product.stock} kg!</span>}
-                {product.stock === 0 && <span className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/20">Stok Habis</span>}
+                {stockLow && <span className="bg-amber-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg shadow-amber-500/20 animate-pulse">Sisa {currentStock} kg!</span>}
+                {currentStock === 0 && <span className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/20">Stok Habis</span>}
               </div>
 
               {/* Wishlist Floating Button Overlay */}
@@ -151,8 +177,33 @@ export default function ProductDetail() {
 
               <h1 className="text-3xl sm:text-4xl font-black mt-2 mb-4 tracking-tight leading-tight text-gray-900 dark:text-white">{product.name}</h1>
               <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500 mb-6 drop-shadow-sm">
-                Rp {product.price?.toLocaleString('id-ID')}
+                Rp {currentPrice?.toLocaleString('id-ID')}
               </p>
+
+              {/* Pilihan Varian SKU (Jika Ada) */}
+              {product.variants && product.variants.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">Pilih Ukuran / Varian</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {product.variants?.map((v) => (
+                      <button
+                        key={v.id_variant}
+                        onClick={() => { setSelectedVariant(v); setQty(1); }}
+                        className={`relative px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
+                          selectedVariant?.id_variant === v.id_variant
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-emerald-50'
+                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400'
+                        }`}
+                      >
+                        {v.name_label}
+                        {selectedVariant?.id_variant === v.id_variant && (
+                          <motion.div layoutId="activeVariant" className="absolute inset-0 border-2 border-emerald-500 rounded-xl" transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="h-px w-full bg-gray-100 dark:bg-slate-700/50 mb-6" />
 
@@ -166,10 +217,10 @@ export default function ProductDetail() {
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-8 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex items-center justify-between shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xl shadow-inner">
-                      {product.supplier.name.charAt(0).toUpperCase()}
+                      {product.supplier?.name?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-gray-900 dark:text-white">{product.supplier.name}</h4>
+                      <h4 className="text-base font-bold text-gray-900 dark:text-white">{product.supplier?.name}</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                         <span className="font-bold text-gray-900 dark:text-white">{product.supplier_rating > 0 ? product.supplier_rating.toFixed(1) : 'Baru'}</span>
@@ -188,8 +239,8 @@ export default function ProductDetail() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Status Stok</p>
-                    <p className={`text-sm font-bold ${product.stock > 10 ? 'text-emerald-600 dark:text-emerald-400' : product.stock > 0 ? 'text-amber-500' : 'text-red-500'}`}>
-                      {product.stock > 0 ? `Tersedia ${product.stock} kg` : 'Stok Habis'}
+                    <p className={`text-sm font-bold ${currentStock > 10 ? 'text-emerald-600 dark:text-emerald-400' : currentStock > 0 ? 'text-amber-500' : 'text-red-500'}`}>
+                      {currentStock > 0 ? `Tersedia ${currentStock}` : 'Stok Habis'}
                     </p>
                   </div>
 
@@ -199,16 +250,21 @@ export default function ProductDetail() {
                       <div className="flex items-center bg-white dark:bg-slate-700 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-600 shadow-sm">
                         <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300"><Minus className="w-4 h-4" /></button>
                         <span className="w-10 text-center text-sm font-black text-gray-900 dark:text-white">{qty}</span>
-                        <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300"><Plus className="w-4 h-4" /></button>
+                        <button onClick={() => setQty(Math.min(currentStock, qty + 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300"><Plus className="w-4 h-4" /></button>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {canBuy && (
-                  <button onClick={addToCart} disabled={adding} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-4 rounded-2xl text-sm font-bold shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 cursor-pointer">
-                    {adding ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sedang Menambahkan...</> : <><ShoppingCart className="w-5 h-5" /> Masukkan ke Keranjang </>}
-                  </button>
+                  <div className="flex flex-col gap-3">
+                    <button onClick={addToCart} disabled={adding} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-4 rounded-2xl text-sm font-bold shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer">
+                      {adding ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sedang Menambahkan...</> : <><ShoppingCart className="w-5 h-5" /> Masukkan Keranjang</>}
+                    </button>
+                    <button onClick={instantBuy} disabled={adding} className="w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-2xl text-sm font-bold shadow-xl shadow-amber-200 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer">
+                      ⚡ Beli Langsung
+                    </button>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -300,7 +356,7 @@ export default function ProductDetail() {
              <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shrink-0">
                <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3 py-3 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-slate-600"><Minus className="w-4 h-4" /></button>
                <span className="w-8 text-center text-sm font-black text-gray-900 dark:text-white">{qty}</span>
-               <button onClick={() => setQty(Math.min(product.stock, qty + 1))} className="px-3 py-3 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-slate-600"><Plus className="w-4 h-4" /></button>
+               <button onClick={() => setQty(Math.min(currentStock, qty + 1))} className="px-3 py-3 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-slate-600"><Plus className="w-4 h-4" /></button>
              </div>
              <button onClick={addToCart} disabled={adding} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/25 active:scale-95 transition-all disabled:opacity-70 flex justify-center items-center gap-2">
                 {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ShoppingCart className="w-4 h-4" /> Beli</>}

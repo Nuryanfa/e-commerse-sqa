@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ func NewUserUsecase(repo domain.UserRepository) domain.UserUsecase {
 }
 
 func (u *userUsecase) Register(user *domain.User) error {
+	user.Email = strings.ToLower(user.Email)
 	// 1. Check if email already exists
 	existingUser, _ := u.userRepo.FindByEmail(user.Email)
 	if existingUser != nil {
@@ -54,6 +56,7 @@ func (u *userUsecase) Register(user *domain.User) error {
 }
 
 func (u *userUsecase) Login(email, pass string) (string, string, error) {
+	email = strings.ToLower(email)
 	// 1. Find user by email
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil {

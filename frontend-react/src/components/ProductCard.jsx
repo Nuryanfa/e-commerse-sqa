@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../services/api';
-import { Leaf, Plus, Eye } from 'lucide-react';
+import { Leaf, Plus, Eye, Zap } from 'lucide-react';
 import QuickViewModal from './QuickViewModal';
 
 export default function ProductCard({ product, index = 0 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const stockLow = product.stock > 0 && product.stock < 5;
@@ -16,6 +17,10 @@ export default function ProductCard({ product, index = 0 }) {
   const addToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (product.variants?.length > 0) {
+      navigate(`/products/${product.id_product}`);
+      return;
+    }
     if (!user) {
       toast.info('Silakan login untuk berbelanja');
       return;
@@ -25,6 +30,30 @@ export default function ProductCard({ product, index = 0 }) {
       toast.success(`${product.name} ditambahkan ke keranjang!`);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gagal menambahkan');
+    }
+  };
+
+  const instantBuy = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (product.variants?.length > 0) {
+      navigate(`/products/${product.id_product}`);
+      return;
+    }
+    if (!user) {
+      toast.info('Silakan login untuk berbelanja');
+      return;
+    }
+    try {
+      const res = await api.post('/orders/instant-checkout', { product_id: product.id_product, quantity: 1 });
+      toast.success('Pesanan Instan Dibuat!');
+      setTimeout(() => {
+        if (res.data?.order?.payment_url) {
+          window.location.href = res.data.order.payment_url;
+        }
+      }, 1000);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal memproses pembelian');
     }
   };
 
@@ -78,6 +107,13 @@ export default function ProductCard({ product, index = 0 }) {
             >
               <Plus className="w-5 h-5" />
             </button>
+            <button
+              onClick={instantBuy}
+              className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg hover:bg-amber-600 hover:scale-110 hover:shadow-amber-500/30 active:scale-95 transition-all cursor-pointer"
+              title="Beli Langsung"
+            >
+              <Zap className="w-5 h-5" />
+            </button>
           </div>
         )}
       </div>
@@ -91,7 +127,10 @@ export default function ProductCard({ product, index = 0 }) {
           {product.name}
         </h3>
         <p className="text-xl font-black" style={{ color: 'var(--text-accent)' }}>
-          Rp {product.price?.toLocaleString('id-ID')}
+          {product.variants?.length > 0
+            ? <span className="text-sm font-semibold text-gray-500 mr-1">Mulai</span> 
+            : ''}
+          Rp {(product.variants?.length > 0 ? product.variants[0].price : product.price)?.toLocaleString('id-ID')}
         </p>
       </div>
     </Link>

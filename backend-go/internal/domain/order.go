@@ -22,8 +22,10 @@ type Order struct {
 type OrderItem struct {
 	ID              string    `json:"id_order_item" gorm:"column:id_order_item;primaryKey"`
 	OrderID         string    `json:"id_order" gorm:"column:id_order" binding:"required"`
-	ProductID       string    `json:"id_product" gorm:"column:id_product" binding:"required"`
-	Product         *Product  `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+	ProductID       string          `json:"id_product" gorm:"column:id_product" binding:"required"`
+	Product         *Product        `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
+	VariantID       *string         `json:"id_variant,omitempty" gorm:"column:id_variant"`
+	Variant         *ProductVariant `json:"variant,omitempty" gorm:"foreignKey:VariantID;references:ID"`
 	Quantity        int       `json:"quantity" gorm:"column:quantity" binding:"required,gt=0"`
 	PriceAtPurchase float64   `json:"price_at_purchase" gorm:"column:price_at_purchase" binding:"required,gt=0"`
 	CreatedAt       time.Time `json:"created_at" gorm:"column:created_at"`
@@ -32,6 +34,7 @@ type OrderItem struct {
 
 type OrderRepository interface {
 	CheckoutTransaction(userID string, cartItems []CartItem, voucherCode string) (*Order, error)
+	InstantCheckoutTransaction(userID string, item CartItem, voucherCode string) (*Order, error)
 	FindByUserID(userID string) ([]Order, error)
 	FindByID(orderID string) (*Order, error)
 	UpdateStatus(orderID string, status string) error
@@ -42,10 +45,13 @@ type OrderRepository interface {
 	FindByProductSupplier(supplierID string) ([]Order, error)
 	// Cronjob Methods
 	CancelExpiredOrders(cutoffTime time.Time) (int, error)
+	// Bulk Operations
+	BatchUpdateStatus(orderIDs []string, status string) error
 }
 
 type OrderUsecase interface {
 	Checkout(userID string, voucherCode string) (*Order, error)
+	InstantCheckout(userID string, productID string, variantID *string, quantity int, voucherCode string) (*Order, error)
 	GetMyOrders(userID string) ([]Order, error)
 	GetOrderDetail(userID string, orderID string) (*Order, error)
 	PayOrder(orderID string) error
@@ -57,6 +63,7 @@ type OrderUsecase interface {
 	// Supplier methods
 	GetSupplierOrders(supplierID string) ([]Order, error)
 	ProcessSupplierOrder(supplierID string, orderID string) error
+	BatchProcessSupplierOrders(supplierID string, orderIDs []string) error
 	// Webhook method
 	ProcessPaymentWebhook(payload map[string]interface{}) error
 	// Cronjob Task

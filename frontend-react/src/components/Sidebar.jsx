@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Home, ShoppingBag, Heart, ShoppingCart, Package, BarChart2, Truck, Shield, KeyRound, UserPlus, Moon, Sun, LogOut, Leaf } from 'lucide-react';
+import { Home, ShoppingBag, Heart, ShoppingCart, Package, BarChart2, Truck, Shield, KeyRound, UserPlus, Moon, Sun, LogOut, Leaf, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
@@ -26,7 +26,10 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }
       label: 'Belanja', icon: <ShoppingCart className="w-3 h-3 text-white" />,
     },
     supplier: {
-      links: [{ to: '/supplier', icon: <BarChart2 className="w-[18px] h-[18px]" />, label: 'Dashboard' }],
+      links: [
+        { to: '/supplier', icon: <BarChart2 className="w-[18px] h-[18px]" />, label: 'Dashboard' },
+        { to: '/supplier/disputes', icon: <ShieldAlert className="w-[18px] h-[18px]" />, label: 'Pusat Sengketa' },
+      ],
       label: 'Supplier', icon: <Leaf className="w-3 h-3 text-white" />,
     },
     courier: {
@@ -34,7 +37,10 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }
       label: 'Kurir', icon: <Truck className="w-3 h-3 text-white" />,
     },
     admin: {
-      links: [{ to: '/admin', icon: <Shield className="w-[18px] h-[18px]" />, label: 'Admin Panel' }],
+      links: [
+        { to: '/admin', icon: <Shield className="w-[18px] h-[18px]" />, label: 'Admin Panel' },
+        { to: '/admin/disputes', icon: <ShieldAlert className="w-[18px] h-[18px]" />, label: 'Ruang Hakim' },
+      ],
       label: 'Admin', icon: <Shield className="w-3 h-3 text-white" />,
     },
   };

@@ -14,7 +14,7 @@ func main() {
 	db := config.InitDB()
 
 	// Auto Migrate
-	_ = db.AutoMigrate(&domain.User{}, &domain.Category{}, &domain.Product{})
+	_ = db.AutoMigrate(&domain.User{}, &domain.Category{}, &domain.Product{}, &domain.ProductVariant{})
 
 	// Hash password — semua dummy user pakai password yang sama: "password123"
 	hashed, err := password.HashPassword("password123")

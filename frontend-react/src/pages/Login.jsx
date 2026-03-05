@@ -21,8 +21,8 @@ export default function Login() {
       const role = await login(email, password);
       navigate({ admin: '/admin', supplier: '/supplier', courier: '/courier' }[role] || '/');
     } catch (err) {
+      console.error("LOGIN ERROR:", err, err.response?.data);
       setError(err.response?.data?.error || 'Email atau password salah.');
-      // Memicu form shake saat error
       controls.start({
         x: [0, -15, 15, -10, 10, -5, 5, 0],
         transition: { duration: 0.5, ease: "easeInOut" }

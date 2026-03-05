@@ -55,6 +55,13 @@ func (m *MockOrderRepository) FindByProductSupplier(supplierID string) ([]domain
 func (m *MockOrderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error) {
 	return 0, nil
 }
+func (m *MockOrderRepository) BatchUpdateStatus(orderIDs []string, status string) error {
+	return nil
+}
+
+func (m *MockOrderRepository) InstantCheckoutTransaction(userID string, item domain.CartItem, voucherCode string) (*domain.Order, error) {
+	return &domain.Order{ID: "mock-instant-id", TotalAmount: float64(item.Quantity * 1000)}, nil
+}
 
 // --- TESTS ---
 

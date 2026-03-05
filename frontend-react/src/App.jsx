@@ -21,10 +21,13 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import DisputeDetail from './pages/DisputeDetail';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminDisputes from './pages/admin/Disputes';
 import SupplierDashboard from './pages/supplier/Dashboard';
+import SupplierDisputes from './pages/supplier/Disputes';
 import CourierDashboard from './pages/courier/Dashboard';
 
 // ScrollToTop — scrolls to top on route change
@@ -70,10 +73,20 @@ function AnimatedRoutes() {
         <Route path="/cart" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
         <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
+        <Route path="/disputes/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><PageWrapper><DisputeDetail /></PageWrapper></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
-        <Route path="/admin/*" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
-        <Route path="/supplier/*" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDashboard /></PageWrapper></ProtectedRoute>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/disputes" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDisputes /></PageWrapper></ProtectedRoute>} />
+        
+        {/* Supplier Routes */}
+        <Route path="/supplier" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDashboard /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/disputes" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDisputes /></PageWrapper></ProtectedRoute>} />
+        
+        {/* Courier Routes */}
         <Route path="/courier/*" element={<ProtectedRoute allowedRoles={['courier']}><PageWrapper><CourierDashboard /></PageWrapper></ProtectedRoute>} />
+        
         <Route path="*" element={
           <PageWrapper>
             <div className="min-h-[60vh] flex items-center justify-center animate-fade-in-up">

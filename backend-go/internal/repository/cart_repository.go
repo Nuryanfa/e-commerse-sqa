@@ -17,7 +17,13 @@ func NewCartRepository(db *gorm.DB) domain.CartRepository {
 
 func (r *cartRepository) UpsertItem(item *domain.CartItem) error {
 	var existingItem domain.CartItem
-	err := r.db.Where("id_user = ? AND id_product = ?", item.UserID, item.ProductID).First(&existingItem).Error
+	query := r.db.Where("id_user = ? AND id_product = ?", item.UserID, item.ProductID)
+	if item.VariantID != nil {
+		query = query.Where("id_variant = ?", *item.VariantID)
+	} else {
+		query = query.Where("id_variant IS NULL")
+	}
+	err := query.First(&existingItem).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -39,8 +45,8 @@ func (r *cartRepository) UpdateItem(item *domain.CartItem) error {
 
 func (r *cartRepository) FindByUserID(userID string) ([]domain.CartItem, error) {
 	var items []domain.CartItem
-	// Preload Product and its Category to show complete details in Cart
-	err := r.db.Preload("Product.Category").Where("id_user = ?", userID).Find(&items).Error
+	// Preload Product and its Category, and also Variant to show complete details in Cart
+	err := r.db.Preload("Product.Category").Preload("Variant").Where("id_user = ?", userID).Find(&items).Error
 	return items, err
 }
 

@@ -87,6 +87,55 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 	return order, nil
 }
 
+func (u *orderUsecase) InstantCheckout(userID string, productID string, variantID *string, quantity int, voucherCode string) (*domain.Order, error) {
+	if quantity <= 0 {
+		return nil, errors.New("jumlah barang minimal 1")
+	}
+
+	item := domain.CartItem{
+		ProductID: productID,
+		VariantID: variantID,
+		Quantity:  quantity,
+	}
+
+	order, err := u.orderRepo.InstantCheckoutTransaction(userID, item, voucherCode)
+	if err != nil {
+		return nil, errors.New("Beli Langsung gagal: " + err.Error())
+	}
+
+	// === INISIALISASI MIDTRANS SNAP API ===
+	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
+	if serverKey == "" {
+		serverKey = "SB-Mid-server-YOUR_DUMMY_KEY" // Ganti dengan key di Sandbox Midtrans
+	}
+
+	var snapClient snap.Client
+	snapClient.New(serverKey, midtrans.Sandbox)
+
+	req := &snap.Request{
+		TransactionDetails: midtrans.TransactionDetails{
+			OrderID:  order.ID,
+			GrossAmt: int64(order.TotalAmount),
+		},
+		CreditCard: &snap.CreditCardDetails{
+			Secure: true,
+		},
+		Callbacks: &snap.Callbacks{
+			Finish: "http://localhost:5174/orders/" + order.ID,
+		},
+	}
+
+	snapResp, snapErr := snapClient.CreateTransaction(req)
+	if snapErr == nil && snapResp != nil {
+		order.PaymentToken = &snapResp.Token
+		order.PaymentURL = &snapResp.RedirectURL
+	} else if snapErr != nil {
+		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token: %v\n", snapErr)
+	}
+
+	return order, nil
+}
+
 func (u *orderUsecase) GetMyOrders(userID string) ([]domain.Order, error) {
 	return u.orderRepo.FindByUserID(userID)
 }
@@ -213,6 +262,55 @@ func (u *orderUsecase) ProcessSupplierOrder(supplierID string, orderID string) e
 		})
 	}
 	return err
+}
+
+// BatchProcessSupplierOrders mengubah banyak pesanan PAID menjadi PROCESSED serentak
+func (u *orderUsecase) BatchProcessSupplierOrders(supplierID string, orderIDs []string) error {
+	if len(orderIDs) == 0 {
+		return errors.New("daftar pesanan kosong")
+	}
+
+	validOrderIDs := []string{}
+	now := time.Now()
+	
+	for _, orderID := range orderIDs {
+		order, err := u.orderRepo.FindByID(orderID)
+		if err != nil {
+			continue // Abaikan order fiktif
+		}
+		
+		isOwnedBySupplier := false
+		for _, item := range order.Items {
+			if item.Product != nil && item.Product.SupplierID == supplierID {
+				isOwnedBySupplier = true
+				break
+			}
+		}
+
+		if isOwnedBySupplier && order.Status == "PAID" {
+			validOrderIDs = append(validOrderIDs, orderID)
+			
+			// Siaga log Audit (Async/Looping Memory)
+			if u.auditLogRepo != nil {
+				_ = u.auditLogRepo.Insert(&domain.AuditLog{
+					ID:        uuid.New().String(),
+					UserID:    supplierID,
+					Action:    "SUPPLIER_BATCH_PROCESS_ORDER",
+					Entity:    "orders",
+					EntityID:  orderID,
+					OldValues: "PAID",
+					NewValues: "PROCESSED",
+					CreatedAt: now,
+				})
+			}
+		}
+	}
+
+	if len(validOrderIDs) == 0 {
+		return errors.New("tidak ada pesanan yang valid untuk diproses (status harus PAID dan milik toko Anda)")
+	}
+
+	return u.orderRepo.BatchUpdateStatus(validOrderIDs, "PROCESSED")
 }
 
 // --- Webhook Logik ---

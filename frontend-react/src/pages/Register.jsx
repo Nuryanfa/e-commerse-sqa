@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { motion, useAnimation } from 'framer-motion';
-import { User, Mail, Lock, ArrowRight, AlertCircle, Leaf } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, AlertCircle, Leaf, ShoppingCart, Tractor, Truck } from 'lucide-react';
 
 export default function Register() {
   const [nama, setNama] = useState('');
@@ -21,7 +21,7 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/users/register', { name: nama, email, password, role });
+      await api.post('/users/register', { nama: nama, email, password, role });
       // Assuming 'register' from useAuth might handle toast or it's removed.
       // If toast is still needed, useToast should be re-imported.
       // For now, following the provided snippet which removes toast.success from here.
