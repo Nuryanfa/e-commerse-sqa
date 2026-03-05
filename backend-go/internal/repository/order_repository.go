@@ -355,12 +355,14 @@ func (r *orderRepository) FindByProductSupplier(supplierID string) ([]domain.Ord
 	return orders, err
 }
 
-// CancelExpiredOrders membatalkan pesanan tertinggal (PENDING) dan memulihkan stok
+// CancelExpiredOrders membatalkan pesanan tertinggal (PENDING) dan memulihkan stok.
+// [A2 SQA FIX]: Restock varian (ProductVariant) juga direstorasi, tidak hanya produk biasa.
 func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error) {
 	var canceledCount int
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var expiredOrders []domain.Order
 		// Cari semua order PENDING yang usianya sudah lebih lama dari cutoffTime
+		// Preload Items.Variant agar kita juga bisa mengembalikan stok varian
 		if err := tx.Preload("Items").Where("status = ? AND created_at < ?", "PENDING", cutoffTime).Find(&expiredOrders).Error; err != nil {
 			return err
 		}
@@ -371,11 +373,22 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 				return err
 			}
 
-			// Pulihkan limit stok untuk setiap item barang
+			// [A2] Pulihkan stok untuk setiap item — bedakan antara varian dan produk biasa
 			for _, item := range order.Items {
-				if err := tx.Model(&domain.Product{}).Where("id_product = ?", item.ProductID).
-					Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
-					return err
+				if item.VariantID != nil {
+					// Item memiliki varian: kembalikan stok ke tabel product_variants
+					if err := tx.Model(&domain.ProductVariant{}).
+						Where("id_variant = ?", *item.VariantID).
+						Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+						return fmt.Errorf("gagal restorasi stok varian %s: %w", *item.VariantID, err)
+					}
+				} else {
+					// Item produk biasa tanpa varian: kembalikan stok ke tabel products
+					if err := tx.Model(&domain.Product{}).
+						Where("id_product = ?", item.ProductID).
+						Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+						return fmt.Errorf("gagal restorasi stok produk %s: %w", item.ProductID, err)
+					}
 				}
 			}
 			canceledCount++
@@ -386,6 +399,7 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 
 	return canceledCount, err
 }
+
 
 // BatchUpdateStatus memperbarui status lebih dari satu Order ID berbarengan (Bulk)
 func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) error {
