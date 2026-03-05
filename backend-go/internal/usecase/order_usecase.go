@@ -46,14 +46,17 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 	}
 
 	// === INISIALISASI MIDTRANS SNAP API ===
-	// Sebaiknya Server Key diletakkan pada .env, jika kosong setel ke "dummy_key" untuk mock
+	// [B2] Server Key wajib diisi via environment variable MIDTRANS_SERVER_KEY
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
-	if serverKey == "" {
-		serverKey = "SB-Mid-server-YOUR_DUMMY_KEY" // Ganti dengan key di Sandbox Midtrans
-	}
 
 	var snapClient snap.Client
 	snapClient.New(serverKey, midtrans.Sandbox)
+
+	// [B2] Frontend URL diambil dari environment variable APP_FRONTEND_URL
+	frontendURL := os.Getenv("APP_FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
 
 	// Menyusun Rincian Pembayaran
 	req := &snap.Request{
@@ -65,21 +68,15 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 			Secure: true,
 		},
 		Callbacks: &snap.Callbacks{
-			Finish: "http://localhost:5174/orders/" + order.ID,
+			Finish: frontendURL + "/orders/" + order.ID,
 		},
 	}
 
 	// Eksekusi Pembuatan Tiket Transaksi
 	snapResp, snapErr := snapClient.CreateTransaction(req)
 	if snapErr == nil && snapResp != nil {
-		// Simpan token & redirect URL (Bisa diperbarui di DB atau langsung return)
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
-
-		// Kita perbarui record pesanan dengan URL/Token yang baru didapat
-		// Karena kita tidak memiliki method repo UpdatePayment details, kita anggap token tersebut diumpan ke response JSON
-		// Untuk implementasi kokoh, sebaiknya ditambahkan db.Save() di repository.
-		// Namun minimal, frontend dapat menerimanya.
 	} else if snapErr != nil {
 		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token: %v\n", snapErr)
 	}
@@ -104,9 +101,11 @@ func (u *orderUsecase) InstantCheckout(userID string, productID string, variantI
 	}
 
 	// === INISIALISASI MIDTRANS SNAP API ===
+	// [B2] Server Key dan Frontend URL wajib diisi via environment variable
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
-	if serverKey == "" {
-		serverKey = "SB-Mid-server-YOUR_DUMMY_KEY" // Ganti dengan key di Sandbox Midtrans
+	frontendURL := os.Getenv("APP_FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
 	}
 
 	var snapClient snap.Client
@@ -121,7 +120,7 @@ func (u *orderUsecase) InstantCheckout(userID string, productID string, variantI
 			Secure: true,
 		},
 		Callbacks: &snap.Callbacks{
-			Finish: "http://localhost:5174/orders/" + order.ID,
+			Finish: frontendURL + "/orders/" + order.ID,
 		},
 	}
 
@@ -264,21 +263,24 @@ func (u *orderUsecase) ProcessSupplierOrder(supplierID string, orderID string) e
 	return err
 }
 
-// BatchProcessSupplierOrders mengubah banyak pesanan PAID menjadi PROCESSED serentak
+// BatchProcessSupplierOrders mengubah banyak pesanan PAID menjadi PROCESSED serentak.
+// [B4] Menggunakan FindByIDs (satu query SQL IN) alih-alih N+1 loop FindByID.
 func (u *orderUsecase) BatchProcessSupplierOrders(supplierID string, orderIDs []string) error {
 	if len(orderIDs) == 0 {
 		return errors.New("daftar pesanan kosong")
 	}
 
+	// [B4] Ambil semua pesanan sekaligus dengan satu query, bukan N kali FindByID di dalam loop
+	orders, err := u.orderRepo.FindByIDs(orderIDs)
+	if err != nil {
+		return errors.New("gagal mengambil data pesanan: " + err.Error())
+	}
+
 	validOrderIDs := []string{}
 	now := time.Now()
-	
-	for _, orderID := range orderIDs {
-		order, err := u.orderRepo.FindByID(orderID)
-		if err != nil {
-			continue // Abaikan order fiktif
-		}
-		
+
+	for _, order := range orders {
+		// Validasi: pesanan harus berstatus PAID dan mengandung produk milik supplier ini
 		isOwnedBySupplier := false
 		for _, item := range order.Items {
 			if item.Product != nil && item.Product.SupplierID == supplierID {
@@ -288,16 +290,15 @@ func (u *orderUsecase) BatchProcessSupplierOrders(supplierID string, orderIDs []
 		}
 
 		if isOwnedBySupplier && order.Status == "PAID" {
-			validOrderIDs = append(validOrderIDs, orderID)
-			
-			// Siaga log Audit (Async/Looping Memory)
+			validOrderIDs = append(validOrderIDs, order.ID)
+
 			if u.auditLogRepo != nil {
 				_ = u.auditLogRepo.Insert(&domain.AuditLog{
 					ID:        uuid.New().String(),
 					UserID:    supplierID,
 					Action:    "SUPPLIER_BATCH_PROCESS_ORDER",
 					Entity:    "orders",
-					EntityID:  orderID,
+					EntityID:  order.ID,
 					OldValues: "PAID",
 					NewValues: "PROCESSED",
 					CreatedAt: now,

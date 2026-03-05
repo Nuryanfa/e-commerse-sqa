@@ -37,6 +37,8 @@ type OrderRepository interface {
 	InstantCheckoutTransaction(userID string, item CartItem, voucherCode string) (*Order, error)
 	FindByUserID(userID string) ([]Order, error)
 	FindByID(orderID string) (*Order, error)
+	// [B4] FindByIDs mengambil banyak pesanan sekaligus dengan satu query SQL IN
+	FindByIDs(orderIDs []string) ([]Order, error)
 	UpdateStatus(orderID string, status string) error
 	FindPaidOrders() ([]Order, error)
 	FindProcessedOrders() ([]Order, error)

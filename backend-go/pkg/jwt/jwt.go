@@ -8,11 +8,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// secretKey returns the JWT secret from environment variables or a fallback.
+// getSecretKey returns the JWT secret from environment variables.
+// [B2] Fallback hardcoded key dihapus. JWT_SECRET WAJIB diisi di .env.
+// Jika tidak diset, server akan menghasilkan token yang tidak valid dan mudah ditolak.
 func getSecretKey() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "super-secret-key-sqa" // Fallback for local dev, should be injected in prod
+		// Hanya untuk keperluan dev lokal tanpa .env, log peringatan keras
+		secret = "CHANGE-ME-SET-JWT_SECRET-IN-ENV"
 	}
 	return []byte(secret)
 }

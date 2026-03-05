@@ -306,6 +306,16 @@ func (r *orderRepository) FindByID(orderID string) (*domain.Order, error) {
 	return &order, nil
 }
 
+// [B4] FindByIDs mengambil banyak pesanan sekaligus dengan satu query SQL IN
+// Menggantikan pola N+1 loop FindByID yang sebelumnya dipakai di BatchProcessSupplierOrders
+func (r *orderRepository) FindByIDs(orderIDs []string) ([]domain.Order, error) {
+	var orders []domain.Order
+	err := r.db.Preload("Items.Product").
+		Where("id_order IN ?", orderIDs).
+		Find(&orders).Error
+	return orders, err
+}
+
 func (r *orderRepository) UpdateStatus(orderID string, status string) error {
 	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Update("status", status).Error
 }
