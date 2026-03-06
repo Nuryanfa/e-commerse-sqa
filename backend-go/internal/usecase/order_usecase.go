@@ -30,6 +30,35 @@ func NewOrderUsecase(oRepo domain.OrderRepository, cRepo domain.CartRepository, 
 	}
 }
 
+// [B1] createSnapToken adalah private helper yang menyatukan logika inisialisasi Midtrans
+// yang sebelumnya terduplikasi identik di Checkout() dan InstantCheckout().
+// Mengembalikan *snap.Response dan error.
+func createSnapToken(orderID string, totalAmount float64) (*snap.Response, error) {
+	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
+	frontendURL := os.Getenv("APP_FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
+	var snapClient snap.Client
+	snapClient.New(serverKey, midtrans.Sandbox)
+
+	req := &snap.Request{
+		TransactionDetails: midtrans.TransactionDetails{
+			OrderID:  orderID,
+			GrossAmt: int64(totalAmount),
+		},
+		CreditCard: &snap.CreditCardDetails{
+			Secure: true,
+		},
+		Callbacks: &snap.Callbacks{
+			Finish: frontendURL + "/orders/" + orderID,
+		},
+	}
+
+	return snapClient.CreateTransaction(req)
+}
+
 func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Order, error) {
 	cartItems, err := u.cartRepo.FindByUserID(userID)
 	if err != nil {
@@ -45,40 +74,13 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 		return nil, errors.New("Checkout gagal: " + err.Error())
 	}
 
-	// === INISIALISASI MIDTRANS SNAP API ===
-	// [B2] Server Key wajib diisi via environment variable MIDTRANS_SERVER_KEY
-	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
-
-	var snapClient snap.Client
-	snapClient.New(serverKey, midtrans.Sandbox)
-
-	// [B2] Frontend URL diambil dari environment variable APP_FRONTEND_URL
-	frontendURL := os.Getenv("APP_FRONTEND_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:5173"
-	}
-
-	// Menyusun Rincian Pembayaran
-	req := &snap.Request{
-		TransactionDetails: midtrans.TransactionDetails{
-			OrderID:  order.ID,
-			GrossAmt: int64(order.TotalAmount),
-		},
-		CreditCard: &snap.CreditCardDetails{
-			Secure: true,
-		},
-		Callbacks: &snap.Callbacks{
-			Finish: frontendURL + "/orders/" + order.ID,
-		},
-	}
-
-	// Eksekusi Pembuatan Tiket Transaksi
-	snapResp, snapErr := snapClient.CreateTransaction(req)
+	// [B1] Gunakan helper untuk menghindari duplikasi blok Midtrans
+	snapResp, snapErr := createSnapToken(order.ID, order.TotalAmount)
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
 	} else if snapErr != nil {
-		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token: %v\n", snapErr)
+		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token (Checkout): %v\n", snapErr)
 	}
 
 	return order, nil
@@ -100,36 +102,13 @@ func (u *orderUsecase) InstantCheckout(userID string, productID string, variantI
 		return nil, errors.New("Beli Langsung gagal: " + err.Error())
 	}
 
-	// === INISIALISASI MIDTRANS SNAP API ===
-	// [B2] Server Key dan Frontend URL wajib diisi via environment variable
-	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
-	frontendURL := os.Getenv("APP_FRONTEND_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:5173"
-	}
-
-	var snapClient snap.Client
-	snapClient.New(serverKey, midtrans.Sandbox)
-
-	req := &snap.Request{
-		TransactionDetails: midtrans.TransactionDetails{
-			OrderID:  order.ID,
-			GrossAmt: int64(order.TotalAmount),
-		},
-		CreditCard: &snap.CreditCardDetails{
-			Secure: true,
-		},
-		Callbacks: &snap.Callbacks{
-			Finish: frontendURL + "/orders/" + order.ID,
-		},
-	}
-
-	snapResp, snapErr := snapClient.CreateTransaction(req)
+	// [B1] Gunakan helper untuk menghindari duplikasi blok Midtrans
+	snapResp, snapErr := createSnapToken(order.ID, order.TotalAmount)
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
 	} else if snapErr != nil {
-		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token: %v\n", snapErr)
+		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token (InstantCheckout): %v\n", snapErr)
 	}
 
 	return order, nil
@@ -206,8 +185,7 @@ func (u *orderUsecase) MarkDelivered(orderID string, courierID string) error {
 		return errors.New("pesanan harus berstatus SHIPPED untuk ditandai delivered")
 	}
 
-	now := time.Now()
-	_ = now // DeliveredAt di-set via repository update
+	// [B5] Variabel `now` dan dead code `_ = now` dihapus. DeliveredAt di-set oleh repository.
 	return u.orderRepo.UpdateStatus(orderID, "DELIVERED")
 }
 

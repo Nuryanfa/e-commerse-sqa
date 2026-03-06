@@ -11,12 +11,8 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/pkg/password"
 )
 
-type UserUsecase interface {
-	Register(user *domain.User) error
-	Login(email, password string) (string, string, error)
-	UpdateProfile(userID, name, phone, address string) error
-}
-
+// [B3] Interface UserUsecase dihapus dari sini — definisi sahih ada di internal/domain/user.go.
+// Prinsip Clean Architecture: interface milik domain, bukan usecase layer.
 type userUsecase struct {
 	userRepo domain.UserRepository
 }
