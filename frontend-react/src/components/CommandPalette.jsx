@@ -107,7 +107,7 @@ export default function CommandPalette({ isOpen, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col max-h-[85vh]"
+            className="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-900 shadow-2xl rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col max-h-[85vh]"
           >
             {/* Search Input */}
             <div className="flex items-center px-4 py-4 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 relative">

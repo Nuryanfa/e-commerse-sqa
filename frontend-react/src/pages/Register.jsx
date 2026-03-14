@@ -21,7 +21,7 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/users/register', { nama: nama, email, password, role });
+      await api.post('/auth/register', { nama: nama, email, password, role });
       // Assuming 'register' from useAuth might handle toast or it's removed.
       // If toast is still needed, useToast should be re-imported.
       // For now, following the provided snippet which removes toast.success from here.

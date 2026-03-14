@@ -16,7 +16,7 @@ func init() {
 // setupRateLimitedRouter membuat router Gin dengan rate limiter untuk testing
 func setupRateLimitedRouter(rps rate.Limit, burst int) *gin.Engine {
 	router := gin.New()
-	router.POST("/api/users/login", RateLimitMiddleware(rps, burst), func(c *gin.Context) {
+	router.POST("/api/v1/auth/login", RateLimitMiddleware(rps, burst), func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "login success"})
 	})
 	return router
@@ -29,7 +29,7 @@ func TestRateLimiter_AllowsWithinLimit(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/api/users/login", nil)
+		req, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 		req.RemoteAddr = "192.168.1.1:12345"
 		router.ServeHTTP(w, req)
 
@@ -47,14 +47,14 @@ func TestRateLimiter_BlocksExcessRequests(t *testing.T) {
 	// Habiskan burst
 	for i := 0; i < 2; i++ {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/api/users/login", nil)
+		req, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 		req.RemoteAddr = "10.0.0.1:12345"
 		router.ServeHTTP(w, req)
 	}
 
 	// Request ke-3 harus kena rate limit
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req.RemoteAddr = "10.0.0.1:12345"
 	router.ServeHTTP(w, req)
 
@@ -69,7 +69,7 @@ func TestRateLimiter_DifferentIPsIndependent(t *testing.T) {
 
 	// IP A: habiskan burst-nya
 	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req1, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req1.RemoteAddr = "10.0.0.1:12345"
 	router.ServeHTTP(w1, req1)
 
@@ -79,7 +79,7 @@ func TestRateLimiter_DifferentIPsIndependent(t *testing.T) {
 
 	// IP A: request kedua harus ditolak
 	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req2, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req2.RemoteAddr = "10.0.0.1:12345"
 	router.ServeHTTP(w2, req2)
 
@@ -89,7 +89,7 @@ func TestRateLimiter_DifferentIPsIndependent(t *testing.T) {
 
 	// IP B: harus masih bisa (independent rate limit)
 	w3 := httptest.NewRecorder()
-	req3, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req3, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req3.RemoteAddr = "10.0.0.2:12345"
 	router.ServeHTTP(w3, req3)
 
@@ -104,13 +104,13 @@ func TestRateLimiter_ResponseBody(t *testing.T) {
 
 	// Habiskan burst
 	w1 := httptest.NewRecorder()
-	req1, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req1, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req1.RemoteAddr = "172.16.0.1:12345"
 	router.ServeHTTP(w1, req1)
 
 	// Request berikutnya harus di-rate limit dan memiliki pesan yang benar
 	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/api/users/login", nil)
+	req2, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 	req2.RemoteAddr = "172.16.0.1:12345"
 	router.ServeHTTP(w2, req2)
 

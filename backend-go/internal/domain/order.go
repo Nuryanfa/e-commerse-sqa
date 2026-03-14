@@ -1,13 +1,17 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Order struct {
 	ID          string      `json:"id_order" gorm:"column:id_order;primaryKey"`
-	UserID      string      `json:"id_user" gorm:"column:id_user" binding:"required"`
+	UserID      string      `json:"id_user" gorm:"column:id_user;index" binding:"required"`
 	TotalAmount float64     `json:"total_amount" gorm:"column:total_amount"`
-	Status         string      `json:"status" gorm:"column:status"`
-	CourierID      *string     `json:"courier_id" gorm:"column:courier_id"`
+	Status         string      `json:"status" gorm:"column:status;index"`
+	CourierID      *string     `json:"courier_id" gorm:"column:courier_id;index"`
 	DiscountAmount float64     `json:"discount_amount" gorm:"column:discount_amount;default:0"`
 	VoucherCode    *string     `json:"voucher_code" gorm:"column:voucher_code"`
 	PaymentToken   *string     `json:"payment_token" gorm:"column:payment_token"`
@@ -17,12 +21,13 @@ type Order struct {
 	Items       []OrderItem `json:"items" gorm:"foreignKey:OrderID;references:ID"`
 	CreatedAt   time.Time   `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   time.Time   `json:"updated_at" gorm:"column:updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
 }
 
 type OrderItem struct {
 	ID              string    `json:"id_order_item" gorm:"column:id_order_item;primaryKey"`
-	OrderID         string    `json:"id_order" gorm:"column:id_order" binding:"required"`
-	ProductID       string          `json:"id_product" gorm:"column:id_product" binding:"required"`
+	OrderID         string    `json:"id_order" gorm:"column:id_order;index" binding:"required"`
+	ProductID       string          `json:"id_product" gorm:"column:id_product;index" binding:"required"`
 	Product         *Product        `json:"product,omitempty" gorm:"foreignKey:ProductID;references:ID"`
 	VariantID       *string         `json:"id_variant,omitempty" gorm:"column:id_variant"`
 	Variant         *ProductVariant `json:"variant,omitempty" gorm:"foreignKey:VariantID;references:ID"`

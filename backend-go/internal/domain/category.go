@@ -1,13 +1,18 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Category struct {
 	ID          string    `json:"id_category" gorm:"column:id_category;primaryKey"`
 	Name        string    `json:"name" gorm:"column:name" binding:"required,min=3"`
 	Description string    `json:"description" gorm:"column:description"`
-	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"column:updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
 }
 
 type CategoryRepository interface {

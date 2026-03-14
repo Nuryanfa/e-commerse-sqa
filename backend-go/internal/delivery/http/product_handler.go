@@ -25,7 +25,7 @@ func NewProductHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, u
 	}
 
 	// Public routes — tanpa login
-	publicGroup := publicRouter.Group("/api/products")
+	publicGroup := publicRouter.Group("/api/v1/products")
 	{
 		publicGroup.GET("", handler.FindAll)
 		publicGroup.GET("/search", handler.Search) // Harus sebelum /:id agar tidak tertangkap wildcard

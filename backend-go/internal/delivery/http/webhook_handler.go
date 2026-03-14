@@ -22,7 +22,7 @@ func NewWebhookHandler(router *gin.RouterGroup, u domain.OrderUsecase) {
 		orderUsecase: u,
 	}
 
-	router.POST("/midtrans", handler.MidtransNotification)
+	router.POST("/webhook", handler.MidtransNotification)
 }
 
 // verifyMidtransSignature memvalidasi signature_key dari payload Midtrans.

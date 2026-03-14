@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useModal } from '../../context/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, Package, CheckCircle, ListTodo, Box, CreditCard, Loader2 } from 'lucide-react';
+import { Truck, Package, CheckCircle, ListTodo, Box, CreditCard, Loader2, ShieldAlert } from 'lucide-react';
 
 export default function CourierDashboard() {
   const [available, setAvailable] = useState([]);
@@ -12,6 +12,8 @@ export default function CourierDashboard() {
   const [tab, setTab] = useState('available');
   const [shipping, setShipping] = useState(null);
   const [delivering, setDelivering] = useState(null);
+  const [returnDisputes, setReturnDisputes] = useState([]);
+  const [returnActioning, setReturnActioning] = useState(null);
   const toast = useToast();
   const modal = useModal();
 
@@ -20,9 +22,11 @@ export default function CourierDashboard() {
     Promise.all([
       api.get('/courier/available'),
       api.get('/courier/my-orders'),
-    ]).then(([a, m]) => {
+      api.get('/disputes')
+    ]).then(([a, m, d]) => {
       setAvailable(a.data.data || []);
       setMyOrders(m.data.data || []);
+      setReturnDisputes(d.data.data || []);
     }).catch(() => {}).finally(() => setLoading(false));
   };
   useEffect(fetchData, []);
@@ -58,6 +62,30 @@ export default function CourierDashboard() {
       }
     });
   };
+
+  const pickupReturn = async (id) => {
+    setReturnActioning(id);
+    try {
+      await api.post(`/courier/disputes/${id}/pickup`);
+      toast.success('Berhasil mengambil tugas retur barang');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal mengambil tugas retur');
+    }
+    setReturnActioning(null);
+  }
+
+  const deliverReturn = async (id) => {
+    setReturnActioning(id);
+    try {
+      await api.post(`/courier/disputes/${id}/deliver`);
+      toast.success('Berhasil mengembalikan barang retur ke Supplier');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal menyerahkan barang retur');
+    }
+    setReturnActioning(null);
+  }
 
   const statusConfig = {
     PROCESSED: { bg: 'bg-amber-100 text-amber-700 border-amber-200', icon: <Package className="w-5 h-5" /> },
@@ -110,6 +138,7 @@ export default function CourierDashboard() {
           { key: 'available', label: `Tersedia (${available.length})`, hasNew: available.length > 0, icon: <ListTodo className="w-4 h-4 inline mr-1.5" /> },
           { key: 'active', label: `Sedang Kirim (${shippedOrders.length})`, icon: <Truck className="w-4 h-4 inline mr-1.5" /> },
           { key: 'done', label: `Selesai (${deliveredOrders.length})`, icon: <CheckCircle className="w-4 h-4 inline mr-1.5" /> },
+          { key: 'returns', label: `Tugas Retur (${returnDisputes.filter(d => d.status === 'APPROVED_FOR_RETURN' || d.status === 'RETURNING').length})`, hasNew: returnDisputes.some(d => d.status === 'APPROVED_FOR_RETURN'), icon: <ShieldAlert className="w-4 h-4 inline mr-1.5" /> }
         ].map(t => (
           <button 
             key={t.key} 
@@ -210,6 +239,44 @@ export default function CourierDashboard() {
                     </div>
                   </div>
                   <span className={`text-xs font-medium px-3 py-1.5 rounded-full border flex items-center gap-1 ${statusConfig.DELIVERED.bg}`}><CheckCircle className="w-3 h-3" /> Terkirim</span>
+                </div>
+              </div>
+            ))
+          )}
+        </motion.div>
+      )}
+
+      {/* Returns */}
+      {tab === 'returns' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          {returnDisputes.filter(d => d.status === 'APPROVED_FOR_RETURN' || d.status === 'RETURNING').length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center flex flex-col items-center">
+              <ShieldAlert className="w-16 h-16 text-gray-300 mb-4 animate-float" />
+              <p className="text-gray-400">Tidak ada penugasan komplain retur.</p>
+            </div>
+          ) : (
+             returnDisputes.filter(d => d.status === 'APPROVED_FOR_RETURN' || d.status === 'RETURNING').map((d, i) => (
+              <div key={d.id_dispute} className={`bg-white rounded-xl border border-rose-100 p-5 animate-fade-in-up stagger-${Math.min(i + 1, 8)} group`}>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500"><ShieldAlert className="w-6 h-6" /></div>
+                    <div>
+                      <p className="text-[10px] border flex items-center gap-1 w-max px-2 py-0.5 rounded-full border-rose-200 bg-rose-50 text-rose-700 font-bold mb-1 uppercase">
+                          <Truck className="w-3 h-3"/> TUGAS RETUR BARANG
+                      </p>
+                      <p className="font-bold text-gray-800">Order #{d.id_order?.slice(0, 8)}</p>
+                      <p className="text-xs text-gray-600 font-medium max-w-sm truncate mt-0.5" title={d.reason}>Alasan: {d.reason}</p>
+                    </div>
+                  </div>
+                  {d.status === 'APPROVED_FOR_RETURN' ? (
+                      <button onClick={() => pickupReturn(d.id_dispute)} disabled={returnActioning === d.id_dispute} className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-blue-200 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 inline-flex items-center gap-2">
+                        {returnActioning === d.id_dispute ? <Loader2 className="w-4 h-4 animate-spin" /> : <Box className="w-4 h-4" />} Ambil dari Pembeli
+                      </button>
+                  ) : (
+                      <button onClick={() => deliverReturn(d.id_dispute)} disabled={returnActioning === d.id_dispute} className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-teal-200 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer disabled:opacity-50 inline-flex items-center gap-2">
+                        {returnActioning === d.id_dispute ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Serahkan ke Toko
+                      </button>
+                  )}
                 </div>
               </div>
             ))

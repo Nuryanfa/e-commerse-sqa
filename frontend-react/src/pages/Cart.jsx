@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useModal } from '../context/ModalContext';
@@ -15,9 +15,10 @@ export default function Cart() {
   const [checkoutStep, setCheckoutStep] = useState(0); // 0: Hidden, 1: Address, 2: Payment/Confirm
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutData, setCheckoutData] = useState({ 
-    address: '', paymentMethod: 'cod' 
+    address: '', paymentMethod: 'midtrans' 
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const modal = useModal();
 
@@ -25,23 +26,49 @@ export default function Cart() {
     if (user) setCheckoutData(prev => ({ ...prev, address: user.address || '' }));
   }, [user]);
 
-  const fetchCart = () => {
-    setLoading(true);
-    api.get('/cart').then(res => setCart(res.data.data || [])).catch(() => setCart([])).finally(() => setLoading(false));
+  const fetchCart = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const res = await api.get('/cart');
+      setCart(res.data.data || []);
+    } catch (err) {
+      setCart([]);
+    } finally {
+      if (isInitial) setLoading(false);
+    }
   };
-  useEffect(() => { fetchCart(); }, []);
+  useEffect(() => { fetchCart(true); }, []);
 
   const updateQty = async (id, qty) => {
     if (qty < 1) return remove(id);
-    try { await api.put(`/cart/${id}`, { quantity: qty }); fetchCart(); }
-    catch (err) { toast.error(err.response?.data?.error || 'Gagal mengubah jumlah'); }
+    // Optimistic UI update
+    setCart(prev => prev.map(item => item.id_cart_item === id ? { ...item, quantity: qty } : item));
+    try { 
+      await api.put(`/cart/${id}`, { quantity: qty }); 
+      fetchCart(false); 
+    }
+    catch (err) { 
+      toast.error(err.response?.data?.error || 'Gagal mengubah jumlah');
+      fetchCart(false); // Revert on fail
+    }
+  };
+
+  const handleLocalQtyChange = (id, qtyStr) => {
+    const val = parseInt(qtyStr);
+    setCart(prev => prev.map(item => item.id_cart_item === id ? { ...item, quantity: isNaN(val) ? '' : val } : item));
+  };
+
+  const handleQtyBlur = (id, qtyStr) => {
+     let val = parseInt(qtyStr);
+     if (isNaN(val) || val < 1) val = 1;
+     updateQty(id, val);
   };
 
   const remove = (id) => {
     modal.confirm({
       title: 'Hapus Item', message: 'Hapus sayuran ini dari keranjang?', type: 'danger', confirmText: 'Hapus',
       onConfirm: async () => {
-        try { await api.delete(`/cart/${id}`); toast.success('Dihapus dari keranjang'); fetchCart(); }
+        try { await api.delete(`/cart/${id}`); toast.success('Dihapus dari keranjang'); fetchCart(false); }
         catch (err) { toast.error(err.response?.data?.error || 'Gagal menghapus'); }
       }
     });
@@ -56,8 +83,20 @@ export default function Cart() {
     setCheckoutStep(1);
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('checkout') === '1' && !loading && cart.length > 0 && checkoutStep === 0) {
+      startCheckout();
+      navigate('/cart', { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, loading, cart.length, checkoutStep]);
+
+
   const handleCheckoutSubmit = async () => {
-    if (!checkoutData.address) return toast.error('Alamat pengiriman wajib diisi');
+    if (!checkoutData.address || checkoutData.address.trim().length < 15) {
+      return toast.error('Alamat pengiriman minimal 15 karakter untuk menghindari alamat fiktif.');
+    }
     
     setCheckingOut(true);
     try {
@@ -67,7 +106,11 @@ export default function Cart() {
       });
       
       const orderData = res.data.order;
-      if (orderData && orderData.payment_token) {
+      
+      if (checkoutData.paymentMethod === 'midtrans') {
+         if (!orderData || !orderData.payment_token) {
+             throw new Error("Layanan Midtrans sedang tidak tersedia. Gunakan metode COD.");
+         }
          // Panggil Jendela Popup Midtrans
          window.snap.pay(orderData.payment_token, {
             onSuccess: function(result) {
@@ -87,11 +130,12 @@ export default function Cart() {
             }
          });
       } else {
-         toast.success('Pesanan berhasil dibuat secara offline!');
+         // Fallback untuk COD atau Transfer
+         toast.success('Pesanan berhasil dibuat!');
          navigate(`/orders/${orderData?.id_order || res.data.id_order}`);
       }
     } catch (err) { 
-      toast.error(err.response?.data?.error || 'Gagal checkout'); 
+      toast.error(err.response?.data?.error || err.message || 'Gagal checkout'); 
     }
     setCheckingOut(false);
   };
@@ -139,11 +183,9 @@ export default function Cart() {
               {cart.map((item, i) => (
                 <motion.div 
                   key={item.id_cart_item} 
-                  layout
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.8, x: -50, transition: { duration: 0.2 } }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 }}
                   className="card-organic p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5 relative group"
                 >
                   {/* Delete Button Absolut (Boleh pindah ke dalam flow flex juga) */}
@@ -169,7 +211,20 @@ export default function Cart() {
                       <button onClick={() => updateQty(item.id_cart_item, Math.max(1, item.quantity - 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-gray-500 hover:text-emerald-700 dark:hover:text-emerald-400">
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="w-8 text-center text-sm font-black" style={{ color: 'var(--text-heading)' }}>{item.quantity}</span>
+                      <input 
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleLocalQtyChange(item.id_cart_item, e.target.value)}
+                        onBlur={(e) => handleQtyBlur(item.id_cart_item, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        className="w-12 text-center text-sm font-black bg-transparent border-none focus:ring-0 p-0 m-0 [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" 
+                        style={{ color: 'var(--text-heading)' }} 
+                      />
                       <button onClick={() => updateQty(item.id_cart_item, item.quantity + 1)} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-gray-500 hover:text-emerald-700 dark:hover:text-emerald-400">
                         <Plus className="w-4 h-4" />
                       </button>
@@ -299,46 +354,6 @@ export default function Cart() {
                     </div>
 
                     <div className="space-y-4">
-                      {/* COD Option */}
-                      <label className={`block border-2 rounded-2xl p-4 cursor-pointer transition-all ${checkoutData.paymentMethod === 'cod' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300'}`}>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <input 
-                              type="radio" 
-                              name="payment" 
-                              value="cod" 
-                              checked={checkoutData.paymentMethod === 'cod'} 
-                              onChange={() => setCheckoutData({...checkoutData, paymentMethod: 'cod'})}
-                              className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <div>
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">Bayar di Tempat (COD)</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Bayar saat sayuran tiba di rumah</p>
-                            </div>
-                          </div>
-                        </div>
-                      </label>
-
-                      {/* Bank Transfer (Mock) */}
-                      <label className={`block border-2 rounded-2xl p-4 cursor-pointer transition-all ${checkoutData.paymentMethod === 'transfer' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300'}`}>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <input 
-                              type="radio" 
-                              name="payment" 
-                              value="transfer" 
-                              checked={checkoutData.paymentMethod === 'transfer'} 
-                              onChange={() => setCheckoutData({...checkoutData, paymentMethod: 'transfer'})}
-                              className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <div>
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">Transfer Manual</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Verifikasi via WhatsApp</p>
-                            </div>
-                          </div>
-                        </div>
-                      </label>
-
                       {/* Midtrans Online Payment */}
                       <label className={`block border-2 rounded-2xl p-4 cursor-pointer transition-all ${checkoutData.paymentMethod === 'midtrans' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-emerald-300'}`}>
                         <div className="flex justify-between items-center">
@@ -352,8 +367,8 @@ export default function Cart() {
                               className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
                             />
                             <div>
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">Pembayaran Online (Midtrans)</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Kartu Kredit, GoPay, QRIS, Virtual Account</p>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">Pembayaran Online Otomatis (Midtrans)</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Mendukung GoPay, QRIS, Virtual Account, & Kartu Kredit</p>
                             </div>
                           </div>
                         </div>

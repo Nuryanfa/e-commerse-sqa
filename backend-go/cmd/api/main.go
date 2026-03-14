@@ -63,7 +63,7 @@ func main() {
 	}))
 
 	// Health Check
-	router.GET("/api/health", func(c *gin.Context) {
+	router.GET("/api/v1/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "Server berjalan dan siap!",
@@ -114,7 +114,7 @@ func main() {
 
 	// 4a. Admin-only routes (JWT + Role "admin")
 	// Digunakan untuk manipulasi Katalog (Create/Update/Delete Produk & Kategori)
-	adminRoutes := router.Group("/api")
+	adminRoutes := router.Group("/api/v1")
 	adminRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("admin"))
 	{
 		deliveryHTTP.NewCategoryHandler(router, adminRoutes, categoryUsecase)
@@ -123,7 +123,7 @@ func main() {
 
 	// 4b. Auth-only routes (JWT — semua role: pembeli, admin, dll)
 	// Digunakan untuk Keranjang Belanja, Checkout, dan Riwayat Pesanan
-	authRoutes := router.Group("/api")
+	authRoutes := router.Group("/api/v1")
 	authRoutes.Use(middleware.AuthMiddleware())
 	{
 		deliveryHTTP.NewCartHandler(authRoutes, cartUsecase)
@@ -131,25 +131,25 @@ func main() {
 	}
 
 	// Open endpoints that also have protected childs
-	deliveryHTTP.NewReviewHandler(router.Group("/api"), reviewUsecase)
-	deliveryHTTP.NewWishlistHandler(router.Group("/api"), wishlistUsecase)
+	deliveryHTTP.NewReviewHandler(router.Group("/api/v1"), reviewUsecase)
+	deliveryHTTP.NewWishlistHandler(router.Group("/api/v1"), wishlistUsecase)
 
 	// 4c. Supplier-only routes (JWT + Role "supplier")
-	supplierRoutes := router.Group("/api/supplier")
+	supplierRoutes := router.Group("/api/v1/supplier")
 	supplierRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("supplier"))
 	{
 		deliveryHTTP.NewSupplierHandler(supplierRoutes, productUsecase, orderUsecase)
 	}
 
 	// 4d. Courier-only routes (JWT + Role "courier")
-	courierRoutes := router.Group("/api/courier")
+	courierRoutes := router.Group("/api/v1/courier")
 	courierRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("courier"))
 	{
-		deliveryHTTP.NewCourierHandler(courierRoutes, orderUsecase)
+		deliveryHTTP.NewCourierHandler(courierRoutes, orderUsecase, disputeUsecase)
 	}
 
 	// 4e. Dispute / Pusat Resolusi (Campuran Role)
-	disputeRoutes := router.Group("/api/disputes")
+	disputeRoutes := router.Group("/api/v1/disputes")
 	disputeRoutes.Use(middleware.AuthMiddleware()) // Harus login
 	{
 		disputeHandler := deliveryHTTP.NewDisputeHandler(disputeUsecase)
@@ -160,16 +160,16 @@ func main() {
 		disputeRoutes.GET("/:id", disputeHandler.GetDisputeDetail)
 		disputeRoutes.POST("/:id/reply", disputeHandler.ReplyDispute)
 
-		// Hanya Admin yang bisa mengetok palu penyelesaian mediasi sengketa
+		// Hanya Admin dan Supplier yang bisa mengetok palu penyelesaian mediasi sengketa
 		adminDispute := disputeRoutes.Group("")
-		adminDispute.Use(middleware.RoleMiddleware("admin"))
+		adminDispute.Use(middleware.RoleMiddleware("admin", "supplier"))
 		{
 			adminDispute.PUT("/:id/resolve", disputeHandler.ResolveDispute)
 		}
 	}
 
 	// 4e. Webhook Public Endpoints (Tanpa Auth / Token JWT)
-	webhookRoutes := router.Group("/api/webhook")
+	webhookRoutes := router.Group("/api/v1/payments")
 	{
 		deliveryHTTP.NewWebhookHandler(webhookRoutes, orderUsecase)
 	}

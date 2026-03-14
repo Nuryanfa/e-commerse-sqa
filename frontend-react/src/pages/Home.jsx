@@ -6,6 +6,7 @@ import { Users, Leaf, ShieldCheck, Heart, Zap, Lock, Search, ShoppingCart, Credi
 import api from '../services/api';
 import Footer from '../components/Footer';
 
+
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
@@ -21,162 +22,177 @@ export default function Home() {
 
   const stats = [
     { icon: <Users className="w-6 h-6 text-white" />, value: '50+', label: 'Petani Lokal', gradient: 'from-emerald-400 to-emerald-600' },
-    { icon: <Leaf className="w-6 h-6 text-white" />, value: '100+', label: 'Produk Segar', gradient: 'from-teal-400 to-teal-600' },
-    { icon: <Heart className="w-6 h-6 text-white" />, value: '1000+', label: 'Pelanggan', gradient: 'from-green-400 to-green-600' },
-    { icon: <Truck className="w-6 h-6 text-white" />, value: '24h', label: 'Pengiriman', gradient: 'from-emerald-500 to-teal-500' },
+    { icon: <Leaf className="w-6 h-6 text-white" />, value: '100+', label: 'Produk Segar', gradient: 'from-emerald-500 to-emerald-700' },
+    { icon: <Heart className="w-6 h-6 text-white" />, value: '1000+', label: 'Pelanggan', gradient: 'from-emerald-300 to-emerald-500' },
+    { icon: <Truck className="w-6 h-6 text-white" />, value: '24h', label: 'Pengiriman', gradient: 'from-emerald-600 to-emerald-800' },
   ];
 
   const features = [
-    { icon: <Leaf className="w-10 h-10 mx-auto text-emerald-500" />, title: 'Organik & Segar', desc: 'Dipetik langsung dari kebun pilihan, tanpa bahan kimia.' },
-    { icon: <ShieldCheck className="w-10 h-10 mx-auto text-emerald-500" />, title: 'Kualitas Premium', desc: 'Melewati quality control ketat sebelum sampai ke Anda.' },
-    { icon: <Zap className="w-10 h-10 mx-auto text-emerald-500" />, title: 'Pengiriman Cepat', desc: 'Kurir terlatih mengantarkan pesanan dalam hitungan jam.' },
-    { icon: <Lock className="w-10 h-10 mx-auto text-emerald-500" />, title: 'Pembayaran Aman', desc: 'Transaksi dilindungi dengan sistem keamanan berlapis.' },
+    { 
+      title: 'Organik & Segar', 
+      description: 'Dipetik langsung dari kebun pilihan, tanpa bahan kimia tambahan.',
+      link: '#', 
+    },
+    { 
+      title: 'Kualitas Premium', 
+      description: 'Melewati quality control ketat sebelum sampai ke meja makan Anda.',
+      link: '#',
+    },
+    { 
+      title: 'Pengiriman Cepat', 
+      description: 'Kurir terlatih mengantarkan pesanan dalam hitungan jam untuk menjaga kesegaran.',
+      link: '#',
+    },
   ];
 
-  const steps = [
-    { num: '01', icon: <Search className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />, title: 'Pilih Produk', desc: 'Jelajahi katalog sayur segar kami' },
-    { num: '02', icon: <CreditCard className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />, title: 'Checkout', desc: 'Masukkan ke keranjang dan bayar' },
-    { num: '03', icon: <Package className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />, title: 'Dikemas', desc: 'Sayur dikemas dengan segar oleh petani' },
-    { num: '04', icon: <Truck className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />, title: 'Diantar', desc: 'Kurir mengantarkan ke rumah Anda' },
+  const bentoItems = [
+    {
+      title: "Sayur Organik Pilihan",
+      description: "Kami hanya bekerja sama dengan petani yang memiliki sertifikasi organik.",
+      color: "bg-emerald-50 dark:bg-emerald-900/20",
+      icon: <Leaf className="h-6 w-6 text-emerald-600" />,
+    },
+    {
+      title: "Langsung Dari Petani",
+      description: "Memangkas jalur distribusi untuk harga yang lebih adil bagi petani dan konsumen.",
+      color: "bg-emerald-100 dark:bg-emerald-800/20",
+      icon: <Users className="h-6 w-6 text-emerald-600" />,
+    },
+    {
+      title: "Keamanan Transaksi",
+      description: "Sistem pembayaran terenkripsi untuk melindungi setiap rupiah Anda.",
+      color: "bg-emerald-200/50 dark:bg-emerald-700/20",
+      icon: <Lock className="h-6 w-6 text-emerald-600" />,
+    },
   ];
 
   return (
-    <div style={{ background: 'var(--surface-base)' }}>
+    <div className="font-sans" style={{ background: 'var(--surface-base)' }}>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-slate-50 to-teal-50/40 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/10 -z-10" />
-        <div className="absolute top-20 right-10 w-72 h-72 bg-emerald-200/20 dark:bg-emerald-500/5 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-10 left-10 w-60 h-60 bg-teal-200/20 dark:bg-teal-500/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-white to-emerald-100/40 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 -z-10" />
+        <div className="absolute top-20 right-10 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl -z-10" />
+        <div className="absolute bottom-10 left-10 w-60 h-60 bg-emerald-200/20 rounded-full blur-3xl -z-10" />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* Left */}
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6 bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                🌿 Fresh From Local Farmers
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold mb-8 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm uppercase tracking-widest">
+                🌿 Freshness Guaranteed from Local Farmers
               </div>
-              <h1 className="text-4xl md:text-5xl font-black leading-tight tracking-tight" style={{ color: 'var(--text-heading)' }}>
+              <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tight" style={{ color: 'var(--text-heading)' }}>
                 Sayur Segar,{' '}
-                <span className="gradient-text">Langsung dari</span>{' '}
-                Petani Lokal.
+                <span className="text-emerald-500">Hidup</span>{' '}
+                Lebih Sehat.
               </h1>
-              <p className="mt-5 text-base leading-relaxed max-w-md" style={{ color: 'var(--text-secondary)' }}>
-                Nikmati kualitas terbaik hasil panen hari ini. Kami menghubungkan Anda langsung dengan petani untuk kesegaran yang tak tertandingi.
+              <p className="mt-6 text-lg leading-relaxed max-w-md font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Kurasi hasil bumi terbaik dari petani pilihan. Kami mengantarkan kesegaran alam langsung ke depan pintu rumah Anda.
               </p>
-              <div className="flex flex-wrap gap-3 mt-8">
-                <Link to="/products" className="btn-primary px-7 py-3 text-sm inline-flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4" /> Belanja Sekarang
+              <div className="flex flex-wrap gap-5 mt-10">
+                <Link to="/products" className="btn-primary px-8 py-4 text-sm inline-flex items-center gap-2 shadow-xl shadow-emerald-500/20">
+                  <ShoppingCart className="w-4 h-4" /> Mulai Belanja
                 </Link>
                 {!isAuthenticated && (
-                  <Link to="/register" className="btn-outline px-7 py-3 text-sm">Daftar Gratis</Link>
+                  <Link to="/register" className="btn-outline px-8 py-4 text-sm border-2">Daftar Member</Link>
                 )}
-              </div>
-              <div className="flex items-center gap-2 mt-8">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((_, i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border-2 border-white dark:border-slate-800">
-                      <Smile className="w-4 h-4" />
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Didukung oleh <strong className="text-emerald-600 dark:text-emerald-400">50+</strong> Petani Lokal</p>
               </div>
             </motion.div>
 
-            {/* Right — Product Grid Visual */}
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="hidden lg:block">
-              <div className="relative">
-                <div className="w-80 h-80 rounded-3xl grid grid-cols-3 gap-3 p-4 mx-auto" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-elevated)' }}>
-                  {[...Array(9)].map((_, i) => (
-                    <div key={i} className="rounded-2xl flex items-center justify-center text-emerald-500 transition-all duration-300 hover:scale-110 cursor-default" style={{ background: 'var(--surface-muted)' }}>
-                      <Leaf className="w-8 h-8 opacity-50" />
-                    </div>
-                  ))}
-                </div>
-                <div className="absolute -bottom-4 -left-4 px-4 py-2.5 rounded-2xl animate-slide-up" style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-glow)' }}>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Tersedia</p>
-                  <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{productCount}+ Produk</p>
-                </div>
-              </div>
+            {/* Right Visual */}
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="hidden lg:block relative">
+               <div className="w-full h-[400px] rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-emerald-200/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                  <Leaf className="w-40 h-40 text-emerald-500 opacity-30 animate-pulse" />
+               </div>
+               <div className="absolute -bottom-6 -left-6 p-6 rounded-2xl glass shadow-2xl animate-float">
+                  <p className="text-3xl font-black text-emerald-500">{productCount}+</p>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Produk Tersedia</p>
+               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Stats */}
-      <section className="border-y" style={{ borderColor: 'var(--border-light)', background: 'var(--surface-card)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="py-12 bg-white dark:bg-[#1a1c18] border-y border-[var(--border-light)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.1 }} className="text-center">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${s.gradient} flex items-center justify-center text-xl mx-auto mb-3 shadow-lg shadow-emerald-100/50 dark:shadow-emerald-900/20`}>{s.icon}</div>
-                <p className="text-2xl font-black" style={{ color: 'var(--text-heading)' }}>{s.value}</p>
-                <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+              <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center group">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.gradient} flex items-center justify-center mx-auto mb-4 transform group-hover:rotate-6 transition-transform`}>{s.icon}</div>
+                <h3 className="text-3xl font-black text-[var(--text-heading)]">{s.value}</h3>
+                <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mt-1">{s.label}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12 animate-fade-in-up">
-          <span className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">Mengapa SayurSehat?</span>
-          <h2 className="text-3xl font-black mt-5 tracking-tight" style={{ color: 'var(--text-heading)' }}>Keunggulan Kami</h2>
-          <p className="mt-2 text-sm max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>Kami berkomitmen menghadirkan pengalaman belanja sayur terbaik.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {features.map((f, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.1 }} className="card-organic p-6 text-center group">
-              <div className="block mb-4 group-hover:scale-110 transition-transform duration-300">{f.icon}</div>
-              <h3 className="font-bold text-sm" style={{ color: 'var(--text-heading)' }}>{f.title}</h3>
-              <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
+      {/* Features Section */}
+      <section className="py-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+         <div className="mb-12">
+            <h2 className="text-3xl font-black text-[var(--text-heading)]">Kenapa SayurSehat?</h2>
+            <p className="text-[var(--text-secondary)] mt-2">Standar kualitas tinggi untuk setiap helai daun.</p>
+         </div>
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {bentoItems.map((item, i) => (
+              <div key={i} className={`p-8 rounded-3xl ${item.color} border border-emerald-100 dark:border-emerald-800/30 flex flex-col justify-between ${i === 0 ? 'md:col-span-2' : ''}`}>
+                 <div className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center mb-6">
+                    {item.icon}
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold text-[var(--text-heading)] mb-2">{item.title}</h3>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">{item.description}</p>
+                 </div>
+              </div>
+            ))}
+         </div>
       </section>
 
-      {/* How It Works */}
-      <section style={{ background: 'var(--surface-card)', borderTop: '1px solid var(--border-light)', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center mb-12 animate-fade-in-up">
-            <span className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">Mudah & Cepat</span>
-            <h2 className="text-3xl font-black mt-5 tracking-tight" style={{ color: 'var(--text-heading)' }}>Cara Belanja</h2>
-            <p className="mt-2 text-sm max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>Hanya 4 langkah mudah untuk mendapatkan sayuran segar.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {steps.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative p-6 rounded-2xl group" style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-light)' }}>
-                <span className="absolute top-4 right-4 text-5xl font-black opacity-5" style={{ color: 'var(--text-heading)' }}>{s.num}</span>
-                <div className="block mb-3 group-hover:scale-110 transition-transform duration-300">{s.icon}</div>
-                <h3 className="font-bold text-sm" style={{ color: 'var(--text-heading)' }}>{s.title}</h3>
-                <p className="text-xs mt-1.5" style={{ color: 'var(--text-secondary)' }}>{s.desc}</p>
-              </motion.div>
-            ))}
-          </div>
+      {/* Premium Experience Section */}
+      <section className="py-24 bg-gray-50 dark:bg-gray-900/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="text-center mb-16">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Fitur Utama</span>
+              <h2 className="text-4xl font-black text-[var(--text-heading)] mt-4">Pengalaman Premium</h2>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {features.map((feature, i) => (
+                 <div key={i} className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-xl font-bold text-[var(--text-heading)] mb-4">{feature.title}</h3>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">{feature.description}</p>
+                 </div>
+              ))}
+           </div>
         </div>
       </section>
 
       {/* Featured Products */}
       {products.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="flex items-end justify-between mb-8 animate-fade-in-up">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="flex items-end justify-between mb-12">
             <div>
-              <h2 className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-heading)' }}>Produk Unggulan</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Pilihan terbaik minggu ini</p>
+              <h2 className="text-3xl font-black text-[var(--text-heading)]">Musim Panen Ini</h2>
+              <p className="text-[var(--text-secondary)] mt-1">Stok terbatas langsung dari petani.</p>
             </div>
-            <Link to="/products" className="btn-outline px-5 py-2 text-xs">Lihat Semua →</Link>
+            <Link to="/products" className="text-sm font-bold text-[#9CA986] hover:underline">Lihat Semua Katalog</Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.slice(0, 4).map((p, i) => (
-              <Link key={p.id_product} to={`/products/${p.id_product}`} className={`card-organic overflow-hidden group animate-fade-in-up stagger-${i + 1}`}>
-                <div className="aspect-square flex items-center justify-center" style={{ background: 'var(--surface-muted)' }}>
-                  {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <span className="text-6xl group-hover:scale-110 transition-transform duration-500">🥬</span>}
+              <Link key={p.id_product} to={`/products/${p.id_product}`} className="rounded-2xl overflow-hidden group bg-white dark:bg-[#2a2e25] border border-transparent hover:border-[#9CA986]/30 transition-all duration-300">
+                <div className="aspect-[4/5] bg-[#f7f8f4] dark:bg-[#1a1c18] overflow-hidden">
+                  {p.image_url ? (
+                    <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 transition-all">
+                      <Leaf className="w-20 h-20 text-emerald-500 opacity-20" />
+                    </div>
+                  )}
                 </div>
-                <div className="p-4">
-                  {p.category && <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-accent)' }}>{p.category.name}</span>}
-                  <h3 className="text-sm font-bold mt-0.5 truncate" style={{ color: 'var(--text-heading)' }}>{p.name}</h3>
-                  <p className="text-lg font-black mt-1" style={{ color: 'var(--text-accent)' }}>Rp {p.price?.toLocaleString('id-ID')}</p>
+                <div className="p-5">
+                  <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{p.category?.name || 'Organik'}</p>
+                  <h3 className="text-lg font-bold text-[var(--text-heading)] mt-1 truncate">{p.name}</h3>
+                  <p className="text-xl font-black text-emerald-500 mt-4">Rp {p.price?.toLocaleString('id-ID')}</p>
                 </div>
               </Link>
             ))}
@@ -185,19 +201,20 @@ export default function Home() {
       )}
 
       {/* CTA */}
-      {!isAuthenticated && (
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="rounded-3xl p-12 text-center animate-fade-in-up" style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 20px 60px rgba(16,185,129,0.25)' }}>
-            <span className="text-5xl block mb-4">🥬</span>
-            <h2 className="text-3xl font-black text-white">Mulai Belanja Sekarang!</h2>
-            <p className="text-emerald-100 mt-2 text-sm max-w-md mx-auto">Daftar gratis dan nikmati sayuran segar langsung dari petani lokal pilihan.</p>
-            <div className="flex flex-wrap justify-center gap-3 mt-8">
-              <Link to="/register" className="bg-white text-emerald-700 px-7 py-3 rounded-2xl font-bold text-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">Daftar Gratis</Link>
-              <Link to="/products" className="border-2 border-white/40 text-white px-7 py-3 rounded-2xl font-bold text-sm hover:bg-white/10 transition-all duration-300">Lihat Produk</Link>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+         <div className="rounded-[40px] bg-gray-900 border border-emerald-900/30 p-16 relative overflow-hidden text-center shadow-xl">
+            <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl" />
+            <div className="relative z-10">
+              <h2 className="text-4xl font-black text-white">Bergabung dengan Komunitas Sehat</h2>
+              <p className="text-gray-400 mt-5 max-w-xl mx-auto text-lg font-medium leading-relaxed">Dapatkan penawaran eksklusif dan info panen sayur langka langsung di dashboard Anda.</p>
+              <div className="mt-10 flex flex-wrap justify-center gap-5">
+                 <Link to="/register" className="btn-primary px-10 py-4 shadow-xl shadow-emerald-500/20">Daftar Sekarang</Link>
+                 <Link to="/products" className="btn-outline px-10 py-4 bg-gray-900 text-white border-gray-700">Lihat Produk</Link>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+         </div>
+      </section>
 
       <Footer />
     </div>

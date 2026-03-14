@@ -19,7 +19,7 @@ export default function OrderDetail() {
 
   const pay = async () => {
     setPaying(true);
-    try { await api.patch(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrder(); }
+    try { await api.post(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrder(); }
     catch (err) { toast.error(err.response?.data?.error || 'Gagal bayar'); }
     setPaying(false);
   };
@@ -129,6 +129,13 @@ export default function OrderDetail() {
       {order.status === 'PENDING' && user?.role === 'pembeli' && (
         <button onClick={pay} disabled={paying} className="w-full mt-6 btn-primary py-4 text-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-md">
           {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />} {paying ? 'Memproses...' : 'Bayar Sekarang'}
+        </button>
+      )}
+
+      {/* Tombol Invoice */}
+      {order.status !== 'PENDING' && (
+        <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="w-full mt-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 font-bold py-3.5 rounded-2xl transition-all shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2 text-sm">
+          <ClipboardSignature className="w-4 h-4" /> Tampilkan Invoice
         </button>
       )}
 

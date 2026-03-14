@@ -20,13 +20,13 @@ func NewUserHandler(r *gin.Engine, us domain.UserUsecase, loginRateLimiter gin.H
 		userUsecase: us,
 	}
 
-	userGroup := r.Group("/api/users")
+	userGroup := r.Group("/api/v1/auth")
 	{
 		userGroup.POST("/register", handler.Register)
 		userGroup.POST("/login", loginRateLimiter, handler.Login) // Rate limited
 	}
 
-	protected := r.Group("/api/users")
+	protected := r.Group("/api/v1/users")
 	protected.Use(middleware.AuthMiddleware())
 	{
 		protected.PUT("/profile", handler.UpdateProfile)

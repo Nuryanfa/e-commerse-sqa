@@ -9,8 +9,10 @@ type Dispute struct {
 	Order     *Order    `json:"order,omitempty" gorm:"foreignKey:OrderID;references:ID"`
 	BuyerID   string    `json:"id_buyer" gorm:"column:id_buyer"`
 	Buyer     *User     `json:"buyer,omitempty" gorm:"foreignKey:BuyerID;references:ID"`
+	CourierID *string   `json:"courier_id" gorm:"column:courier_id;index"`
+	Courier   *User     `json:"courier,omitempty" gorm:"foreignKey:CourierID;references:ID"`
 	Reason    string    `json:"reason" gorm:"column:reason" binding:"required"`
-	Status    string    `json:"status" gorm:"column:status"` // OPEN, RESOLVED, REJECTED, REFUNDED
+	Status    string    `json:"status" gorm:"column:status;index"` // OPEN, APPROVED_FOR_RETURN, RETURNING, RETURNED, REFUNDED, REJECTED
 	ImageURL  string    `json:"image_url,omitempty" gorm:"column:image_url"`
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`

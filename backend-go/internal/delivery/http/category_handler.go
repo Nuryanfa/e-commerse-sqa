@@ -20,7 +20,7 @@ func NewCategoryHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, 
 	}
 
 	// Public routes — tanpa login
-	publicGroup := publicRouter.Group("/api/categories")
+	publicGroup := publicRouter.Group("/api/v1/categories")
 	{
 		publicGroup.GET("", handler.FindAll)
 		publicGroup.GET("/:id", handler.FindByID)

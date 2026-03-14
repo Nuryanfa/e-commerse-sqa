@@ -95,22 +95,22 @@ export default function Navbar({ onToggleSidebar }) {
         </Link>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4 ml-6">
           {/* Search */}
           {/* Search Trigger */}
           <div className="hidden sm:flex items-center">
             <button 
               onClick={() => setSearchOpen(true)}
-              className="group flex items-center justify-between w-60 px-3 py-2 rounded-xl text-sm border focus:outline-none transition-all duration-300 hover:border-emerald-400 cursor-text"
-              style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-primary)', color: 'var(--text-muted)' }}
+              className="group flex items-center justify-between w-72 px-4 py-2.5 rounded-xl text-sm border focus:outline-none transition-all duration-300 hover:border-emerald-500 cursor-text shadow-sm"
+              style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Search className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                <span className="font-medium">Cari sayur, buah...</span>
+                <span className="font-semibold text-gray-500 dark:text-gray-400">Cari sayur, buah...</span>
               </div>
               <div className="flex items-center gap-1 font-sans text-[10px] font-bold">
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">K</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">K</kbd>
               </div>
             </button>
           </div>

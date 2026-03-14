@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Membuat instance axios dengan konfigurasi default
 const api = axios.create({
-  baseURL: "http://localhost:8080/api", // Base URL ke backend Golang
+  baseURL: "http://localhost:8080/api/v1", // Base URL ke backend Golang (versi API v1 sesuai SKPL)
   headers: {
     "Content-Type": "application/json",
   },

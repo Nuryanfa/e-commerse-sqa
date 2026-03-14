@@ -13,6 +13,7 @@ type DisputeRepository interface {
 	GetDisputeByOrderID(orderID string) (*domain.Dispute, error)
 	GetDisputesByRole(role string, userID string) ([]domain.Dispute, error)
 	UpdateDisputeStatus(id string, status string, adminNote string) error
+	AssignCourier(disputeID string, courierID string) error
 	AddMessage(msg *domain.DisputeMessage) error
 	GetMessagesByDisputeID(disputeID string) ([]domain.DisputeMessage, error)
 }
@@ -64,6 +65,9 @@ func (r *disputeRepository) GetDisputesByRole(role string, userID string) ([]dom
 			Where("products.supplier_id = ?", userID).Distinct("disputes.id_dispute")
 	case "admin":
 		// Admin melihat seluruh komplain masuk
+	case "courier":
+		// Kurir melihat komplain yang butuh di-pickup ATAU yang dia bawa
+		query = query.Where("status = 'APPROVED_FOR_RETURN' OR disputes.courier_id = ?", userID)
 	default:
 		return nil, gorm.ErrRecordNotFound
 	}
@@ -78,6 +82,13 @@ func (r *disputeRepository) UpdateDisputeStatus(id string, status string, adminN
 		updates["admin_note"] = adminNote
 	}
 	return r.db.Model(&domain.Dispute{}).Where("id_dispute = ?", id).Updates(updates).Error
+}
+
+func (r *disputeRepository) AssignCourier(disputeID string, courierID string) error {
+	return r.db.Model(&domain.Dispute{}).Where("id_dispute = ?", disputeID).Updates(map[string]interface{}{
+		"courier_id": courierID,
+		"status":     "RETURNING",
+	}).Error
 }
 
 func (r *disputeRepository) AddMessage(msg *domain.DisputeMessage) error {

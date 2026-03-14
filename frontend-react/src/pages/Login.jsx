@@ -111,7 +111,7 @@ export default function Login() {
             <div className="space-y-1.5 focus-within:text-emerald-600 dark:focus-within:text-emerald-400 group">
               <div className="flex justify-between items-center">
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-600 transition-colors">Kata Sandi</label>
-                <Link to="#" className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Lupa sandi?</Link>
+                <button type="button" onClick={() => alert('Fitur email reset password belum aktif. Silakan hubungi Administrator atau Admin Naufal (admin@sayursehat.id) untuk mereset kata sandi Anda.')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline bg-transparent border-none cursor-pointer">Lupa sandi?</button>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

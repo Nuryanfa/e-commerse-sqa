@@ -88,15 +88,9 @@ export default function ProductDetail() {
     if (!user) { toast.info('Login untuk berbelanja'); return navigate('/login'); }
     setAdding(true);
     try {
-      const res = await api.post('/orders/instant-checkout', { product_id: id, quantity: qty, id_variant: selectedVariant?.id_variant });
-      toast.success('Pesanan Instan Dibuat! Mengalihkan ke pembayaran...');
-      setTimeout(() => {
-        if (res.data?.order?.payment_url) {
-          window.location.href = res.data.order.payment_url;
-        } else {
-          navigate('/orders');
-        }
-      }, 1500);
+      await api.post('/cart', { id_product: id, quantity: qty, id_variant: selectedVariant?.id_variant });
+      toast.success('Pilihan ditambahkan! Mengalihkan ke pembayaran...');
+      setTimeout(() => navigate('/cart?checkout=1'), 800);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gagal memproses pembelian instan');
     }
@@ -249,7 +243,23 @@ export default function ProductDetail() {
                       <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jumlah</span>
                       <div className="flex items-center bg-white dark:bg-slate-700 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-600 shadow-sm">
                         <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300"><Minus className="w-4 h-4" /></button>
-                        <span className="w-10 text-center text-sm font-black text-gray-900 dark:text-white">{qty}</span>
+                        <input 
+                          type="number"
+                          min="1"
+                          max={currentStock}
+                          value={qty}
+                          onChange={(e) => {
+                            let val = parseInt(e.target.value);
+                            setQty(isNaN(val) ? '' : val);
+                          }}
+                          onBlur={(e) => {
+                            let val = parseInt(e.target.value);
+                            if (isNaN(val) || val < 1) val = 1;
+                            if (val > currentStock) val = currentStock;
+                            setQty(val);
+                          }}
+                          className="w-12 text-center text-sm font-black bg-transparent border-none focus:ring-0 p-0 m-0 [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] text-gray-900 dark:text-white" 
+                        />
                         <button onClick={() => setQty(Math.min(currentStock, qty + 1))} className="px-3 py-2 transition-colors duration-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300"><Plus className="w-4 h-4" /></button>
                       </div>
                     </div>
@@ -355,7 +365,23 @@ export default function ProductDetail() {
           <div className="max-w-md mx-auto flex items-center gap-3 relative">
              <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shrink-0">
                <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-3 py-3 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-slate-600"><Minus className="w-4 h-4" /></button>
-               <span className="w-8 text-center text-sm font-black text-gray-900 dark:text-white">{qty}</span>
+               <input 
+                 type="number"
+                 min="1"
+                 max={currentStock}
+                 value={qty}
+                 onChange={(e) => {
+                   let val = parseInt(e.target.value);
+                   setQty(isNaN(val) ? '' : val);
+                 }}
+                 onBlur={(e) => {
+                   let val = parseInt(e.target.value);
+                   if (isNaN(val) || val < 1) val = 1;
+                   if (val > currentStock) val = currentStock;
+                   setQty(val);
+                 }}
+                 className="w-12 text-center text-sm font-black bg-transparent border-none focus:ring-0 p-0 m-0 [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield] text-gray-900 dark:text-white" 
+               />
                <button onClick={() => setQty(Math.min(currentStock, qty + 1))} className="px-3 py-3 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-slate-600"><Plus className="w-4 h-4" /></button>
              </div>
              <button onClick={addToCart} disabled={adding} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/25 active:scale-95 transition-all disabled:opacity-70 flex justify-center items-center gap-2">

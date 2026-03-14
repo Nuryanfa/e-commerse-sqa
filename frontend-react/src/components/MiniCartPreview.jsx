@@ -31,7 +31,7 @@ export default function MiniCartPreview({ isOpen }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="absolute right-0 top-full mt-3 w-80 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden z-50 origin-top-right flex flex-col"
+          className="absolute right-0 top-full mt-3 w-80 bg-white dark:bg-slate-900 shadow-2xl rounded-xl border border-gray-100 dark:border-slate-800 overflow-hidden z-50 origin-top-right flex flex-col"
         >
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">

@@ -1,0 +1,26 @@
+/* Toast component styling */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  min-width: 250px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fade-in 0.3s ease-out, slide-up 0.4s ease-out;
+  z-index: 1000;
+}
+.toast-success {
+  background: var(--color-primary-500);
+}
+.toast-error {
+  background: #ef4444; /* red-500 */
+}
+.toast-info {
+  background: var(--color-primary-300);
+}

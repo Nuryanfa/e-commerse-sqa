@@ -56,7 +56,11 @@ func createSnapToken(orderID string, totalAmount float64) (*snap.Response, error
 		},
 	}
 
-	return snapClient.CreateTransaction(req)
+	resp, midErr := snapClient.CreateTransaction(req)
+	if midErr != nil {
+		return nil, errors.New(midErr.Message)
+	}
+	return resp, nil
 }
 
 func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Order, error) {

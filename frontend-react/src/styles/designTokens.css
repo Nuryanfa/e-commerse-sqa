@@ -1,0 +1,53 @@
+/* Design Tokens – CSS Variables */
+:root {
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Primary color palette (emerald) */
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+
+  /* Surface colors */
+  --surface-base: #f8fafc;
+  --surface-card: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f0fdf4;
+  --surface-muted: #f0fdf4;
+
+  /* Text colors */
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --text-accent: #059669;
+
+  /* Border */
+  --border-primary: #e2e8f0;
+  --border-accent: rgba(16, 185, 129, 0.2);
+
+  /* Glass effect */
+  --glass-bg: rgba(248, 250, 252, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+
+  /* Shadows */
+  --shadow-soft: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
+  --shadow-hover: 0 12px 40px rgba(16,185,129,0.15);
+}
+
+/* Dark mode overrides */
+.dark {
+  --surface-base: #0c1222;
+  --surface-card: #1a2540;
+  --surface-hover: #1e3a2f;
+  --text-primary: #e2e8f0;
+  --text-accent: #34d399;
+  --border-primary: #1e3048;
+}

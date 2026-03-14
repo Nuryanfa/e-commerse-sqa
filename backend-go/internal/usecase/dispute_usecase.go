@@ -15,6 +15,8 @@ type DisputeUseCase interface {
 	GetDisputeDetail(disputeID string) (*domain.Dispute, []domain.DisputeMessage, error)
 	AddReply(disputeID, senderID, message string) (*domain.DisputeMessage, error)
 	ResolveDispute(disputeID, adminID, decision, adminNote string) error
+	AssignReturnCourier(disputeID, courierID string) error
+	MarkReturnDelivered(disputeID, courierID string) error
 }
 
 type disputeUseCase struct {
@@ -119,8 +121,8 @@ func (u *disputeUseCase) AddReply(disputeID, senderID, message string) (*domain.
 }
 
 func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote string) error {
-	// Decision harus valid: REFUNDED, REJECTED, atau RESOLVED_PARTIAL
-	if decision != "REFUNDED" && decision != "REJECTED" && decision != "RESOLVED_PARTIAL" {
+	// Decision harus valid
+	if decision != "REFUNDED" && decision != "REJECTED" && decision != "RESOLVED_PARTIAL" && decision != "APPROVED_FOR_RETURN" {
 		return errors.New("status putusan tidak valid")
 	}
 
@@ -129,8 +131,8 @@ func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote 
 		return errors.New("sengketa tidak ditemukan")
 	}
 
-	if dispute.Status != "OPEN" {
-		return errors.New("sengketa sudah diputuskan sebelumnya")
+	if dispute.Status != "OPEN" && dispute.Status != "RETURNED" {
+		return errors.New("sengketa sudah tidak bisa diubah karena bukan berstatus OPEN atau RETURNED")
 	}
 
 	// 1. Update Status Sengketa
@@ -147,4 +149,30 @@ func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote 
 	}
 
 	return nil
+}
+
+func (u *disputeUseCase) AssignReturnCourier(disputeID, courierID string) error {
+	dispute, err := u.disputeRepo.GetDisputeByID(disputeID)
+	if err != nil {
+		return errors.New("sengketa tidak ditemukan")
+	}
+
+	if dispute.Status != "APPROVED_FOR_RETURN" {
+		return errors.New("sengketa ini tidak sedang menantikan kurir untuk retur")
+	}
+
+	return u.disputeRepo.AssignCourier(disputeID, courierID)
+}
+
+func (u *disputeUseCase) MarkReturnDelivered(disputeID, courierID string) error {
+	dispute, err := u.disputeRepo.GetDisputeByID(disputeID)
+	if err != nil {
+		return errors.New("sengketa tidak ditemukan")
+	}
+
+	if dispute.Status != "RETURNING" || dispute.CourierID == nil || *dispute.CourierID != courierID {
+		return errors.New("akses ditolak atau status sengketa tidak sesuai")
+	}
+
+	return u.disputeRepo.UpdateDisputeStatus(disputeID, "RETURNED", "Barang Retur telah diserahkan kembali ke Supplier oleh Kurir")
 }

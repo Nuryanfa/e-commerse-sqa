@@ -8,3 +8,8 @@ Task
 Walkthrough
 tmp_old_app.jsx
 .gemini/
+*.pdf
+STP_UMKM*.pdf
+SUD_UMKM*.pdf
+daftar_akun.md
+test_db.go

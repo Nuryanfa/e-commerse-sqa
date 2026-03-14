@@ -1,21 +1,26 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Product struct {
 	ID          string    `json:"id_product" gorm:"column:id_product;primaryKey"`
-	Name        string    `json:"name" gorm:"column:name" binding:"required,min=3"`
+	Name        string    `json:"name" gorm:"column:name;index" binding:"required,min=3"`
 	Description string    `json:"description" gorm:"column:description"`
 	Price       float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
 	Stock       int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
-	CategoryID  string    `json:"id_category" gorm:"column:id_category" binding:"required"`
+	CategoryID  string    `json:"id_category" gorm:"column:id_category;index" binding:"required"`
 	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
-	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id"`
+	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id;index"`
 	Supplier       *User     `json:"supplier,omitempty" gorm:"foreignKey:SupplierID;references:ID"`
 	SupplierRating float64   `json:"supplier_rating,omitempty" gorm:"-"` // Dihitung run-time
 	ImageURL       string           `json:"image_url" gorm:"column:image_url"`
 	CreatedAt      time.Time        `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt      time.Time        `json:"updated_at" gorm:"column:updated_at"`
+	DeletedAt      gorm.DeletedAt   `json:"-" gorm:"index;column:deleted_at"`
 	Variants       []ProductVariant `json:"variants,omitempty" gorm:"foreignKey:ProductID;references:ID"`
 }
 

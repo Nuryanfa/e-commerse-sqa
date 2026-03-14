@@ -21,6 +21,7 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Invoice from './pages/Invoice';
 import DisputeDetail from './pages/DisputeDetail';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
@@ -73,6 +74,7 @@ function AnimatedRoutes() {
         <Route path="/cart" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
         <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
+        <Route path="/invoice/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><Invoice /></ProtectedRoute>} />
         <Route path="/disputes/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><PageWrapper><DisputeDetail /></PageWrapper></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
         
