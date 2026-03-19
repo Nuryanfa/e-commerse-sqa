@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { motion, useAnimation } from 'framer-motion';
 import { Mail, Lock, ArrowRight, AlertCircle, Leaf, Eye, EyeOff } from 'lucide-react';
 
@@ -12,14 +12,14 @@ export default function Login() {
   const [loading,   setLoading]   = useState(false);
   const navigate  = useNavigate();
   const controls  = useAnimation();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', { email, password });
-      const role = res.data.user?.role;
+      const role = await login(email, password);
       if      (role === 'admin')    navigate('/admin');
       else if (role === 'supplier') navigate('/supplier');
       else if (role === 'courier')  navigate('/courier');

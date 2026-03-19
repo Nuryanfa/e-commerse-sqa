@@ -1,10 +1,8 @@
 /* ============================================================
    DESIGN TOKENS — Stitch "Digital Greenhouse"
    Full Material Design 3 token set, Light + Dark mode
+   (Google Fonts @import is in index.css to satisfy CSS spec)
    ============================================================ */
-
-/* ── Google Fonts ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 /* ── LIGHT MODE (default) ─────────────────────────────────── */
 :root {
