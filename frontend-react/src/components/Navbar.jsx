@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingCart, User, Package, LogOut, Leaf, Heart, Moon, Sun, X } from 'lucide-react';
+import { Search, ShoppingCart, User, Package, LogOut, Leaf, Heart, Moon, Sun } from 'lucide-react';
 import CommandPalette from './CommandPalette';
 
 export default function Navbar() {
@@ -11,10 +11,8 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const location  = useLocation();
-  const navigate  = useNavigate();
   const [searchOpen,   setSearchOpen]   = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileMenu,   setMobileMenu]   = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown on outside click
