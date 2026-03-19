@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { motion, useAnimation } from 'framer-motion';
 import { User, Mail, Lock, ArrowRight, AlertCircle, Leaf, ShoppingCart, Tractor, Truck } from 'lucide-react';
 
 export default function Register() {
-  const [nama, setNama] = useState('');
-  const [email, setEmail] = useState('');
+  const [nama,     setNama]     = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('pembeli');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [role,     setRole]     = useState('pembeli');
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
   const navigate = useNavigate();
   const controls = useAnimation();
 
@@ -21,168 +19,144 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/register', { nama: nama, email, password, role });
-      // Assuming 'register' from useAuth might handle toast or it's removed.
-      // If toast is still needed, useToast should be re-imported.
-      // For now, following the provided snippet which removes toast.success from here.
+      await api.post('/auth/register', { nama, email, password, role });
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.error || 'Pendaftaran gagal. Silakan coba lagi.');
-      // Goyangan memental ke kiri dan kanan cepat
-      controls.start({
-        x: [0, -15, 15, -10, 10, -5, 5, 0],
-        transition: { duration: 0.5, ease: "easeInOut" }
-      });
+      controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
     }
     setLoading(false);
   };
 
   const roles = [
-    { value: 'pembeli', icon: <ShoppingCart className="w-6 h-6" />, name: 'Pembeli', desc: 'Belanja sayur segar' },
-    { value: 'supplier', icon: <Tractor className="w-6 h-6" />, name: 'Supplier', desc: 'Jual produk lahan Anda' },
-    { value: 'courier', icon: <Truck className="w-6 h-6" />, name: 'Kurir', desc: 'Antar pesanan sehat' },
+    { value: 'pembeli',  icon: <ShoppingCart style={{ width: '1.25rem', height: '1.25rem' }} />, name: 'Pembeli',  desc: 'Belanja sayur segar pilihan' },
+    { value: 'supplier', icon: <Tractor     style={{ width: '1.25rem', height: '1.25rem' }} />, name: 'Supplier', desc: 'Buka toko sayur digital Anda' },
+    { value: 'courier',  icon: <Truck       style={{ width: '1.25rem', height: '1.25rem' }} />, name: 'Kurir',    desc: 'Antar kesegaran ke pelanggan' },
   ];
 
+  const inputStyle = { width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', color: 'var(--on-surface)', fontSize: '0.875rem', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' };
+
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
-      {/* Left Splash Screen - Hidden on Mobile */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-emerald-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/80 to-teal-900/90 mix-blend-multiply z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1595856121406-03f4aab82a88?q=80&w=1974&auto=format&fit=crop" 
-          alt="Lahan Pertanian Hijau" 
-          className="absolute inset-0 w-full h-full object-cover z-0"
+    <div className="min-h-screen grid lg:grid-cols-2" style={{ background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
+
+      {/* ── Left: Botanical full-bleed ──────────────────────── */}
+      <div className="hidden lg:block relative overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1595856121406-03f4aab82a88?q=80&w=1974&auto=format&fit=crop"
+          alt="Lahan Pertanian"
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="relative z-20 flex flex-col justify-between p-16 h-full text-white">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
-              <Leaf className="w-6 h-6 text-white" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(155deg, rgba(0,50,20,0.92) 0%, rgba(0,90,40,0.72) 100%)' }} />
+        <div className="relative z-10 flex flex-col justify-between h-full p-14">
+          <div className="flex items-center gap-3">
+            <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Leaf style={{ width: '1.125rem', height: '1.125rem', color: 'white' }} />
             </div>
-            <span className="text-2xl font-black tracking-tight">SayurSehat</span>
-          </motion.div>
-          
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
-            <h1 className="text-5xl font-black leading-tight mb-6">
-              Mulai Langka Sehat,<br />Bersama-sama.
-            </h1>
-            <p className="text-lg text-emerald-100 max-w-md font-medium">
-              Dari kebun ke piring Anda. Bergabunglah dengan platform tepercaya yang menghubungkan alam, petani mandiri, dan dapur sehat keluarga.
-            </p>
-          </motion.div>
-          
-          <div className="flex items-center gap-4 text-sm font-medium text-emerald-200">
-            <span>© 2026 SayurSehat. All rights reserved.</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: 'white' }}>SayurSehat</span>
           </div>
+          <div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.75rem', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', color: 'white', marginBottom: '1.25rem' }}>
+              Gabung dalam<br />Ekosistem<br />Kesegaran Digital.
+            </h1>
+            <p style={{ color: 'rgba(200,255,210,0.75)', fontSize: '0.9rem', lineHeight: 1.75, maxWidth: '22rem' }}>
+              Membawa hasil bumi terbaik langsung dari petani ke meja makan Anda dengan transparansi penuh.
+            </p>
+          </div>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>© 2024 SayurSehat — The Digital Greenhouse</p>
         </div>
       </div>
 
-      {/* Right Register Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative overflow-y-auto">
-        <div className="w-full max-w-md py-8">
-          {/* Mobile Logo Only */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-200 dark:shadow-none animate-bounce-in">
-              <Leaf className="w-8 h-8 text-white" />
+      {/* ── Right: Register Form ─────────────────────────────── */}
+      <div className="flex items-start justify-center p-8 sm:p-12 overflow-y-auto">
+        <div className="w-full max-w-md py-6">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+            <div style={{ width: '2rem', height: '2rem', borderRadius: '0.625rem', background: 'var(--brand-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Leaf style={{ width: '1rem', height: '1rem', color: 'white' }} />
             </div>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-heading)' }}>SayurSehat</span>
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-white mb-2">Buat Akun 🚀</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-8">Silakan lengkapi data profil di bawah untuk mendaftar akun.</p>
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.875rem', fontWeight: 800, color: 'var(--text-heading)', marginBottom: '0.35rem' }}>Mulai Perjalanan Anda</h2>
+            <p style={{ color: 'var(--outline)', fontSize: '0.875rem', marginBottom: '2rem' }}>
+              Sudah punya akun?{' '}
+              <Link to="/login" style={{ color: 'var(--md-primary)', fontWeight: 700, textDecoration: 'none' }}>Masuk di sini</Link>
+            </p>
           </motion.div>
 
           {error && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-2xl mb-6 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <p className="font-medium">{error}</p>
+            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+              className="flex items-start gap-2.5 px-4 py-3 rounded-xl mb-5"
+              style={{ background: 'rgba(176,37,0,0.08)', color: 'var(--md-error)' }}>
+              <AlertCircle style={{ width: '1rem', height: '1rem', flexShrink: 0, marginTop: '0.05rem' }} />
+              <p style={{ fontSize: '0.83rem', fontWeight: 500 }}>{error}</p>
             </motion.div>
           )}
 
-          <motion.form 
-            onSubmit={handleSubmit} 
-            className="space-y-4" 
-            initial={{ opacity: 0 }} 
-            animate={controls}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            
-            {/* Roles Selection */}
-            <div className="space-y-3">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pilih Tipe Akun Anda</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {roles.map((r) => (
-                  <button 
-                    key={r.value} 
-                    type="button" 
-                    onClick={() => setRole(r.value)}
-                    className={`relative p-4 rounded-xl text-center transition-all duration-300 border-2 overflow-hidden flex flex-col items-center justify-center gap-2 ${
-                      role === r.value 
-                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 shadow-md shadow-emerald-100 dark:shadow-none' 
-                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-emerald-300 dark:hover:border-emerald-700'
-                    }`}
-                  >
-                    {/* Active Background Indicator Glow */}
-                    {role === r.value && <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent pointer-events-none" />}
-                    
-                    <div className={`transition-transform duration-300 ${role === r.value ? 'scale-110 text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
+          <motion.form onSubmit={handleSubmit} animate={controls}>
+            {/* Role selector */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.75rem', letterSpacing: '0.025em' }}>Pilih Tipe Akun</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                {roles.map(r => {
+                  const active = role === r.value;
+                  return (
+                    <button key={r.value} type="button" onClick={() => setRole(r.value)}
+                      style={{
+                        padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', textAlign: 'center',
+                        background: active ? 'var(--md-primary-container)' : 'var(--surface-container)',
+                        color:      active ? 'var(--md-on-primary-container)' : 'var(--on-surface-variant)',
+                        transform:  active ? 'scale(1.03)' : 'scale(1)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
                       {r.icon}
-                    </div>
-                    <div>
-                      <span className={`block text-xs font-bold ${role === r.value ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {r.name}
-                      </span>
-                      <span className="block text-[10px] text-gray-400 font-medium leading-tight mt-0.5">
-                        {r.desc}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>{r.name}</span>
+                      <span style={{ fontSize: '0.62rem', lineHeight: 1.3, color: active ? 'var(--md-on-primary-container)' : 'var(--outline)' }}>{r.desc}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="space-y-4">
-              {[{ label: 'Nama Lengkap', type: 'text', value: nama, set: setNama, ph: 'Mis: Budi Santoso', icon: <User /> },
-                { label: 'Alamat Email', type: 'email', value: email, set: setEmail, ph: 'anda@email.com', icon: <Mail /> },
-                { label: 'Kata Sandi', type: 'password', value: password, set: setPassword, ph: 'Minimal 8 karakter rahasia', icon: <Lock /> }
-              ].map((f, i) => (
-                <div key={i} className="space-y-1.5 focus-within:text-emerald-600 dark:focus-within:text-emerald-400 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-600 transition-colors">{f.label}</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500 transition-colors">
-                      <div className="w-5 h-5">{f.icon}</div>
-                    </div>
-                    <input 
-                      type={f.type} required minLength={f.type === 'password' ? 8 : (f.type === 'text' ? 3 : 0)} value={f.value} onChange={e => f.set(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder-gray-400 dark:placeholder-gray-500"
-                      placeholder={f.ph} 
-                    />
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Nama Lengkap</label>
+                <div style={{ position: 'relative' }}>
+                  <User style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
+                  <input type="text" required minLength={3} value={nama} onChange={e => setNama(e.target.value)} placeholder="Mis: Budi Santoso" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
                 </div>
-              ))}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Alamat Email</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="anda@email.com" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Kata Sandi</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
+                  <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimal 8 karakter" style={{ ...inputStyle }} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary w-full justify-center" style={{ paddingTop: '0.875rem', paddingBottom: '0.875rem', fontSize: '0.925rem' }}>
+                {loading
+                  ? <><span style={{ width: '1rem', height: '1rem', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /> Membuat Akun...</>
+                  : <>Daftar Sekarang <ArrowRight style={{ width: '1rem', height: '1rem' }} /></>
+                }
+              </button>
             </div>
-
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 mt-2"
-            >
-              {loading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> 
-                  Membuat Akun...
-                </>
-              ) : (
-                <>
-                  Daftar Sekarang <ArrowRight className="w-4 h-4 ml-1" />
-                </>
-              )}
-            </button>
           </motion.form>
-
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center text-sm mt-8 text-gray-500 dark:text-gray-400 font-medium pb-8 lg:pb-0">
-            Sudah pengguna SayurSehat? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline ml-1">Masuk di sini</Link>
-          </motion.p>
         </div>
       </div>
     </div>
