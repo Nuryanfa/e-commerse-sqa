@@ -59,6 +59,9 @@ function ScrollToTopButton() {
   );
 }
 
+// Routes that use the internal panel layout (sidebar visible)
+const INTERNAL_ROUTES = ['/admin', '/supplier', '/courier'];
+
 // Komponen route animasi
 function AnimatedRoutes() {
   const location = useLocation();
@@ -106,6 +109,46 @@ function AnimatedRoutes() {
   );
 }
 
+// Layout wrapper — shows Sidebar only for internal panel routes
+function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed }) {
+  const location = useLocation();
+  const isInternalRoute = INTERNAL_ROUTES.some(r => location.pathname.startsWith(r));
+
+  return (
+    <motion.div
+      key="app"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex min-h-screen"
+      style={{ background: 'var(--bg)' }}
+    >
+      <ScrollToTop />
+
+      {/* Sidebar only for internal routes (admin/supplier/courier) */}
+      {isInternalRoute && (
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+        />
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Navbar shown only for public/buyer routes */}
+        {!isInternalRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
+
+        <main className="flex-1">
+          <AnimatedRoutes />
+        </main>
+      </div>
+
+      <ScrollToTopButton />
+    </motion.div>
+  );
+}
+
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -127,33 +170,13 @@ export default function App() {
                 {showSplash ? (
                   <SplashScreen key="splash" />
                 ) : (
-                  <motion.div 
+                  <AppLayout
                     key="app"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex min-h-screen" 
-                    style={{ background: 'var(--surface-base)' }}
-                  >
-                    <ScrollToTop />
-
-                    <Sidebar
-                      isOpen={sidebarOpen}
-                      onClose={() => setSidebarOpen(false)}
-                      collapsed={sidebarCollapsed}
-                      onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-                    />
-
-                    <div className="flex-1 flex flex-col min-w-0">
-                      <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />
-
-                      <main className="flex-1">
-                        <AnimatedRoutes />
-                      </main>
-                    </div>
-
-                    <ScrollToTopButton />
-                  </motion.div>
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
+                    sidebarCollapsed={sidebarCollapsed}
+                    setSidebarCollapsed={setSidebarCollapsed}
+                  />
                 )}
               </AnimatePresence>
             </BrowserRouter>

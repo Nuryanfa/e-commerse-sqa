@@ -1,182 +1,199 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingCart, User, Package, LogOut, Leaf, Home, LayoutGrid } from 'lucide-react';
+import { Search, ShoppingCart, User, Package, LogOut, Leaf, Heart, Moon, Sun, X } from 'lucide-react';
 import CommandPalette from './CommandPalette';
-import MegaMenu from './MegaMenu';
-import MiniCartPreview from './MiniCartPreview';
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
-  const location = useLocation();
-  const [searchOpen, setSearchOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
+  const location  = useLocation();
+  const navigate  = useNavigate();
+  const [searchOpen,   setSearchOpen]   = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cartCount] = useState(0);
-  const [cartHover, setCartHover] = useState(false);
-  const [megaMenuHover, setMegaMenuHover] = useState(false);
+  const [mobileMenu,   setMobileMenu]   = useState(false);
   const dropdownRef = useRef(null);
 
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    const h = e => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // Hotkey pencarian Cmd+K / Ctrl+K
+  // Ctrl+K shortcut
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, []);
 
-  // Breadcrumb
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const breadcrumbs = pathParts.map((part, i) => ({
-    label: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' '),
-    path: '/' + pathParts.slice(0, i + 1).join('/'),
-    isLast: i === pathParts.length - 1,
-  }));
+  // Don't render on internal routes (those have their own headers)
+  if (['/admin', '/supplier', '/courier'].some(r => location.pathname.startsWith(r))) return null;
 
-  // Sembunyikan Navbar untuk Dasbor Aktor Internal
-  if (['/admin', '/supplier', '/courier'].some(route => location.pathname.startsWith(route))) {
-    return null;
-  }
+  const navLinks = [
+    { to: '/', label: 'Beranda' },
+    { to: '/products', label: 'Katalog' },
+  ];
+
+  const isActive = (path) => path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   return (
     <>
-    <header className="sticky top-0 z-40 glass animate-fade-in-down" style={{ borderBottom: '1px solid var(--border-light)' }}>
-      <div className="flex items-center h-14 px-4 gap-3">
-        {/* Mobile hamburger */}
-        <button onClick={onToggleSidebar} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl cursor-pointer transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" style={{ color: 'var(--text-secondary)' }}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
+      {/* ── Main Navbar ─────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-40"
+        style={{
+          background: 'var(--surface-container-lowest)',
+          borderBottom: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-16 gap-6">
 
-        {/* Categories Mega Menu Trigger & Breadcrumb Wrapper */}
-        <nav className="hidden sm:flex items-center gap-1.5 text-sm flex-1 min-w-0">
-          <div 
-            className="hidden lg:block relative mr-2"
-            onMouseEnter={() => setMegaMenuHover(true)}
-            onMouseLeave={() => setMegaMenuHover(false)}
-          >
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 transition-colors border border-transparent hover:border-emerald-200 dark:hover:border-slate-700">
-              <LayoutGrid className="w-4 h-4" /> Kategori Belanja
-            </button>
-            <MegaMenu isOpen={megaMenuHover} />
-          </div>
-
-          <Link to="/" className="flex items-center gap-1 transition-colors hover:text-emerald-600" style={{ color: 'var(--text-muted)' }}>
-            <Home className="w-4 h-4" />
-          </Link>
-          {breadcrumbs.map((b, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              <span style={{ color: 'var(--text-muted)' }}>/</span>
-              {b.isLast ? (
-                <span className="font-medium truncate" style={{ color: 'var(--text-heading)' }}>{b.label}</span>
-              ) : (
-                <Link to={b.path} className="hover:text-emerald-600 transition-colors truncate" style={{ color: 'var(--text-muted)' }}>{b.label}</Link>
-              )}
+          {/* ── Logo ─────────────────────────────────────────── */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0" style={{ textDecoration: 'none' }}>
+            <div style={{ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', background: 'var(--brand-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Leaf style={{ width: '1rem', height: '1rem', color: 'white' }} />
+            </div>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-heading)', letterSpacing: '-0.02em' }}>
+              SayurSehat
             </span>
-          ))}
-          {breadcrumbs.length === 0 && <span className="font-medium" style={{ color: 'var(--text-heading)' }}>Beranda</span>}
-        </nav>
+          </Link>
 
-        {/* Mobile logo */}
-        <Link to="/" className="sm:hidden flex items-center gap-1.5 flex-1 text-emerald-600 dark:text-emerald-400">
-          <Leaf className="w-5 h-5" />
-          <span className="font-bold text-sm gradient-text">SayurSehat</span>
-        </Link>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-4 ml-6">
-          {/* Search */}
-          {/* Search Trigger */}
-          <div className="hidden sm:flex items-center">
-            <button 
-              onClick={() => setSearchOpen(true)}
-              className="group flex items-center justify-between w-72 px-4 py-2.5 rounded-xl text-sm border focus:outline-none transition-all duration-300 hover:border-emerald-500 cursor-text shadow-sm"
-              style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
-            >
-              <div className="flex items-center gap-3">
-                <Search className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                <span className="font-semibold text-gray-500 dark:text-gray-400">Cari sayur, buah...</span>
-              </div>
-              <div className="flex items-center gap-1 font-sans text-[10px] font-bold">
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">K</kbd>
-              </div>
-            </button>
-          </div>
-
-          <button 
-             onClick={() => setSearchOpen(true)} 
-             className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" 
-             style={{ color: 'var(--text-secondary)' }}
-          >
-             <Search className="w-[18px] h-[18px]" />
-          </button>
-
-          {/* Cart (pembeli only) */}
-          {isAuthenticated && user?.role === 'pembeli' && (
-            <div className="relative" onMouseEnter={() => setCartHover(true)} onMouseLeave={() => setCartHover(false)}>
-              <Link to="/cart" className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" style={{ color: 'var(--text-secondary)' }}>
-                <ShoppingCart className="w-[18px] h-[18px]" />
-                {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center badge-stock">{cartCount}</span>}
+          {/* ── Nav Links (desktop) ──────────────────────────── */}
+          <nav className="hidden md:flex items-center gap-1 flex-1">
+            {navLinks.map(link => (
+              <Link key={link.to} to={link.to}
+                style={{
+                  padding: '0.4rem 0.875rem',
+                  borderRadius: 'var(--radius-full)',
+                  textDecoration: 'none',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  color: isActive(link.to) ? 'var(--md-on-primary-container)' : 'var(--on-surface-variant)',
+                  background: isActive(link.to) ? 'var(--md-primary-container)' : 'transparent',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {link.label}
               </Link>
-              <MiniCartPreview isOpen={cartHover} />
-            </div>
-          )}
+            ))}
+          </nav>
 
-          {/* User avatar / Login */}
-          {isAuthenticated ? (
-            <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200/40 dark:hover:shadow-emerald-900/30 hover:scale-105">
-                {user?.nama?.charAt(0)?.toUpperCase() || '?'}
-              </button>
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden shadow-2xl origin-top-right"
-                    style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--border-primary)' }}
-                  >
-                    <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
-                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-heading)' }}>{user?.nama}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
-                    </div>
-                    <div className="py-1">
-                      <Link to="/profile" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-                        <User className="w-4 h-4" /> Profil Saya
-                      </Link>
-                      {user?.role === 'pembeli' && (
-                        <Link to="/orders" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" style={{ color: 'var(--text-secondary)' }}>
-                          <Package className="w-4 h-4" /> Pesanan
-                        </Link>
-                      )}
-                      <button onClick={() => { logout(); setDropdownOpen(false); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
-                        <LogOut className="w-4 h-4" /> Keluar
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <Link to="/login" className="btn-primary px-5 py-2 text-sm">Masuk</Link>
-          )}
+          {/* ── Spacer (mobile) ─────────────────────────────── */}
+          <div className="flex-1 md:hidden" />
+
+          {/* ── Right Actions ────────────────────────────────── */}
+          <div className="flex items-center gap-2">
+
+            {/* Search Bar (desktop) */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="hidden sm:flex items-center gap-3"
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--surface-container)',
+                border: 'none',
+                cursor: 'text',
+                width: '14rem',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--outline)', fontSize: '0.8rem' }}>
+                <Search style={{ width: '0.875rem', height: '0.875rem' }} />
+                Cari sayur, buah...
+              </span>
+              <span style={{ fontSize: '0.6rem', color: 'var(--outline)', border: '1px solid var(--outline-variant)', borderRadius: '0.2rem', padding: '0.05rem 0.3rem', fontFamily: 'monospace' }}>⌘K</span>
+            </button>
+
+            {/* Search icon (mobile) */}
+            <button onClick={() => setSearchOpen(true)} className="sm:hidden" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)' }}>
+              <Search style={{ width: '1rem', height: '1rem' }} />
+            </button>
+
+            {/* Wishlist */}
+            {isAuthenticated && user?.role === 'pembeli' && (
+              <Link to="/wishlist" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', textDecoration: 'none', transition: 'background 0.2s ease' }}>
+                <Heart style={{ width: '1rem', height: '1rem' }} />
+              </Link>
+            )}
+
+            {/* Cart */}
+            {isAuthenticated && user?.role === 'pembeli' && (
+              <Link to="/cart" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', textDecoration: 'none', position: 'relative' }}>
+                <ShoppingCart style={{ width: '1rem', height: '1rem' }} />
+              </Link>
+            )}
+
+            {/* Dark mode toggle */}
+            <button onClick={toggleTheme} style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', transition: 'background 0.2s ease' }}>
+              {isDark ? <Sun style={{ width: '1rem', height: '1rem' }} /> : <Moon style={{ width: '1rem', height: '1rem' }} />}
+            </button>
+
+            {/* User Avatar / Login */}
+            {isAuthenticated ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-full)', background: 'var(--brand-gradient)', color: 'white', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '0.8rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s ease' }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.08)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  {user?.nama?.charAt(0)?.toUpperCase() || '?'}
+                </button>
+
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ position: 'absolute', right: 0, top: '2.75rem', width: '13rem', borderRadius: 'var(--radius-lg)', background: 'var(--surface-container-lowest)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)', overflow: 'hidden', zIndex: 50 }}
+                    >
+                      {/* User info header */}
+                      <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border)' }}>
+                        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-heading)', marginBottom: '0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nama}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--outline)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+                      </div>
+                      <div style={{ padding: '0.5rem' }}>
+                        {[
+                          { to: '/profile', icon: <User style={{ width: '0.875rem', height: '0.875rem' }} />, label: 'Profil Saya' },
+                          ...(user?.role === 'pembeli' ? [{ to: '/orders', icon: <Package style={{ width: '0.875rem', height: '0.875rem' }} />, label: 'Pesanan' }] : []),
+                        ].map(item => (
+                          <Link key={item.to} to={item.to} onClick={() => setDropdownOpen(false)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', color: 'var(--on-surface-variant)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, transition: 'background 0.15s ease' }}
+                            onMouseOver={e => e.currentTarget.style.background = 'var(--surface-container-low)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {item.icon} {item.label}
+                          </Link>
+                        ))}
+                        <button onClick={() => { logout(); setDropdownOpen(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', color: 'var(--md-error)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, width: '100%', textAlign: 'left', transition: 'background 0.15s ease' }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(176,37,0,0.06)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <LogOut style={{ width: '0.875rem', height: '0.875rem' }} /> Keluar
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', textDecoration: 'none' }}>Masuk</Link>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
       <CommandPalette isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
