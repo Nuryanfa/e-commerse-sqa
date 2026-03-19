@@ -29,6 +29,9 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminDisputes from './pages/admin/Disputes';
 import SupplierDashboard from './pages/supplier/Dashboard';
+import SupplierInventory from './pages/supplier/Inventory';
+import SupplierOrders from './pages/supplier/Orders';
+import SupplierAnalytics from './pages/supplier/Analytics';
 import SupplierDisputes from './pages/supplier/Disputes';
 import CourierDashboard from './pages/courier/Dashboard';
 
@@ -89,6 +92,9 @@ function AnimatedRoutes() {
         
         {/* Supplier Routes */}
         <Route path="/supplier" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDashboard /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/products" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierInventory /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/orders" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierOrders /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/analytics" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierAnalytics /></PageWrapper></ProtectedRoute>} />
         <Route path="/supplier/disputes" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDisputes /></PageWrapper></ProtectedRoute>} />
         
         {/* Courier Routes */}

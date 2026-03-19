@@ -2,16 +2,25 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { ShieldAlert, Eye, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ShieldAlert, Eye, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const S = {
+  card:  { background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' },
+  label: { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--outline)', fontFamily: 'var(--font-display)' },
+  h:     { fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text-heading)' },
+  muted: { fontSize: '0.78rem', color: 'var(--outline)' },
+};
+const inp = { width: '100%', padding: '0.65rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', color: 'var(--on-surface)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' };
 
 export default function SupplierDisputes() {
   const [disputes, setDisputes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const toast = useToast();
 
   useEffect(() => {
-    api.get('/disputes')
+    api.get('/supplier/disputes')
       .then(res => setDisputes(res.data.data || []))
       .catch(() => toast.error('Gagal memuat daftar sengketa'))
       .finally(() => setLoading(false));
@@ -26,66 +35,74 @@ export default function SupplierDisputes() {
     }
   };
 
+  const filtered = disputes.filter(d => !search || d.id_order.toLowerCase().includes(search.toLowerCase()));
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center gap-4 mb-8 animate-fade-in-up">
-        <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-200">
-          <ShieldAlert className="w-7 h-7" />
-        </div>
+    <div style={{ padding: '2rem 1.5rem', maxWidth: '72rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Pusat Sengketa (Supplier)</h1>
-          <p className="text-gray-500 text-sm">Tanggapi keluhan pembeli terkait produk yang cacat / rusak</p>
+          <h1 style={{ ...S.h, fontSize: '1.5rem', margin: 0 }}>Dispute Resolution</h1>
+          <p style={{ ...S.muted, marginTop: '0.25rem' }}>Tanggapi keluhan pembeli terkait pesanan</p>
         </div>
       </div>
 
-      <div className="card-organic overflow-hidden animate-fade-in-up shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs uppercase tracking-wider">
-                <th className="p-4 font-bold border-b dark:border-gray-700">ID Pesanan</th>
-                <th className="p-4 font-bold border-b dark:border-gray-700">Tgl Masuk</th>
-                <th className="p-4 font-bold border-b dark:border-gray-700">Alasan Singkat</th>
-                <th className="p-4 font-bold border-b dark:border-gray-700 text-center">Status</th>
-                <th className="p-4 font-bold border-b dark:border-gray-700 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {loading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-400">Memuat data sengketa...</td></tr>
-              ) : disputes.length === 0 ? (
-                <tr>
-                   <td colSpan="5" className="p-16 text-center">
-                     <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-3 opacity-50" />
-                     <p className="text-slate-500">Toko Anda bersih! Tidak ada komplain pembeli.</p>
-                   </td>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ position: 'relative', flex: 1, maxWidth: '24rem' }}>
+          <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
+          <input placeholder="Cari ID Pesanan..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, paddingLeft: '2.5rem', borderRadius: 'var(--radius-full)' }} />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ ...S.card, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--outline)' }}>Memuat data sengketa...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+            <ShieldAlert style={{ width: '3rem', height: '3rem', color: 'var(--outline)', opacity: 0.4 }} />
+            <p style={{ ...S.h, fontSize: '1rem', margin: 0 }}>Toko Anda bersih!</p>
+            <p style={{ ...S.muted }}>Tidak ada komplain pembeli yang perlu ditangani.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-container-low)' }}>
+                  {['ID Pesanan', 'Tgl Masuk', 'Alasan', 'Status', 'Aksi'].map(h => (
+                    <th key={h} style={{ padding: '0.75rem 1.25rem', textAlign: h==='Status'||h==='Aksi' ? 'center' : 'left', ...S.label }}>{h}</th>
+                  ))}
                 </tr>
-              ) : (
-                disputes.map((d) => (
-                  <tr key={d.id_dispute} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="p-4 font-mono text-sm text-gray-700 dark:text-gray-300">
-                      #{d.id_order?.slice(0, 8)}
+              </thead>
+              <tbody>
+                {filtered.map((d) => (
+                  <tr key={d.id_dispute} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.15s' }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--surface-container-low)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                    <td style={{ padding: '0.875rem 1.25rem' }}>
+                      <p style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-heading)', margin: 0 }}>#{d.id_order?.slice(0, 8).toUpperCase()}</p>
                     </td>
-                    <td className="p-4 text-sm text-gray-500">
-                      {new Date(d.created_at).toLocaleDateString()}
+                    <td style={{ padding: '0.875rem 1.25rem', color: 'var(--outline)', fontSize: '0.8rem' }}>
+                      {new Date(d.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})}
                     </td>
-                    <td className="p-4 text-sm font-medium text-gray-800 dark:text-gray-200 max-w-[200px] truncate">
+                    <td style={{ padding: '0.875rem 1.25rem', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-heading)', fontWeight: 500 }}>
                       {d.reason}
                     </td>
-                    <td className="p-4 text-center">
+                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
                       {getStatusBadge(d.status)}
                     </td>
-                    <td className="p-4 text-right">
-                      <Link to={`/disputes/${d.id_dispute}`} className="btn-secondary px-4 py-2 text-xs flex items-center justify-center gap-2 max-w-max ml-auto text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer">
-                        <Eye className="w-3.5 h-3.5" /> Lihat Ruang Chat
+                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
+                      <Link to={`/disputes/${d.id_dispute}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container)', color: 'var(--on-surface-variant)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.75rem', transition: 'all 0.15s' }} onMouseOver={e => { e.currentTarget.style.background = 'rgba(217,119,6,0.1)'; e.currentTarget.style.color = '#d97706'; }} onMouseOut={e => { e.currentTarget.style.background = 'var(--surface-container)'; e.currentTarget.style.color = 'var(--on-surface-variant)'; }}>
+                        <Eye size={14} /> Lihat Detail
                       </Link>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
