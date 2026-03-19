@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import SellerSidebar from './components/SellerSidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import StoreRoute from './components/StoreRoute';
 import PageWrapper from './components/PageWrapper';
@@ -59,8 +60,9 @@ function ScrollToTopButton() {
   );
 }
 
-// Routes that use the internal panel layout (sidebar visible)
-const INTERNAL_ROUTES = ['/admin', '/supplier', '/courier'];
+const INTERNAL_ROUTES    = ['/admin', '/supplier', '/courier'];
+const SELLER_ROUTES      = ['/supplier'];
+const BUYER_ROUTES       = ['/', '/products', '/cart', '/orders', '/wishlist', '/profile', '/login', '/register'];
 
 // Komponen route animasi
 function AnimatedRoutes() {
@@ -113,6 +115,7 @@ function AnimatedRoutes() {
 function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed }) {
   const location = useLocation();
   const isInternalRoute = INTERNAL_ROUTES.some(r => location.pathname.startsWith(r));
+  const isSellerRoute   = SELLER_ROUTES.some(r => location.pathname.startsWith(r));
 
   return (
     <motion.div
@@ -125,8 +128,18 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
     >
       <ScrollToTop />
 
-      {/* Sidebar only for internal routes (admin/supplier/courier) */}
-      {isInternalRoute && (
+      {/* Dark SellerSidebar for supplier */}
+      {isSellerRoute && (
+        <SellerSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+        />
+      )}
+
+      {/* Generic Sidebar for admin/courier */}
+      {isInternalRoute && !isSellerRoute && (
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
