@@ -1,53 +1,159 @@
-/* Design Tokens – CSS Variables */
+/* ================================================================
+   SAYURSEHAT — "THE DIGITAL GREENHOUSE"
+   Design Tokens based on Google Stitch / Material Design 3
+   Primary: #22C55E | Font: Plus Jakarta Sans + Inter
+================================================================ */
+
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* ── Typography ─────────────────────────────────────── */
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
-  /* Primary color palette (emerald) */
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
+  /* ── Material Design 3 Color Palette ─────────────────── */
+  --md-primary:            #006a2d;
+  --md-on-primary:         #ceffd0;
+  --md-primary-container:  #6bff8f;
+  --md-on-primary-container: #005f28;
 
-  /* Surface colors */
-  --surface-base: #f8fafc;
-  --surface-card: #ffffff;
-  --surface-elevated: #ffffff;
-  --surface-hover: #f0fdf4;
-  --surface-muted: #f0fdf4;
+  --md-secondary:          #006942;
+  --md-on-secondary:       #caffdc;
+  --md-secondary-container: #7afbb7;
+  --md-on-secondary-container: #005e3a;
 
-  /* Text colors */
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --text-accent: #059669;
+  --md-tertiary:           #006573;
+  --md-on-tertiary:        #daf8ff;
+  --md-tertiary-container: #00e0fd;
+  --md-on-tertiary-container: #004b56;
 
-  /* Border */
-  --border-primary: #e2e8f0;
-  --border-accent: rgba(16, 185, 129, 0.2);
+  --md-error:              #b02500;
+  --md-error-container:    #f95630;
+  --md-on-error:           #ffefec;
 
-  /* Glass effect */
-  --glass-bg: rgba(248, 250, 252, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.6);
+  /* ── Surface Tokens ─────────────────────────────────── */
+  --surface:               #f5f7f9;
+  --surface-bright:        #f5f7f9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eef1f3;
+  --surface-container:     #e5e9eb;
+  --surface-container-high: #dfe3e6;
+  --surface-container-highest: #d9dde0;
+  --surface-dim:           #d0d5d8;
+  --surface-tint:          #006a2d;
 
-  /* Shadows */
-  --shadow-soft: 0 1px 3px rgba(0,0,0,0.04);
-  --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
-  --shadow-hover: 0 12px 40px rgba(16,185,129,0.15);
+  /* ── On-Surface Text Tokens ─────────────────────────── */
+  --on-surface:            #2c2f31;
+  --on-surface-variant:    #595c5e;
+  --on-background:         #2c2f31;
+
+  /* ── Outline Tokens ─────────────────────────────────── */
+  --outline:               #747779;
+  --outline-variant:       #abadaf;
+
+  /* ── Inverse Tokens ─────────────────────────────────── */
+  --inverse-surface:       #0b0f10;
+  --inverse-on-surface:    #9a9d9f;
+  --inverse-primary:       #6bff8f;
+
+  /* ── Brand Overrides (Stitch custom) ────────────────── */
+  --brand-primary:         #22C55E;
+  --brand-gradient:        linear-gradient(135deg, #006a2d 0%, #22C55E 100%);
+
+  /* ── Semantic Aliases ───────────────────────────────── */
+  --bg:                    var(--surface);
+  --card-bg:               var(--surface-container-lowest);
+  --section-bg:            var(--surface-container-low);
+  --text-heading:          var(--on-surface);
+  --text-body:             var(--on-surface-variant);
+  --text-muted:            var(--outline);
+  --text-accent:           var(--md-primary);
+  --border:                rgba(171, 173, 175, 0.15); /* outline-variant @ 15% */
+
+  /* ── Sidebar (light) ────────────────────────────────── */
+  --sidebar-bg:            var(--surface-container-lowest);
+  --sidebar-hover:         var(--surface-container-low);
+  --sidebar-active-bg:     var(--md-primary-container);
+  --sidebar-active-text:   var(--md-on-primary-container);
+  --sidebar-text:          var(--on-surface-variant);
+
+  /* ── Spacing Scale ──────────────────────────────────── */
+  --space-1: 0.25rem;  --space-2: 0.5rem;  --space-3: 0.75rem;
+  --space-4: 1rem;     --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;     --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;    --space-20: 5rem;   --space-24: 6rem;
+
+  /* ── Border Radius ──────────────────────────────────── */
+  --radius-sm:   0.375rem;
+  --radius-md:   0.75rem;
+  --radius-lg:   1.5rem;     /* xl – product cards */
+  --radius-full: 9999px;
+
+  /* ── Shadows (Ambient only, no hard drop shadows) ───── */
+  --shadow-sm:     0 1px 4px rgba(0,0,0,0.04);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.05);
+  --shadow-lg:     0 0 32px rgba(44,47,49,0.06); /* ambient */
+  --shadow-float:  0 -2px 20px rgba(0,0,0,0.06);
+
+  /* ── Glassmorphism ──────────────────────────────────── */
+  --glass-bg:      rgba(245,247,249,0.70);
+  --glass-blur:    12px;
+  --glass-border:  rgba(255,255,255,0.50);
 }
 
-/* Dark mode overrides */
+/* ── Dark Mode Tokens ─────────────────────────────────────── */
 .dark {
-  --surface-base: #0c1222;
-  --surface-card: #1a2540;
-  --surface-hover: #1e3a2f;
-  --text-primary: #e2e8f0;
-  --text-accent: #34d399;
-  --border-primary: #1e3048;
+  /* Surfaces */
+  --surface:               #0b0f10;
+  --surface-bright:        #1a1f20;
+  --surface-container-lowest: #0b0f10;
+  --surface-container-low: #161b1c;
+  --surface-container:     #1e2425;
+  --surface-container-high: #272e2f;
+  --surface-container-highest: #323838;
+  --surface-dim:           #080c0d;
+
+  /* On-Surface */
+  --on-surface:            #e0e3e3;
+  --on-surface-variant:    #bfc8c9;
+  --on-background:         #e0e3e3;
+
+  /* Outline */
+  --outline:               #899292;
+  --outline-variant:       #3f4949;
+
+  /* Brand/Primary (inverted for dark) */
+  --md-primary:            #5bf083;
+  --md-on-primary:         #004a1d;
+  --md-primary-container:  #005d26;
+  --md-on-primary-container: #6bff8f;
+
+  /* Semantic re-map */
+  --bg:             var(--surface);
+  --card-bg:        var(--surface-container-low);
+  --section-bg:     var(--surface-container);
+  --text-heading:   var(--on-surface);
+  --text-body:      var(--on-surface-variant);
+  --text-muted:     var(--outline);
+  --text-accent:    var(--md-primary);
+  --border:         rgba(63,73,73,0.50);
+
+  /* Sidebar */
+  --sidebar-bg:     var(--surface-container-lowest);
+  --sidebar-hover:  var(--surface-container-low);
+  --sidebar-active-bg: rgba(91,240,131,0.12);
+  --sidebar-active-text: #5bf083;
+  --sidebar-text:   var(--on-surface-variant);
+
+  /* Glassmorphism (dark) */
+  --glass-bg:     rgba(11,15,16,0.75);
+  --glass-border: rgba(63,73,73,0.40);
+
+  /* Shadows (dark) */
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.30);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.40);
+  --shadow-lg:  0 0 32px rgba(0,0,0,0.50);
+
+  --brand-gradient: linear-gradient(135deg, #005d26 0%, #5bf083 100%);
 }

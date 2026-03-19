@@ -5,13 +5,13 @@ import { motion, useAnimation } from 'framer-motion';
 import { Mail, Lock, ArrowRight, AlertCircle, Leaf } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const controls = useAnimation();
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const { login }   = useAuth();
+  const navigate    = useNavigate();
+  const controls    = useAnimation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,131 +21,130 @@ export default function Login() {
       const role = await login(email, password);
       navigate({ admin: '/admin', supplier: '/supplier', courier: '/courier' }[role] || '/');
     } catch (err) {
-      console.error("LOGIN ERROR:", err, err.response?.data);
       setError(err.response?.data?.error || 'Email atau password salah.');
-      controls.start({
-        x: [0, -15, 15, -10, 10, -5, 5, 0],
-        transition: { duration: 0.5, ease: "easeInOut" }
-      });
+      controls.start({ x: [0, -12, 12, -8, 8, -4, 4, 0], transition: { duration: 0.45 } });
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
-      {/* Left Splash Screen - Hidden on Mobile */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-emerald-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/80 to-teal-900/90 mix-blend-multiply z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop" 
-          alt="Fresh Vegetables" 
-          className="absolute inset-0 w-full h-full object-cover z-0"
+    <div className="min-h-screen flex" style={{ background: 'var(--bg)', fontFamily: 'var(--font-body)' }}>
+      {/* ── Left Panel ─────────────────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'var(--md-on-primary-container)' }}>
+        {/* Background image */}
+        <img
+          src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop"
+          alt="Fresh Vegetables"
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="relative z-20 flex flex-col justify-between p-16 h-full text-white">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
-              <Leaf className="w-6 h-6 text-white" />
+        {/* Overlay */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(0,74,29,0.88) 0%, rgba(0,101,61,0.75) 100%)' }} />
+
+        <div className="relative z-10 flex flex-col justify-between p-16 h-full text-white">
+          {/* Logo */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>
+              <Leaf className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tight">SayurSehat</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em' }}>SayurSehat</span>
           </motion.div>
-          
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
-            <h1 className="text-5xl font-black leading-tight mb-6">
-              Bahan Segar<br />Langsung dari<br />Petani Lokal
+
+          {/* Headline */}
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.15 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}>
+              Membawa Kesegaran<br />Kebun Digital<br />ke Pintu Rumah Anda.
             </h1>
-            <p className="text-lg text-emerald-100 max-w-md font-medium">
-              Bergabunglah dengan ribuan keluarga yang telah mempercayakan kebutuhan dapur sehat mereka kepada kami.
+            <p style={{ color: 'rgba(206,255,208,0.85)', fontSize: '1rem', lineHeight: 1.65, maxWidth: '22rem' }}>
+              Kualitas premium, dipanen hari ini. Bergabung dengan ribuan keluarga yang mempercayakan kebutuhan dapur sehat mereka kepada kami.
             </p>
+            {/* Trust badge */}
+            <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(107,255,143,0.15)', border: '1px solid rgba(107,255,143,0.30)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', color: '#6bff8f' }}>✦ 100% ORGANIK · PANEN HARI INI</span>
+            </div>
           </motion.div>
-          
-          <div className="flex items-center gap-4 text-sm font-medium text-emerald-200">
-            <span>© 2026 SayurSehat. All rights reserved.</span>
-          </div>
+
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.50)' }}>© 2024 SayurSehat — The Digital Greenhouse.</p>
         </div>
       </div>
 
-      {/* Right Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-16 relative">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo Only */}
+      {/* ── Right Panel: Login Form ──────────────────────────── */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-200 dark:shadow-none animate-bounce-in">
-              <Leaf className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--brand-gradient)' }}>
+              <Leaf className="w-7 h-7 text-white" />
             </div>
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-gray-900 dark:text-white mb-2">Selamat Datang! 👋</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-8">Silakan masukkan kredensial Anda untuk masuk ke akun Anda.</p>
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-heading)', marginBottom: '0.35rem' }}>
+              Selamat Datang
+            </h2>
+            <p style={{ fontSize: '0.87rem', color: 'var(--text-body)', marginBottom: '2rem' }}>
+              Silakan masuk ke akun Anda untuk melanjutkan belanja.
+            </p>
           </motion.div>
 
+          {/* Error */}
           {error && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} file={{ opacity: 1, scale: 1 }} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-2xl mb-6 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <p className="font-medium">{error}</p>
+            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+              className="flex items-start gap-2 px-4 py-3 rounded-xl mb-5"
+              style={{ background: 'rgba(176,37,0,0.08)', color: 'var(--md-error)' }}>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <p style={{ fontSize: '0.83rem', fontWeight: 500 }}>{error}</p>
             </motion.div>
           )}
 
-          <motion.form 
-             onSubmit={handleSubmit} 
-             className="space-y-5" 
-             initial={{ opacity: 0 }} 
-             animate={controls} 
-             whileInView={{ opacity: 1 }} 
-             transition={{ delay: 0.1, duration: 0.5 }}
-          >
-            <div className="space-y-1.5 focus-within:text-emerald-600 dark:focus-within:text-emerald-400 group">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-600 transition-colors">Alamat Email</label>
+          <motion.form onSubmit={handleSubmit} className="space-y-4" animate={controls}>
+            {/* Email */}
+            <div>
+              <label className="label-sm block mb-1.5">Alamat Email</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                </div>
-                <input 
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--outline)' }} />
+                <input
                   type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder-gray-400 dark:placeholder-gray-500"
-                  placeholder="anda@email.com" 
+                  placeholder="anda@email.com"
+                  className="input-field pl-10"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5 focus-within:text-emerald-600 dark:focus-within:text-emerald-400 group">
-              <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-600 transition-colors">Kata Sandi</label>
-                <button type="button" onClick={() => alert('Fitur email reset password belum aktif. Silakan hubungi Administrator atau Admin Naufal (admin@sayursehat.id) untuk mereset kata sandi Anda.')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline bg-transparent border-none cursor-pointer">Lupa sandi?</button>
+            {/* Password */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="label-sm">Kata Sandi</label>
+                <button type="button"
+                  onClick={() => alert('Fitur reset password belum aktif. Hubungi admin@sayursehat.id.')}
+                  style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--md-primary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Lupa Password?
+                </button>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                </div>
-                <input 
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--outline)' }} />
+                <input
                   type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder-gray-400 dark:placeholder-gray-500"
-                  placeholder="••••••••" 
+                  placeholder="••••••••"
+                  className="input-field pl-10"
                 />
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-200 dark:shadow-none hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 mt-4"
-            >
+            {/* Submit */}
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center mt-2" style={{ paddingTop: '0.9rem', paddingBottom: '0.9rem' }}>
               {loading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> 
-                  Sedang masuk...
-                </>
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sedang masuk...</>
               ) : (
-                <>
-                  Masuk Sekarang <ArrowRight className="w-4 h-4 ml-1" />
-                </>
+                <>Masuk Sekarang <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </motion.form>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-center text-sm mt-8 text-gray-500 dark:text-gray-400 font-medium">
-            Pengguna baru SayurSehat? <Link to="/register" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline ml-1">Daftar Akun Gratis</Link>
-          </motion.p>
+          <p className="text-center mt-7" style={{ fontSize: '0.83rem', color: 'var(--text-body)' }}>
+            Belum punya akun?{' '}
+            <Link to="/register" style={{ color: 'var(--md-primary)', fontWeight: 700 }}>Daftar Sekarang</Link>
+          </p>
         </div>
       </div>
     </div>

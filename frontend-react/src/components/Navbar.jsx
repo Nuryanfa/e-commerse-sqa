@@ -52,7 +52,7 @@ export default function Navbar({ onToggleSidebar }) {
 
   return (
     <>
-    <header className="sticky top-0 z-40 glass animate-fade-in-down" style={{ borderBottom: '1px solid var(--border-light)' }}>
+    <header className="navbar-glass sticky top-0 z-40 animate-fade-in-down">
       <div className="flex items-center h-14 px-4 gap-3">
         {/* Mobile hamburger */}
         <button onClick={onToggleSidebar} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl cursor-pointer transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" style={{ color: 'var(--text-secondary)' }}>
@@ -66,7 +66,7 @@ export default function Navbar({ onToggleSidebar }) {
             onMouseEnter={() => setMegaMenuHover(true)}
             onMouseLeave={() => setMegaMenuHover(false)}
           >
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 transition-colors border border-transparent hover:border-emerald-200 dark:hover:border-slate-700">
+            <button style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.4rem 0.875rem', borderRadius: 'var(--radius-full)', background: 'var(--md-primary-container)', color: 'var(--md-on-primary-container)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.8rem', border: 'none', cursor: 'pointer' }}>
               <LayoutGrid className="w-4 h-4" /> Kategori Belanja
             </button>
             <MegaMenu isOpen={megaMenuHover} />
@@ -101,16 +101,15 @@ export default function Navbar({ onToggleSidebar }) {
           <div className="hidden sm:flex items-center">
             <button 
               onClick={() => setSearchOpen(true)}
-              className="group flex items-center justify-between w-72 px-4 py-2.5 rounded-xl text-sm border focus:outline-none transition-all duration-300 hover:border-emerald-500 cursor-text shadow-sm"
-              style={{ backgroundColor: 'var(--surface-input)', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '18rem', padding: '0.6rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', cursor: 'text', color: 'var(--on-surface-variant)' }}
             >
-              <div className="flex items-center gap-3">
-                <Search className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                <span className="font-semibold text-gray-500 dark:text-gray-400">Cari sayur, buah...</span>
+              <div className="flex items-center gap-2.5">
+                <Search style={{ width: '1rem', height: '1rem', color: 'var(--outline)' }} />
+                <span style={{ fontSize: '0.85rem', color: 'var(--outline)', fontFamily: 'var(--font-body)' }}>Cari sayur, buah...</span>
               </div>
-              <div className="flex items-center gap-1 font-sans text-[10px] font-bold">
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 opacity-50">K</kbd>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.65rem', fontWeight: 700, color: 'var(--outline)' }}>
+                <kbd style={{ padding: '0.15rem 0.35rem', borderRadius: '0.2rem', background: 'var(--surface-container-high)' }}>⌘</kbd>
+                <kbd style={{ padding: '0.15rem 0.35rem', borderRadius: '0.2rem', background: 'var(--surface-container-high)' }}>K</kbd>
               </div>
             </button>
           </div>
@@ -137,7 +136,7 @@ export default function Navbar({ onToggleSidebar }) {
           {/* User avatar / Login */}
           {isAuthenticated ? (
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-xs font-bold flex items-center justify-center cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200/40 dark:hover:shadow-emerald-900/30 hover:scale-105">
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-full)', background: 'var(--brand-gradient)', color: 'white', fontSize: '0.8rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none', transition: 'transform 0.2s ease', fontFamily: 'var(--font-display)' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.07)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}>
                 {user?.nama?.charAt(0)?.toUpperCase() || '?'}
               </button>
               <AnimatePresence>
@@ -147,8 +146,8 @@ export default function Navbar({ onToggleSidebar }) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden shadow-2xl origin-top-right"
-                    style={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--border-primary)' }}
+                    className="absolute right-0 top-12 w-52 rounded-2xl overflow-hidden origin-top-right"
+                    style={{ background: 'var(--surface-container-lowest)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}
                   >
                     <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
                       <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-heading)' }}>{user?.nama}</p>
@@ -172,7 +171,7 @@ export default function Navbar({ onToggleSidebar }) {
               </AnimatePresence>
             </div>
           ) : (
-            <Link to="/login" className="btn-primary px-5 py-2 text-sm">Masuk</Link>
+            <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem' }}>Masuk</Link>
           )}
         </div>
       </div>

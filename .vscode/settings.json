@@ -1,3 +1,5 @@
 {
-  "CodeGPT.apiKey": "Ollama"
+  "CodeGPT.apiKey": "Ollama",
+  "css.lint.unknownAtRules": "ignore",
+  "kiroAgent.configureMCP": "Disabled"
 }

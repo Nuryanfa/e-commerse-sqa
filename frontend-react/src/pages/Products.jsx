@@ -98,7 +98,7 @@ export default function Products() {
   };
 
   return (
-    <div style={{ background: 'var(--surface-base)' }}>
+    <div style={{ background: 'var(--bg)' }}>
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-2">
         <div className="animate-fade-in-up">
@@ -118,8 +118,8 @@ export default function Products() {
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Cari kangkung, bayam, tomat..."
-              className="w-full rounded-2xl pl-11 pr-10 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all duration-300"
-              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-soft)' }}
+            className="w-full rounded-xl pl-11 pr-10 py-3 text-sm focus:outline-none transition-all duration-200"
+              style={{ background: 'var(--surface-container)', color: 'var(--on-surface)', border: 'none', fontFamily: 'var(--font-body)' }}
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-xs cursor-pointer transition-all hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500">✕</button>
@@ -131,8 +131,8 @@ export default function Products() {
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value)}
-              className="w-full appearance-none rounded-2xl pl-4 pr-10 py-3 text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all cursor-pointer font-medium"
-              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-primary)', color: 'var(--text-heading)', boxShadow: 'var(--shadow-soft)' }}
+              className="w-full appearance-none rounded-xl pl-4 pr-10 py-3 text-sm focus:outline-none transition-all cursor-pointer font-medium"
+              style={{ background: 'var(--surface-container)', color: 'var(--on-surface)', border: 'none', fontFamily: 'var(--font-body)' }}
             >
               <option value="newest">Baru Ditambahkan</option>
               <option value="price_asc">Harga: Termurah</option>
@@ -180,7 +180,8 @@ export default function Products() {
             <div className="flex flex-col gap-2">
               <button 
                 onClick={() => setSelectedCategory('')} 
-                className={`relative px-4 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors duration-300 overflow-hidden ${selectedCategory === '' ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
+                className={`relative w-full px-4 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors overflow-hidden border-none cursor-pointer ${selectedCategory === '' ? '' : ''}`}
+                style={{ background: selectedCategory === '' ? 'var(--md-primary-container)' : 'transparent', color: selectedCategory === '' ? 'var(--md-on-primary-container)' : 'var(--on-surface-variant)', fontFamily: 'var(--font-body)' }}
               >
                 {selectedCategory === '' && <motion.div layoutId="activeDesktopCat" className="absolute inset-0 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl" transition={{ type: 'spring', stiffness: 300, damping: 30 }} />}
                 <span className="relative z-10">Semua Koleksi</span>
@@ -189,7 +190,8 @@ export default function Products() {
                 <button 
                   key={c.id_category} 
                   onClick={() => setSelectedCategory(c.id_category)} 
-                  className={`relative px-4 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors duration-300 overflow-hidden ${selectedCategory === c.id_category ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
+                  className={`relative w-full px-4 py-2.5 rounded-xl text-left text-sm font-semibold transition-colors overflow-hidden border-none cursor-pointer ${selectedCategory === c.id_category ? '' : ''}`}
+                  style={{ background: selectedCategory === c.id_category ? 'var(--md-primary-container)' : 'transparent', color: selectedCategory === c.id_category ? 'var(--md-on-primary-container)' : 'var(--on-surface-variant)', fontFamily: 'var(--font-body)' }}
                 >
                   {selectedCategory === c.id_category && <motion.div layoutId="activeDesktopCat" className="absolute inset-0 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl" transition={{ type: 'spring', stiffness: 300, damping: 30 }} />}
                   <span className="relative z-10">{c.name}</span>
