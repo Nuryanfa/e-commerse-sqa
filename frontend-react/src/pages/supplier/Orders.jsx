@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ShoppingCart, CheckCircle, Package, Search, Filter } from 'lucide-react';
 
 const S = {
-  card:  { background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' },
+  card:  { background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(0,0,0,0.02)' },
   label: { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--outline)', fontFamily: 'var(--font-display)' },
   h:     { fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text-heading)' },
   muted: { fontSize: '0.78rem', color: 'var(--outline)' },
@@ -72,11 +72,11 @@ export default function SupplierOrders() {
   const processed = orders.filter(o => o.status === 'PROCESSED').length;
 
   return (
-    <div style={{ padding: '2rem 1.5rem', maxWidth: '72rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ padding: '2.5rem 2rem', maxWidth: '75rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
         <div>
-          <h1 style={{ ...S.h, fontSize: '1.5rem', margin: 0 }}>Orders to Fulfill</h1>
+          <h1 style={{ ...S.h, fontSize: '1.75rem', margin: 0 }}>Orders to Fulfill</h1>
           <p style={{ ...S.muted, marginTop: '0.25rem' }}>Kelola pesanan masuk dan pengiriman</p>
         </div>
         {selected.length > 0 && (
