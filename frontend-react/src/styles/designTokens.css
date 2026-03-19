@@ -1,53 +1,186 @@
-/* Design Tokens – CSS Variables */
+/* ============================================================
+   DESIGN TOKENS — Stitch "Digital Greenhouse"
+   Full Material Design 3 token set, Light + Dark mode
+   ============================================================ */
+
+/* ── Google Fonts ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* ── LIGHT MODE (default) ─────────────────────────────────── */
 :root {
   /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
 
-  /* Primary color palette (emerald) */
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
+  /* ── Brand Gradient ─────────────────────────────────────── */
+  --brand-gradient: linear-gradient(135deg, #059669 0%, #10b981 55%, #34d399 100%);
 
-  /* Surface colors */
-  --surface-base: #f8fafc;
-  --surface-card: #ffffff;
-  --surface-elevated: #ffffff;
-  --surface-hover: #f0fdf4;
-  --surface-muted: #f0fdf4;
+  /* ── MD3 Primary (Emerald) ──────────────────────────────── */
+  --md-primary:              #006c3e;
+  --md-on-primary:           #ffffff;
+  --md-primary-container:    #d0ffe3;
+  --md-on-primary-container: #002111;
 
-  /* Text colors */
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --text-accent: #059669;
+  /* ── MD3 Error ─────────────────────────────────────────── */
+  --md-error:    #ba1a1a;
+  --md-on-error: #ffffff;
 
-  /* Border */
-  --border-primary: #e2e8f0;
-  --border-accent: rgba(16, 185, 129, 0.2);
+  /* ── MD3 Surfaces (tonal layering) ─────────────────────── */
+  --md-background:   #f8fdf9;
+  --md-on-background: #181d19;
+  --md-surface:                #f8fdf9;
+  --md-on-surface:             #181d19;
+  --md-surface-variant:        #dce5dc;
+  --md-on-surface-variant:     #404943;
 
-  /* Glass effect */
-  --glass-bg: rgba(248, 250, 252, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.6);
+  /* Alias tokens used in components */
+  --bg:                       var(--md-background);
+  --on-surface:               var(--md-on-surface);
+  --on-surface-variant:       var(--md-on-surface-variant);
+  --outline:                  #707972;
+  --outline-variant:          #c0c9c1;
+  --inverse-surface:          #2c312d;
+  --inverse-on-surface:       #eff1ee;
 
-  /* Shadows */
-  --shadow-soft: 0 1px 3px rgba(0,0,0,0.04);
-  --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
-  --shadow-hover: 0 12px 40px rgba(16,185,129,0.15);
+  /* ── Surface containers (tonal layering 5 levels) ───────── */
+  --surface-dim:              #d8dbda;
+  --surface-bright:           #f8fdf9;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low:    #f2f7f3;
+  --surface-container:        #ecf2ed;
+  --surface-container-high:   #e7ece8;
+  --surface-container-highest:#e1e6e2;
+
+  /* ── Legacy aliases (for older components) ──────────────── */
+  --surface-base:    var(--md-background);
+  --surface-card:    var(--surface-container-lowest);
+  --surface-input:   var(--surface-container);
+  --text-heading:    var(--md-on-background);
+  --text-body:       var(--md-on-surface-variant);
+  --text-primary:    var(--md-on-surface);
+  --text-secondary:  var(--md-on-surface-variant);
+  --text-muted:      var(--outline);
+  --border:          var(--outline-variant);
+  --border-light:    var(--surface-container-high);
+  --border-primary:  var(--outline-variant);
+
+  /* ── Border Radius ─────────────────────────────────────── */
+  --radius-sm:   0.375rem;  /* 6px */
+  --radius-md:   0.75rem;   /* 12px */
+  --radius-lg:   1rem;      /* 16px */
+  --radius-xl:   1.5rem;    /* 24px */
+  --radius-full: 9999px;
+
+  /* ── Spacing ────────────────────────────────────────────── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ── Shadows ────────────────────────────────────────────── */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:  0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg:  0 10px 20px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
+  --shadow-xl:  0 20px 40px rgba(0,0,0,0.10), 0 8px 16px rgba(0,0,0,0.06);
+
+  /* Legacy shadow names */
+  --shadow-soft:     var(--shadow-sm);
+  --shadow-card:     var(--shadow-md);
+  --shadow-elevated: var(--shadow-lg);
+  --shadow-hover:    var(--shadow-xl);
+  --shadow-glow:     0 8px 30px rgba(0,108,62,0.15);
+
+  /* ── Sidebar (internal panel) ───────────────────────────── */
+  --sidebar-width:            240px;
+  --sidebar-collapsed-width:  64px;
+  --sidebar-bg:               var(--surface-container-lowest);
+  --sidebar-border:           var(--border);
+  --sidebar-hover:            var(--surface-container-low);
+  --sidebar-active-bg:        var(--md-primary-container);
+  --sidebar-active-text:      var(--md-on-primary-container);
+  --sidebar-text:             var(--on-surface-variant);
+  --sidebar-muted:            var(--outline);
+
+  /* ── Glass ──────────────────────────────────────────────── */
+  --glass-bg:     rgba(248, 253, 249, 0.88);
+  --glass-border: rgba(255,255,255,0.6);
 }
 
-/* Dark mode overrides */
+/* ── DARK MODE ───────────────────────────────────────────── */
 .dark {
-  --surface-base: #0c1222;
-  --surface-card: #1a2540;
-  --surface-hover: #1e3a2f;
-  --text-primary: #e2e8f0;
-  --text-accent: #34d399;
-  --border-primary: #1e3048;
+  /* MD3 Primary */
+  --md-primary:              #6de99b;
+  --md-on-primary:           #003920;
+  --md-primary-container:    #005230;
+  --md-on-primary-container: #89fdb7;
+
+  /* MD3 Error */
+  --md-error:    #ffb4ab;
+  --md-on-error: #690005;
+
+  /* MD3 Surfaces */
+  --md-background:    #0f1712;
+  --md-on-background: #dde4dc;
+  --md-surface:       #0f1712;
+  --md-on-surface:    #dde4dc;
+  --md-surface-variant:        #404943;
+  --md-on-surface-variant:     #bfc9c0;
+
+  /* Alias tokens */
+  --bg:                       var(--md-background);
+  --on-surface:               var(--md-on-surface);
+  --on-surface-variant:       var(--md-on-surface-variant);
+  --outline:                  #8a9390;
+  --outline-variant:          #404943;
+  --inverse-surface:          #dde4dc;
+  --inverse-on-surface:       #2b322c;
+
+  /* Surface containers */
+  --surface-dim:              #0f1712;
+  --surface-bright:           #353b36;
+  --surface-container-lowest: #0a0f0d;
+  --surface-container-low:    #181d19;
+  --surface-container:        #1c2220;
+  --surface-container-high:   #262d27;
+  --surface-container-highest:#313831;
+
+  /* Legacy aliases */
+  --surface-base:    var(--md-background);
+  --surface-card:    var(--surface-container-low);
+  --surface-input:   var(--surface-container);
+  --text-heading:    var(--md-on-background);
+  --text-body:       var(--md-on-surface-variant);
+  --text-primary:    var(--md-on-surface);
+  --text-secondary:  var(--md-on-surface-variant);
+  --text-muted:      var(--outline);
+  --border:          var(--outline-variant);
+  --border-light:    var(--surface-container-high);
+  --border-primary:  var(--outline-variant);
+
+  /* Shadows */
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 10px rgba(0,0,0,0.35);
+  --shadow-lg:  0 10px 24px rgba(0,0,0,0.40);
+  --shadow-xl:  0 20px 40px rgba(0,0,0,0.50);
+  --shadow-glow: 0 8px 30px rgba(109,233,155,0.12);
+
+  /* Sidebar */
+  --sidebar-bg:          var(--surface-container-lowest);
+  --sidebar-border:      var(--border);
+  --sidebar-hover:       var(--surface-container-low);
+  --sidebar-active-bg:   var(--md-primary-container);
+  --sidebar-active-text: var(--md-on-primary-container);
+  --sidebar-text:        var(--on-surface-variant);
+  --sidebar-muted:       var(--outline);
+
+  /* Glass */
+  --glass-bg:     rgba(12, 18, 14, 0.88);
+  --glass-border: rgba(64, 73, 67, 0.6);
 }
