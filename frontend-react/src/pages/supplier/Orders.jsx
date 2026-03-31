@@ -51,13 +51,13 @@ export default function SupplierOrders() {
   const toggleAll = () => setSelected(s => s.length === orders.filter(o=>o.status==='PAID').length ? [] : orders.filter(o=>o.status==='PAID').map(o=>o.id_order));
 
   const processOrder = (id) => {
-    api.put(`/supplier/orders/${id}/status`, { status: "PROCESSED" })
+    api.put(`/supplier/orders/${id}/process`)
       .then(() => { toast.success('Pesanan diproses'); fetchOrders(); setSelected(s => s.filter(x => x !== id)); })
-      .catch(() => toast.error('Gagal update status'));
+      .catch((err) => toast.error(err.response?.data?.error || 'Gagal update status'));
   };
   const processBulk = () => {
     if(!selected.length) return;
-    Promise.all(selected.map(id => api.put(`/supplier/orders/${id}/status`, { status: "PROCESSED" })))
+    Promise.all(selected.map(id => api.put(`/supplier/orders/${id}/process`)))
       .then(() => { toast.success(`${selected.length} pesanan diproses`); setSelected([]); fetchOrders(); })
       .catch(() => toast.error('Beberapa gagal diproses'));
   };

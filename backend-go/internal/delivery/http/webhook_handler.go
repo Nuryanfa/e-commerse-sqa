@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type WebhookHandler struct {
@@ -55,7 +56,7 @@ func (h *WebhookHandler) MidtransNotification(c *gin.Context) {
 
 	// Dekode body request JSON dari webhook midtrans
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Payload webhook dari Midtrans tidak valid"})
+		response.Error(c, response.ErrBadRequest("Payload webhook dari Midtrans tidak valid"))
 		return
 	}
 
@@ -68,7 +69,7 @@ func (h *WebhookHandler) MidtransNotification(c *gin.Context) {
 		// Verifikasi tanda tangan Midtrans — tolak jika tidak cocok
 		if !verifyMidtransSignature(payload, serverKey) {
 			log.Printf("[WEBHOOK SECURITY] Signature tidak valid untuk OrderID: %v. Request ditolak.", payload["order_id"])
-			c.JSON(http.StatusForbidden, gin.H{"error": "Signature tidak valid. Akses ditolak."})
+			response.Error(c, response.ErrForbidden("Signature tidak valid. Akses ditolak."))
 			return
 		}
 	}
@@ -79,9 +80,9 @@ func (h *WebhookHandler) MidtransNotification(c *gin.Context) {
 	err := h.orderUsecase.ProcessPaymentWebhook(payload)
 	if err != nil {
 		log.Printf("[WEBHOOK ERROR] Gagal set Webhook status: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update status pesanan"})
+		response.Error(c, response.ErrInternal("Gagal update status pesanan"))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "sukses", "message": "notifikasi terekam"})
+	response.Success(c, http.StatusOK, "notifikasi terekam", nil)
 }

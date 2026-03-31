@@ -1,26 +1,27 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, Package, ShoppingCart, BarChart2,
-  AlertTriangle, Settings, HelpCircle, Plus, LogOut, ChevronLeft, ChevronRight, Store
+  LayoutDashboard, Users, Store, Truck, 
+  MessageSquareWarning, Settings, LogOut, ChevronLeft, ChevronRight, Activity, DollarSign
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function SellerSidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
+export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const { pathname } = useLocation();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   const links = [
-    { label: 'Dashboard',   path: '/supplier',           icon: <LayoutDashboard size={18} /> },
-    { label: 'Inventory',   path: '/supplier/products',  icon: <Package size={18} /> },
-    { label: 'Orders',      path: '/supplier/orders',    icon: <ShoppingCart size={18} /> },
-    { label: 'Analytics',   path: '/supplier/analytics', icon: <BarChart2 size={18} /> },
-    { label: 'Disputes',    path: '/supplier/disputes',  icon: <AlertTriangle size={18} /> },
-    { label: 'Settings',    path: '/supplier/settings',  icon: <Settings size={18} /> },
-    { label: 'Support',     path: '/supplier/support',   icon: <HelpCircle size={18} /> },
+    { label: 'Dashboard',   path: '/admin',             icon: <LayoutDashboard size={18} /> },
+    { label: 'Revenue',     path: '/admin/revenue',     icon: <DollarSign size={18} /> },
+    { label: 'Users',       path: '/admin/users',       icon: <Users size={18} /> },
+    { label: 'Sellers',     path: '/admin/sellers',     icon: <Store size={18} /> },
+    { label: 'Logistics',   path: '/admin/logistics',   icon: <Truck size={18} /> },
+    { label: 'Complaints',  path: '/admin/complaints',  icon: <MessageSquareWarning size={18} /> },
+    { label: 'System Logs', path: '/admin/logs',        icon: <Activity size={18} /> },
+    { label: 'Settings',    path: '/admin/settings',    icon: <Settings size={18} /> },
   ];
 
-  const handleLogout = () => { logout(); onClose?.(); };
+  const handleLogout = () => { logout(); };
 
   return (
     <>
@@ -46,12 +47,12 @@ export default function SellerSidebar({ isOpen, onClose, collapsed, onToggleColl
         <div style={{ padding: collapsed ? '1.5rem 0' : '1.5rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', borderBottom: '1px solid transparent' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
             <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: '#e2f5ec', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem' }}>{user?.nama?.charAt(0) || 'S'}</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem' }}>S</span>
             </div>
             {!collapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ whiteSpace: 'nowrap' }}>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1rem', color: 'var(--text-heading)', margin: 0, textTransform: 'tight' }}>{user?.nama || 'SayurSehat'}</h2>
-                <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Supplier Portal</p>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1rem', color: 'var(--text-heading)', margin: 0, textTransform: 'tight' }}>SayurSehat</h2>
+                <p style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Admin Console</p>
               </motion.div>
             )}
           </div>
@@ -61,8 +62,8 @@ export default function SellerSidebar({ isOpen, onClose, collapsed, onToggleColl
         <div style={{ flex: 1, padding: collapsed ? '1rem 0.5rem' : '1rem', overflowY: 'auto' }} className="custom-scrollbar">
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             {links.map((link) => {
-              // Exact match for /supplier to prevent it from matching /supplier/products etc.
-              const isActive = link.path === '/supplier' ? pathname === '/supplier' : pathname.startsWith(link.path);
+              // Exact match for /admin to prevent it from matching /admin/revenue etc.
+              const isActive = link.path === '/admin' ? pathname === '/admin' : pathname.startsWith(link.path);
               
               const activeStyle = isActive ? { background: '#e2f5ec', color: '#16a34a', fontWeight: 700 } : { background: 'transparent', color: 'var(--outline)', fontWeight: 600 };
 
@@ -93,19 +94,6 @@ export default function SellerSidebar({ isOpen, onClose, collapsed, onToggleColl
               );
             })}
           </ul>
-
-          {/* Quick Add Product Button */}
-          {!collapsed && (
-            <div style={{ marginTop: '2rem' }}>
-              <Link 
-                to="/supplier/products" 
-                state={{ openAddMenu: true }} 
-                onClick={onClose}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#16a34a', color: 'white', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', textDecoration: 'none', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.85rem' }}>
-                <Plus size={16} strokeWidth={3} /> Add Product
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* Footer Actions */}

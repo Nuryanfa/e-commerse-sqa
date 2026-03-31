@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import SellerSidebar from './components/SellerSidebar';
+import AdminSidebar from './components/AdminSidebar';
+import AdminNavbar from './components/AdminNavbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import StoreRoute from './components/StoreRoute';
 import PageWrapper from './components/PageWrapper';
@@ -28,11 +30,19 @@ import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminDisputes from './pages/admin/Disputes';
+import AdminRevenue from './pages/admin/Revenue';
+import AdminUsers from './pages/admin/Users';
+import AdminSellers from './pages/admin/Sellers';
+import AdminLogistics from './pages/admin/Logistics';
+import AdminLogs from './pages/admin/Logs';
+import AdminSettings from './pages/admin/Settings';
 import SupplierDashboard from './pages/supplier/Dashboard';
 import SupplierInventory from './pages/supplier/Inventory';
 import SupplierOrders from './pages/supplier/Orders';
 import SupplierAnalytics from './pages/supplier/Analytics';
 import SupplierDisputes from './pages/supplier/Disputes';
+import SupplierSettings from './pages/supplier/Settings';
+import SupplierSupport from './pages/supplier/Support';
 import CourierDashboard from './pages/courier/Dashboard';
 
 // ScrollToTop — scrolls to top on route change
@@ -65,6 +75,7 @@ function ScrollToTopButton() {
 
 const INTERNAL_ROUTES    = ['/admin', '/supplier', '/courier'];
 const SELLER_ROUTES      = ['/supplier'];
+const ADMIN_ROUTES       = ['/admin'];
 const BUYER_ROUTES       = ['/', '/products', '/cart', '/orders', '/wishlist', '/profile', '/login', '/register'];
 
 // Komponen route animasi
@@ -88,7 +99,13 @@ function AnimatedRoutes() {
         
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
-        <Route path="/admin/disputes" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDisputes /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/revenue" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminRevenue /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminUsers /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/sellers" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminSellers /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/logistics" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminLogistics /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/complaints" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDisputes /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/logs" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminLogs /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminSettings /></PageWrapper></ProtectedRoute>} />
         
         {/* Supplier Routes */}
         <Route path="/supplier" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDashboard /></PageWrapper></ProtectedRoute>} />
@@ -96,6 +113,8 @@ function AnimatedRoutes() {
         <Route path="/supplier/orders" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierOrders /></PageWrapper></ProtectedRoute>} />
         <Route path="/supplier/analytics" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierAnalytics /></PageWrapper></ProtectedRoute>} />
         <Route path="/supplier/disputes" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierDisputes /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/settings" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierSettings /></PageWrapper></ProtectedRoute>} />
+        <Route path="/supplier/support" element={<ProtectedRoute allowedRoles={['supplier']}><PageWrapper><SupplierSupport /></PageWrapper></ProtectedRoute>} />
         
         {/* Courier Routes */}
         <Route path="/courier/*" element={<ProtectedRoute allowedRoles={['courier']}><PageWrapper><CourierDashboard /></PageWrapper></ProtectedRoute>} />
@@ -122,6 +141,7 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
   const location = useLocation();
   const isInternalRoute = INTERNAL_ROUTES.some(r => location.pathname.startsWith(r));
   const isSellerRoute   = SELLER_ROUTES.some(r => location.pathname.startsWith(r));
+  const isAdminRoute    = ADMIN_ROUTES.some(r => location.pathname.startsWith(r));
 
   return (
     <motion.div
@@ -130,7 +150,7 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
       className="flex min-h-screen"
-      style={{ background: 'var(--bg)' }}
+      style={{ background: isAdminRoute ? 'var(--bg)' : 'var(--bg)' }} // Can adjust admin background here if needed
     >
       <ScrollToTop />
 
@@ -144,8 +164,18 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
         />
       )}
 
-      {/* Generic Sidebar for admin/courier */}
-      {isInternalRoute && !isSellerRoute && (
+      {/* AdminSidebar for admin */}
+      {isAdminRoute && (
+        <AdminSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+        />
+      )}
+
+      {/* Generic Sidebar for courier */}
+      {isInternalRoute && !isSellerRoute && !isAdminRoute && (
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -156,7 +186,10 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Navbar shown only for public/buyer routes */}
-        {!isInternalRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
+        {!isInternalRoute && !isAdminRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
+        
+        {/* PanelNavbar (AdminNavbar) shown for admin and seller routes */}
+        {(isAdminRoute || isSellerRoute) && <AdminNavbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
 
         <main className="flex-1">
           <AnimatedRoutes />

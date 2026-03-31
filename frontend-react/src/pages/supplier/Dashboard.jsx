@@ -4,14 +4,7 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Banknote, ShoppingCart, AlertTriangle, ChevronRight, Package, Truck } from 'lucide-react';
-
-const S = {
-  card:  { background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' },
-  label: { fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--outline)', fontFamily: 'var(--font-display)' },
-  h:     { fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text-heading)' },
-  muted: { fontSize: '0.875rem', color: 'var(--outline)' },
-};
+import { Package, Truck, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 
 export default function SupplierDashboard() {
   const { user } = useAuth();
@@ -42,133 +35,167 @@ export default function SupplierDashboard() {
   const recentOrders   = orders.filter(o => o.status === 'PAID').slice(0, 3);
 
   const processOrder = (id) => {
-    api.put(`/supplier/orders/${id}/status`, { status: "PROCESSED" })
+    api.put(`/supplier/orders/${id}/process`)
       .then(() => { toast.success('Pesanan diproses'); setOrders(orders.map(o => o.id_order === id ? { ...o, status: 'PROCESSED' } : o)); })
-      .catch(() => toast.error('Gagal proses pesanan'));
+      .catch((err) => toast.error(err.response?.data?.error || 'Gagal merespon pesanan'));
   };
 
   return (
-    <div style={{ padding: '2.5rem 2rem', maxWidth: '75rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ ...S.h, fontSize: '1.75rem', margin: 0 }}>Dashboard Overview</h1>
-        <p style={{ ...S.muted, marginTop: '0.35rem' }}>Welcome back, {user?.nama || 'Seller'}. Here's what's happening today.</p>
+    <div className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen">
+      {/* Header Premium */}
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-900 to-slate-900 p-8 sm:p-10 mb-8 border border-slate-700 shadow-2xl shadow-indigo-900/10 isolate animate-fade-in-up">
+        {/* Dekorasi BG */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
+        <div className="absolute -bottom-24 left-1/4 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+              <Store className="w-8 h-8 text-indigo-300" />
+            </div>
+            <div>
+              <p className="text-indigo-200 font-medium text-xs tracking-widest uppercase mb-1">Dashboard Mitra Toko</p>
+              <h1 className="text-3xl font-black text-white tracking-tight">Halo, {user?.nama || 'Pengelola'}!</h1>
+            </div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3.5 rounded-2xl text-center">
+            <p className="text-xs text-indigo-200 uppercase font-bold tracking-widest mb-1">Omzet Aktif (Berjalan)</p>
+            <p className="text-2xl font-black text-white font-mono">Rp {(totalSales).toLocaleString('id-ID')}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} style={{ ...S.card, padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-            <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
-              <Banknote size={20} strokeWidth={2.5} />
+      {/* Grid Statistik Utma */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {[
+          { icon: TrendingUp, label: 'Kinerja Penjualan (MTD)', val: `Rp ${(totalSales/1000000).toFixed(2)}M`, pct: '+12.5%', isAlert: false, colorClass: 'text-emerald-500', bgClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
+          { icon: Package, label: 'Pesanan Diproses', val: activeOrders, pct: 'Aktif', isAlert: false, colorClass: 'text-indigo-500', bgClass: 'bg-indigo-50 dark:bg-indigo-900/20' },
+          { icon: AlertTriangle, label: 'Peringatan Stok', val: stockAlerts > 0 ? `${stockAlerts} Barang` : 'Stok Aman', pct: stockAlerts > 0 ? 'Urgent' : 'Aman', isAlert: stockAlerts > 0, colorClass: stockAlerts > 0 ? 'text-rose-500' : 'text-slate-500', bgClass: stockAlerts > 0 ? 'bg-rose-50 dark:bg-rose-900/20' : 'bg-slate-50 dark:bg-slate-900/20' },
+        ].map((s, i) => (
+          <motion.div 
+            key={i} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: i * 0.1 }} 
+            className="group relative bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300"
+          >
+            <div className="flex items-start justify-between mb-4">
+               <div>
+                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1.5">{s.label}</p>
+                 <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${s.isAlert ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'}`}>
+                   {s.pct}
+                 </span>
+               </div>
+               <div className={`w-12 h-12 rounded-2xl ${s.bgClass} flex flex-col items-center justify-center group-hover:scale-110 transition-transform`}>
+                 <s.icon className={`w-6 h-6 ${s.colorClass}`} />
+               </div>
             </div>
-            <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)' }}>+12.5%</span>
-          </div>
-          <p style={{ ...S.label }}>Total Sales (MTD)</p>
-          <p style={{ ...S.h, fontSize: '2rem', marginTop: '0.25rem' }}>Rp {(totalSales/1000000).toFixed(2)}M</p>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ ...S.card, padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-            <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-              <ShoppingCart size={20} strokeWidth={2.5} />
-            </div>
-            <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)' }}>+5%</span>
-          </div>
-          <p style={{ ...S.label }}>Active Orders</p>
-          <p style={{ ...S.h, fontSize: '2rem', marginTop: '0.25rem' }}>{activeOrders}</p>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ ...S.card, padding: '1.5rem', border: stockAlerts > 0 ? '1px solid #fca5a5' : '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-            <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
-              <AlertTriangle size={20} strokeWidth={2.5} />
-            </div>
-            {stockAlerts > 0 && <span style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>{stockAlerts} Items Low</span>}
-          </div>
-          <p style={{ ...S.label }}>Stock Alerts</p>
-          <p style={{ ...S.h, fontSize: '2rem', marginTop: '0.25rem', color: stockAlerts > 0 ? '#dc2626' : 'var(--text-heading)' }}>{stockAlerts > 0 ? 'Requires Attention' : 'All Good'}</p>
-        </motion.div>
+            <h3 className={`text-3xl font-black ${s.isAlert ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'}`}>{s.val}</h3>
+          </motion.div>
+        ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-        {/* Inventory Management Preview */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.25rem' }}>
-            <h2 style={{ ...S.h, fontSize: '1.25rem', margin: 0 }}>Inventory Management</h2>
-            <Link to="/supplier/products" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: '#16a34a', fontWeight: 600, textDecoration: 'none' }}>
-              View All <ChevronRight size={16} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Inventori Overview */}
+        <div className="lg:col-span-2">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Package className="w-5 h-5 text-indigo-500" /> Ringkasan Inventori
+            </h3>
+            <Link to="/supplier/products" className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-lg transition-colors">
+              Lihat Katalog <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
           
-          <div style={{ ...S.card, padding: 0, overflow: 'hidden', flex: 1 }}>
-            {loading ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--outline)' }}>Loading inventory...</div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                <thead>
-                  <tr style={{ background: 'var(--surface-container-low)' }}>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', ...S.label }}>PRODUCT</th>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', ...S.label }}>CATEGORY</th>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'center', ...S.label }}>STOCK</th>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', ...S.label }}>PRICE</th>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'center', ...S.label }}>STATUS</th>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Produk</th>
+                    <th className="px-6 py-4 text-center">Stok (Kg)</th>
+                    <th className="px-6 py-4 text-right">Harga</th>
+                    <th className="px-6 py-4 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {recentProducts.map(p => (
-                    <tr key={p.id_product} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'var(--surface-container-low)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                      <td style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                        {p.image_url ? <img src={p.image_url} style={{ width: '2rem', height: '2rem', borderRadius: '0.35rem', objectFit: 'cover' }} /> : <div style={{ width: '2rem', height: '2rem', borderRadius: '0.35rem', background: 'var(--surface-container-high)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={14} color="var(--outline)" /></div>}
-                        <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{p.name}</span>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50 font-medium">
+                  {loading ? (
+                    <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400 bg-gray-50/50 dark:bg-slate-800/50">Memuat data produk...</td></tr>
+                  ) : recentProducts.map((p) => (
+                    <tr key={p.id_product} className="hover:bg-gray-50 dark:hover:bg-slate-750 transition-colors">
+                      <td className="px-6 py-4 flex items-center gap-4 border-none">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-xl object-cover border border-gray-200 dark:border-slate-700" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
+                            <Package className="w-5 h-5" />
+                          </div>
+                        )}
+                        <span className="font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{p.name}</span>
                       </td>
-                      <td style={{ padding: '1rem 1.5rem', color: 'var(--outline)' }}>{p.category?.name || 'Sayuran'}</td>
-                      <td style={{ padding: '1rem 1.5rem', textAlign: 'center', fontWeight: 600, color: p.stock <= 5 ? '#dc2626' : 'var(--text-heading)' }}>{p.stock} kg</td>
-                      <td style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-heading)' }}>Rp {p.price.toLocaleString('id-ID')}</td>
-                      <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                        {p.stock > 10 ? <span style={{ background: '#dcfce7', color: '#16a34a', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: 700 }}>Available</span> : p.stock > 0 ? <span style={{ background: '#fef08a', color: '#854d0e', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: 700 }}>Low Stock</span> : <span style={{ background: '#fee2e2', color: '#dc2626', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: 700 }}>Out of Stock</span>}
+                      <td className={`px-6 py-4 text-center font-bold font-mono ${p.stock <= 5 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'}`}>
+                        {p.stock}
+                      </td>
+                      <td className="px-6 py-4 text-right text-gray-600 dark:text-gray-300">
+                        Rp {p.price.toLocaleString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${p.stock > 10 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                          {p.stock > 10 ? 'Tersedia' : 'Restock'}
+                        </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            {recentProducts.length === 0 && !loading && (
+               <div className="p-8 text-center text-gray-500 font-medium">Belum ada produk di daftar katalog Anda.</div>
             )}
           </div>
         </div>
 
-        {/* Orders to Fulfill */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.25rem' }}>
-            <h2 style={{ ...S.h, fontSize: '1.25rem', margin: 0 }}>Orders to Fulfill</h2>
-            <span style={{ background: '#dcfce7', color: '#16a34a', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700 }}>{recentOrders.length} New</span>
+        {/* Antrean Pengiriman (Live Order Feed) */}
+        <div>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Truck className="w-5 h-5 text-indigo-500" /> Antrean Kiriman
+            </h3>
+            <span className="text-xs font-bold tracking-widest text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1.5 rounded-lg uppercase">
+              {recentOrders.length} Tertunda
+            </span>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm flex flex-col gap-4">
             {recentOrders.length === 0 && !loading && (
-              <div style={{ ...S.card, padding: '3rem', textAlign: 'center', color: 'var(--outline)' }}>Semua pesanan sudah diproses!</div>
+              <div className="py-12 text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl">
+                <CheckCircle className="w-10 h-10 text-emerald-400 mb-2" />
+                <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Semua pesanan selesai diproses.</p>
+              </div>
             )}
             {recentOrders.map(o => (
-              <motion.div key={o.id_order} initial={{opacity:0, y:10}} animate={{opacity:1,y:0}} style={{ ...S.card, padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--outline)' }}>Order #{o.id_order?.slice(0,8).toUpperCase()}</span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--outline)', background: 'var(--surface-container-high)', padding: '0.2rem 0.5rem', borderRadius: '0.25rem' }}>BARU SAJA</span>
+              <div key={o.id_order} className="group relative bg-gray-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700/50 hover:border-indigo-500/30 transition-all flex flex-col">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse-soft" />
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">Pemesan: {o.user?.nama || 'Tamu'}</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-100 dark:border-slate-700">Baru</span>
                 </div>
-                <h4 style={{ ...S.h, margin: '0 0 0.5rem 0', fontSize: '1rem' }}>{o.user?.nama || 'Guest Customer'}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--outline)', marginBottom: '1rem' }}>
-                  <Package size={14} /> <span>{o.items?.length || 1} items</span>
-                  <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--outline)' }} />
-                  <span>Rp {o.total_amount?.toLocaleString('id-ID')}</span>
+                
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-gray-100 dark:border-slate-700/50 mb-3">
+                   <p className="text-xs font-mono text-gray-500 mb-1 flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> #{o.id_order?.split('-')[0].toUpperCase()}</p>
+                   <p className="text-sm font-black text-gray-900 dark:text-white">Rp {o.total_amount?.toLocaleString('id-ID')}</p>
                 </div>
-                <button onClick={() => processOrder(o.id_order)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#006c3e', color: 'white', padding: '0.65rem', borderRadius: '0.5rem', border: 'none', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-display)', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#005a33'} onMouseOut={e=>e.currentTarget.style.background='#006c3e'}>
-                  <Truck size={16} strokeWidth={2.5} /> Process Order
+                
+                <button 
+                  onClick={() => processOrder(o.id_order)} 
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-transform shadow-md shadow-indigo-500/20 hover:-translate-y-0.5"
+                >
+                  <Package className="w-4 h-4" /> Proses Sekarang
                 </button>
-              </motion.div>
+              </div>
             ))}
-            {recentOrders.length > 0 && (
-              <Link to="/supplier/orders" style={{ textAlign: 'center', color: '#16a34a', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none', padding: '0.5rem' }}>
-                Lihat Semua Pesanan
-              </Link>
-            )}
           </div>
         </div>
       </div>

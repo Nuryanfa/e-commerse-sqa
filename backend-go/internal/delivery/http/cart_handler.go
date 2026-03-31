@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type CartHandler struct {
@@ -29,49 +30,61 @@ func NewCartHandler(r *gin.RouterGroup, uc domain.CartUsecase) {
 func (h *CartHandler) AddToCart(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := userID.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	var req domain.CartItem
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.cartUsecase.AddToCart(uid, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Barang berhasil ditambahkan ke keranjang"})
+	response.Success(c, http.StatusOK, "Barang berhasil ditambahkan ke keranjang", nil)
 }
 
 func (h *CartHandler) ViewCart(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := userID.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	items, err := h.cartUsecase.ViewCart(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal merender keranjang", "detail": err.Error()})
+		response.Error(c, response.ErrInternal("Gagal merender keranjang: " + err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": items})
+	response.Success(c, http.StatusOK, "Berhasil memuat keranjang belanja", items)
 }
 
 func (h *CartHandler) UpdateQuantity(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := userID.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	itemID := c.Param("id")
 
 	var req struct {
@@ -79,31 +92,35 @@ func (h *CartHandler) UpdateQuantity(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Kuantitas tidak valid"})
+		response.Error(c, response.ErrBadRequest("Kuantitas tidak valid"))
 		return
 	}
 
 	if err := h.cartUsecase.UpdateQuantity(uid, itemID, req.Quantity); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Kuantitas diperbarui"})
+	response.Success(c, http.StatusOK, "Kuantitas diperbarui", nil)
 }
 
 func (h *CartHandler) RemoveFromCart(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := userID.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	itemID := c.Param("id")
 
 	if err := h.cartUsecase.RemoveFromCart(uid, itemID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Barang dihapus dari keranjang"})
+	response.Success(c, http.StatusOK, "Barang dihapus dari keranjang", nil)
 }

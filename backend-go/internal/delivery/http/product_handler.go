@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type ProductHandler struct {
@@ -73,7 +74,7 @@ func (h *ProductHandler) parseProductRequest(c *gin.Context, req *domain.Product
 		}
 
 		if req.Name == "" || req.CategoryID == "" || req.Price <= 0 || req.Stock < 0 {
-			return errors.New("Validasi gagal: pastikan semua field wajib terisi dengan benar")
+			return errors.New("validasi gagal: pastikan semua field wajib terisi dengan benar")
 		}
 		return nil
 	}
@@ -84,60 +85,60 @@ func (h *ProductHandler) parseProductRequest(c *gin.Context, req *domain.Product
 func (h *ProductHandler) Create(c *gin.Context) {
 	var req domain.Product
 	if err := h.parseProductRequest(c, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.productUsecase.Create(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Produk berhasil dibuat", "data": req})
+	response.Success(c, http.StatusCreated, "Produk berhasil dibuat", req)
 }
 
 func (h *ProductHandler) FindAll(c *gin.Context) {
 	products, err := h.productUsecase.FindAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": products})
+	response.Success(c, http.StatusOK, "Berhasil memuat daftar produk", products)
 }
 
 func (h *ProductHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 	product, err := h.productUsecase.FindByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrNotFound(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": product})
+	response.Success(c, http.StatusOK, "Berhasil memuat detail produk", product)
 }
 
 func (h *ProductHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req domain.Product
 	if err := h.parseProductRequest(c, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.productUsecase.Update(id, &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil diupdate", "data": req})
+	response.Success(c, http.StatusOK, "Produk berhasil diupdate", req)
 }
 
 func (h *ProductHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.productUsecase.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil dihapus"})
+	response.Success(c, http.StatusOK, "Produk berhasil dihapus", nil)
 }
 
 func (h *ProductHandler) Search(c *gin.Context) {
@@ -160,13 +161,11 @@ func (h *ProductHandler) Search(c *gin.Context) {
 
 	products, err := h.productUsecase.Search(keyword, categoryID, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	// For infinite scroll, frontend might need 'has_more' flag or total products info.
-	// Since we don't have a Count query right now, returning current length is sufficient for basic next-page checks
-	c.JSON(http.StatusOK, gin.H{
+	response.Success(c, http.StatusOK, "Berhasil memuat hasil pencarian", map[string]interface{}{
 		"data": products, 
 		"total": len(products),
 		"page": page,

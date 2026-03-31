@@ -52,6 +52,7 @@ type OrderRepository interface {
 	FindByProductSupplier(supplierID string) ([]Order, error)
 	// Cronjob Methods
 	CancelExpiredOrders(cutoffTime time.Time) (int, error)
+	CancelOrderTransaction(orderID string) error
 	// Bulk Operations
 	BatchUpdateStatus(orderIDs []string, status string) error
 }

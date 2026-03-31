@@ -122,9 +122,16 @@ export default function Navbar() {
               </Link>
             )}
 
+            {/* Orders */}
+            {isAuthenticated && user?.role === 'pembeli' && (
+              <Link to="/orders" className="relative transition hover:bg-gray-100 dark:hover:bg-slate-700" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', textDecoration: 'none' }}>
+                <Package style={{ width: '1rem', height: '1rem' }} />
+              </Link>
+            )}
+
             {/* Cart */}
             {isAuthenticated && user?.role === 'pembeli' && (
-              <Link to="/cart" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', textDecoration: 'none', position: 'relative' }}>
+              <Link to="/cart" className="relative transition hover:bg-gray-100 dark:hover:bg-slate-700" style={{ width: '2.25rem', height: '2.25rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-surface-variant)', textDecoration: 'none', position: 'relative' }}>
                 <ShoppingCart style={{ width: '1rem', height: '1rem' }} />
               </Link>
             )}

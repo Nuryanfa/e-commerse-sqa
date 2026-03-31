@@ -110,6 +110,10 @@ func main() {
 	disputeRepo := repository.NewDisputeRepository(db)
 	disputeUsecase := usecase.NewDisputeUseCase(disputeRepo, orderRepo)
 
+	// Admin API
+	adminRepo := repository.NewAdminRepository(db)
+	adminUsecase := usecase.NewAdminUsecase(adminRepo)
+
 	// 4. Protected Routes
 
 	// 4a. Admin-only routes (JWT + Role "admin")
@@ -119,6 +123,7 @@ func main() {
 	{
 		deliveryHTTP.NewCategoryHandler(router, adminRoutes, categoryUsecase)
 		deliveryHTTP.NewProductHandler(router, adminRoutes, productUsecase)
+		deliveryHTTP.NewAdminHandler(adminRoutes, adminUsecase)
 	}
 
 	// 4b. Auth-only routes (JWT — semua role: pembeli, admin, dll)

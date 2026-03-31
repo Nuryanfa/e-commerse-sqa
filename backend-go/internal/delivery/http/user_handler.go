@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type UserHandler struct {
@@ -36,25 +37,22 @@ func NewUserHandler(r *gin.Engine, us domain.UserUsecase, loginRateLimiter gin.H
 func (h *UserHandler) Register(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	user.Email = strings.ToLower(user.Email)
 
 	if err := h.userUsecase.Register(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Registrasi berhasil",
-		"data": map[string]string{
-			"id_user": user.ID,
-			"nama":    user.Nama,
-			"email":   user.Email,
-			"role":    user.Role,
-		},
+	response.Success(c, http.StatusCreated, "Registrasi berhasil", map[string]string{
+		"id_user": user.ID,
+		"nama":    user.Nama,
+		"email":   user.Email,
+		"role":    user.Role,
 	})
 }
 
@@ -65,7 +63,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&loginReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email dan Password tidak valid"})
+		response.Error(c, response.ErrBadRequest("Email dan Password tidak valid"))
 		return
 	}
 
@@ -73,24 +71,27 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 	token, role, err := h.userUsecase.Login(loginReq.Email, loginReq.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrUnauthorized(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login berhasil",
-		"token":   token,
-		"role":    role,
+	response.Success(c, http.StatusOK, "Login berhasil", map[string]interface{}{
+		"token": token,
+		"role":  role,
 	})
 }
 
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	var req struct {
 		Name    string `json:"name" binding:"required"`
@@ -99,16 +100,14 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid: Nama diwajibkan"})
+		response.Error(c, response.ErrBadRequest("Data tidak valid: Nama diwajibkan"))
 		return
 	}
 
 	if err := h.userUsecase.UpdateProfile(uid, req.Name, req.Phone, req.Address); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Profil berhasil diperbarui",
-	})
+	response.Success(c, http.StatusOK, "Profil berhasil diperbarui", nil)
 }

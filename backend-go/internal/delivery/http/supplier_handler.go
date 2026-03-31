@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type SupplierHandler struct {
@@ -36,10 +37,10 @@ func (h *SupplierHandler) MyProducts(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 	products, err := h.productUsecase.FindBySupplierID(supplierID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": products, "total": len(products)})
+	response.Success(c, http.StatusOK, "Daftar produk dimuat", map[string]interface{}{"data": products, "total": len(products)})
 }
 
 func (h *SupplierHandler) parseProductRequest(c *gin.Context, req *domain.Product) error {
@@ -85,16 +86,16 @@ func (h *SupplierHandler) CreateProduct(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 	var req domain.Product
 	if err := h.parseProductRequest(c, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.productUsecase.CreateBySupplier(supplierID, &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Produk berhasil dibuat", "data": req})
+	response.Success(c, http.StatusCreated, "Produk berhasil dibuat", req)
 }
 
 func (h *SupplierHandler) UpdateProduct(c *gin.Context) {
@@ -102,16 +103,16 @@ func (h *SupplierHandler) UpdateProduct(c *gin.Context) {
 	productID := c.Param("id")
 	var req domain.Product
 	if err := h.parseProductRequest(c, &req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.productUsecase.UpdateBySupplier(supplierID, productID, &req); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrForbidden(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil diupdate"})
+	response.Success(c, http.StatusOK, "Produk berhasil diupdate", nil)
 }
 
 func (h *SupplierHandler) DeleteProduct(c *gin.Context) {
@@ -119,21 +120,21 @@ func (h *SupplierHandler) DeleteProduct(c *gin.Context) {
 	productID := c.Param("id")
 
 	if err := h.productUsecase.DeleteBySupplier(supplierID, productID); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrForbidden(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil dihapus"})
+	response.Success(c, http.StatusOK, "Produk berhasil dihapus", nil)
 }
 
 func (h *SupplierHandler) MyOrders(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 	orders, err := h.orderUsecase.GetSupplierOrders(supplierID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": orders, "total": len(orders)})
+	response.Success(c, http.StatusOK, "Daftar pesanan termuat", map[string]interface{}{"data": orders, "total": len(orders)})
 }
 
 func (h *SupplierHandler) ProcessOrder(c *gin.Context) {
@@ -141,11 +142,11 @@ func (h *SupplierHandler) ProcessOrder(c *gin.Context) {
 	orderID := c.Param("id")
 
 	if err := h.orderUsecase.ProcessSupplierOrder(supplierID, orderID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Pesanan berhasil diproses dan siap diserahkan ke kurir"})
+	response.Success(c, http.StatusOK, "Pesanan berhasil diproses dan siap diserahkan ke kurir", nil)
 }
 
 func (h *SupplierHandler) BatchProcessOrders(c *gin.Context) {
@@ -156,14 +157,14 @@ func (h *SupplierHandler) BatchProcessOrders(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Daftar ID Pesanan (order_ids) tidak boleh kosong"})
+		response.Error(c, response.ErrBadRequest("Daftar ID Pesanan (order_ids) tidak boleh kosong"))
 		return
 	}
 
 	if err := h.orderUsecase.BatchProcessSupplierOrders(supplierID, req.OrderIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("%d pesanan berhasil diproses serentak", len(req.OrderIDs))})
+	response.Success(c, http.StatusOK, fmt.Sprintf("%d pesanan berhasil diproses serentak", len(req.OrderIDs)), nil)
 }

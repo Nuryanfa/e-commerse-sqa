@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type CategoryHandler struct {
@@ -38,58 +39,58 @@ func NewCategoryHandler(publicRouter *gin.Engine, adminRouter *gin.RouterGroup, 
 func (h *CategoryHandler) Create(c *gin.Context) {
 	var req domain.Category
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.categoryUsecase.Create(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Kategori berhasil dibuat", "data": req})
+	response.Success(c, http.StatusCreated, "Kategori berhasil dibuat", req)
 }
 
 func (h *CategoryHandler) FindAll(c *gin.Context) {
 	categories, err := h.categoryUsecase.FindAll()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": categories})
+	response.Success(c, http.StatusOK, "Berhasil memuat daftar kategori", categories)
 }
 
 func (h *CategoryHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 	category, err := h.categoryUsecase.FindByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrNotFound(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": category})
+	response.Success(c, http.StatusOK, "Berhasil memuat detail kategori", category)
 }
 
 func (h *CategoryHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req domain.Category
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
 	if err := h.categoryUsecase.Update(id, &req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Kategori berhasil diupdate"})
+	response.Success(c, http.StatusOK, "Kategori berhasil diupdate", nil)
 }
 
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.categoryUsecase.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Kategori berhasil dihapus"})
+	response.Success(c, http.StatusOK, "Kategori berhasil dihapus", nil)
 }

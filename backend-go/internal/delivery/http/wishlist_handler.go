@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type WishlistHandler struct {
@@ -25,44 +26,49 @@ func NewWishlistHandler(router *gin.RouterGroup, wu usecase.WishlistUsecase) {
 }
 
 func (h *WishlistHandler) GetMyWishlist(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	wishlist, err := h.wishlistUsecase.GetMyWishlist(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memuat wishlist"})
+		response.Error(c, response.ErrInternal("Gagal memuat wishlist"))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Wishlist berhasil dimuat",
-		"data":    wishlist,
-	})
+	response.Success(c, http.StatusOK, "Wishlist berhasil dimuat", wishlist)
 }
 
 func (h *WishlistHandler) ToggleWishlist(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	var req struct {
 		ProductID string `json:"id_product" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		response.Error(c, response.ErrBadRequest("Invalid request body"))
 		return
 	}
 
 	added, err := h.wishlistUsecase.ToggleWishlist(uid, req.ProductID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
@@ -71,29 +77,27 @@ func (h *WishlistHandler) ToggleWishlist(c *gin.Context) {
 		msg = "Berhasil ditambahkan ke wishlist"
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": msg,
-		"added":   added,
-	})
+	response.Success(c, http.StatusOK, msg, map[string]bool{"added": added})
 }
 
 func (h *WishlistHandler) CheckWishlist(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	productID := c.Param("id")
 
 	existsStatus, err := h.wishlistUsecase.CheckIsWishlisted(uid, productID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Status wishlist dicek",
-		"is_wishlisted": existsStatus,
-	})
+	response.Success(c, http.StatusOK, "Status wishlist dicek", map[string]bool{"is_wishlisted": existsStatus})
 }

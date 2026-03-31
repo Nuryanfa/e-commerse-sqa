@@ -7,6 +7,7 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type ReviewHandler struct {
@@ -32,29 +33,30 @@ func (h *ReviewHandler) GetProductReviews(c *gin.Context) {
 
 	reviews, err := h.reviewUsecase.GetProductReviews(productID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memuat ulasan"})
+		response.Error(c, response.ErrInternal("Gagal memuat ulasan"))
 		return
 	}
 
 	avgRating, _ := h.reviewUsecase.GetProductAverageRating(productID)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Ulasan berhasil dimuat",
-		"data": gin.H{
-			"reviews": reviews,
-			"average": avgRating,
-			"count":   len(reviews),
-		},
+	response.Success(c, http.StatusOK, "Ulasan berhasil dimuat", map[string]interface{}{
+		"reviews": reviews,
+		"average": avgRating,
+		"count":   len(reviews),
 	})
 }
 
 func (h *ReviewHandler) AddReview(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	productID := c.Param("id")
 
 	var req struct {
@@ -63,7 +65,7 @@ func (h *ReviewHandler) AddReview(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid. Rating harus 1-5"})
+		response.Error(c, response.ErrBadRequest("Data tidak valid. Rating harus 1-5"))
 		return
 	}
 
@@ -75,12 +77,9 @@ func (h *ReviewHandler) AddReview(c *gin.Context) {
 	}
 
 	if err := h.reviewUsecase.AddReview(review); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Ulasan berhasil ditambahkan",
-		"data":    review,
-	})
+	response.Success(c, http.StatusCreated, "Ulasan berhasil ditambahkan", review)
 }

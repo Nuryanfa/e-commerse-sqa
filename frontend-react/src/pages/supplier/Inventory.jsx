@@ -3,6 +3,7 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useModal } from '../../context/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import ImageDropzone from '../../components/ImageDropzone';
 import { Package, Plus, Edit, Trash2, Tag, Search, X, CheckCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 
@@ -18,7 +19,8 @@ export default function SupplierInventory() {
   const [products,    setProducts]  = useState([]);
   const [categories,  setCategories]= useState([]);
   const [loading,     setLoading]   = useState(true);
-  const [showForm,    setShowForm]  = useState(false);
+  const location = useLocation();
+  const [showForm,    setShowForm]  = useState(location.state?.openAddMenu || false);
   const [editing,     setEditing]   = useState(null);
   const [form,        setForm]      = useState({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' });
   const [imageFile,   setImageFile] = useState(null);
@@ -34,7 +36,14 @@ export default function SupplierInventory() {
       .catch(() => toast.error('Gagal memuat produk'))
       .finally(() => setLoading(false));
   };
-  useEffect(fetch, []);
+  
+  useEffect(() => {
+    fetch();
+    if (location.state?.openAddMenu) {
+      setShowForm(true);
+      window.history.replaceState({}, document.title); // clear state
+    }
+  }, [location.state?.openAddMenu]);
 
   const resetForm = () => { setForm({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' }); setEditing(null); setShowForm(false); setImageFile(null); };
 

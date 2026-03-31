@@ -19,7 +19,7 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
     setIsAdding(true);
     try {
-      await api.post('/cart', { product_id: product.id_product, quantity });
+      await api.post('/cart', { id_product: product.id_product, quantity });
       toast.success(`${quantity} ${product.name} ditambahkan ke keranjang`);
       onClose();
     } catch (err) {

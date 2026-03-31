@@ -55,19 +55,19 @@ func (r *disputeRepository) GetDisputesByRole(role string, userID string) ([]dom
 	log.Printf("[DEBUG-DISPUTE-REPO] Role: %s, UserID: %s", role, userID)
 
 	switch role {
-	case "pembeli":
+	case domain.RoleBuyer:
 		query = query.Where("id_buyer = ?", userID)
-	case "supplier":
+	case domain.RoleSupplier:
 		// Mencari Sengketa (Dispute) di mana Order bersangkutan memuat produk milik Supplier ini
 		query = query.Joins("JOIN orders ON disputes.id_order = orders.id_order").
 			Joins("JOIN order_items ON orders.id_order = order_items.id_order").
 			Joins("JOIN products ON order_items.id_product = products.id_product").
 			Where("products.supplier_id = ?", userID).Distinct("disputes.id_dispute")
-	case "admin":
+	case domain.RoleAdmin:
 		// Admin melihat seluruh komplain masuk
-	case "courier":
+	case domain.RoleCourier:
 		// Kurir melihat komplain yang butuh di-pickup ATAU yang dia bawa
-		query = query.Where("status = 'APPROVED_FOR_RETURN' OR disputes.courier_id = ?", userID)
+		query = query.Where("status = ? OR disputes.courier_id = ?", domain.DisputeStatusApprovedForReturn, userID)
 	default:
 		return nil, gorm.ErrRecordNotFound
 	}
@@ -87,7 +87,7 @@ func (r *disputeRepository) UpdateDisputeStatus(id string, status string, adminN
 func (r *disputeRepository) AssignCourier(disputeID string, courierID string) error {
 	return r.db.Model(&domain.Dispute{}).Where("id_dispute = ?", disputeID).Updates(map[string]interface{}{
 		"courier_id": courierID,
-		"status":     "RETURNING",
+		"status":     domain.DisputeStatusReturning,
 	}).Error
 }
 

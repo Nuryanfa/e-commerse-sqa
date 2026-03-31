@@ -1,347 +1,244 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Download, Calendar, Activity, CheckCircle, AlertTriangle, AlertCircle, Users, Store, TrendingUp, PackageCheck, Zap } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { useModal } from '../../context/ModalContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import ImageDropzone from '../../components/ImageDropzone';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Package, Tags, BarChart2, DollarSign, Plus, Edit, Trash2 } from 'lucide-react';
-
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f43f5e'];
 
 export default function AdminDashboard() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('products');
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '' });
-  const [prodForm, setProdForm] = useState({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' });
-  const [editingProd, setEditingProd] = useState(null);
-  const [showProdForm, setShowProdForm] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
+  const [stats, setStats] = useState({
+    gross_revenue: 0,
+    total_users: 0,
+    total_sellers: 0,
+    revenue_trends: [],
+    top_categories: [],
+    recent_logs: [],
+    live_feed: []
+  });
   const toast = useToast();
-  const modal = useModal();
 
-  const fetchData = () => {
-    setLoading(true);
-    Promise.all([api.get('/products'), api.get('/categories')]).then(([p, c]) => {
-      setProducts(p.data.data || []); setCategories(c.data.data || []);
-    }).catch(() => {}).finally(() => setLoading(false));
-  };
-  useEffect(fetchData, []);
+  useEffect(() => {
+    api.get('/admin/dashboard')
+      .then(res => setStats(res.data.data))
+      .catch(() => toast.error('Gagal memuat statistik dashboard'))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const submitCat = async (e) => {
-    e.preventDefault();
-    try {
-      if (editing) { 
-        await api.put(`/categories/${editing}`, form); 
-        toast.success('Kategori berhasil diperbarui');
-      } else { 
-        await api.post('/categories', form); 
-        toast.success('Kategori berhasil ditambahkan');
-      }
-      setForm({ name: '' }); setEditing(null); setShowForm(false); fetchData();
-    } catch (err) { toast.error(err.response?.data?.error || 'Gagal menyimpan kategori'); }
-  };
-  const delCat = (id) => { 
-    modal.confirm({
-      title: 'Hapus Kategori',
-      message: 'Apakah Anda yakin ingin menghapus kategori ini? Pastikan tidak ada produk yang terikat.',
-      type: 'danger',
-      onConfirm: async () => {
-        try { await api.delete(`/categories/${id}`); toast.success('Kategori dihapus'); fetchData(); } 
-        catch { toast.error('Gagal menghapus kategori'); }
-      }
-    });
-  };
+  const chartData = stats.revenue_trends?.length > 0 ? stats.revenue_trends : [
+    { name: 'Sen', revenue: 65000 }, { name: 'Sel', revenue: 75000 },
+    { name: 'Rab', revenue: 68000 }, { name: 'Kam', revenue: 95000 },
+    { name: 'Jum', revenue: 110000 }, { name: 'Sab', revenue: 125000 },
+    { name: 'Min', revenue: stats.gross_revenue || 128430 },
+  ];
 
-  const submitProd = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('name', prodForm.name);
-    formData.append('description', prodForm.description);
-    formData.append('price', parseFloat(prodForm.price));
-    formData.append('stock', parseInt(prodForm.stock));
-    formData.append('id_category', prodForm.id_category);
-    if (prodForm.image_url) formData.append('image_url', prodForm.image_url);
-    if (imageFile) formData.append('image', imageFile);
+  const topCats = stats.top_categories?.length > 0 ? stats.top_categories : [
+    { name: 'Sayuran Daun', percentage: 45 },
+    { name: 'Sayuran Akar', percentage: 24 },
+    { name: 'Buah & Melon', percentage: 18 },
+    { name: 'Bumbu & Rempah', percentage: 13 },
+  ];
 
-    try {
-      if (editingProd) { 
-        await api.put(`/products/${editingProd}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }); 
-        toast.success('Produk berhasil diperbarui');
-      } else { 
-        await api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } }); 
-        toast.success('Produk berhasil ditambahkan');
-      }
-      setProdForm({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' }); 
-      setEditingProd(null); 
-      setShowProdForm(false); 
-      setImageFile(null);
-      fetchData();
-    } catch (err) { toast.error(err.response?.data?.error || 'Gagal menyimpan produk'); }
-  };
-  const delProd = (id) => { 
-    modal.confirm({
-      title: 'Hapus Produk',
-      message: 'Apakah Anda yakin ingin menghapus produk ini?',
-      type: 'danger',
-      onConfirm: async () => {
-        try { await api.delete(`/products/${id}`); toast.success('Produk dihapus'); fetchData(); } 
-        catch { toast.error('Gagal menghapus produk'); }
-      }
-    });
-  };
+  const logs = stats.recent_logs?.length > 0 ? stats.recent_logs : [
+    { event: 'Pencairan Berhasil', user_ip: 'Toko Pak Budi', status: 'COMPLETED', time: new Date().toISOString() },
+    { event: 'Penjual Baru', user_ip: 'Agro Makmur', status: 'PENDING', time: new Date(Date.now() - 600000).toISOString() },
+  ];
 
-  const totalStock = products.reduce((s, p) => s + p.stock, 0);
-  const totalValue = products.reduce((s, p) => s + p.price * p.stock, 0);
-
-  // Analytics Data Prep
-  const categoryStats = categories.map(c => {
-    const catProducts = products.filter(p => p.id_category === c.id_category);
-    return {
-      name: c.name,
-      totalProducts: catProducts.length,
-      totalStock: catProducts.reduce((s, p) => s + p.stock, 0),
-      value: catProducts.reduce((s, p) => s + p.price * p.stock, 0)
-    };
-  }).filter(c => c.totalProducts > 0);
-
-  if (loading) return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">{[...Array(4)].map((_, i) => <div key={i} className="h-28 rounded-2xl shimmer" />)}</div>
-      <div className="h-96 rounded-2xl shimmer" />
-    </div>
-  );
+  const feedItems = stats.live_feed?.length > 0 ? stats.live_feed : [
+    { title: 'Pelanggan Baru', description: 'Pengguna baru mendaftar', time: new Date().toISOString() },
+    { title: 'Pesanan Baru', description: 'Pembayaran Rp 140k diterima', time: new Date().toISOString() },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8 animate-fade-in-up">
-        <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-200">
-          <Settings className="w-7 h-7" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Admin Panel</h1>
-          <p className="text-gray-400 text-sm">Kelola seluruh produk dan kategori</p>
+    <div className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen">
+      {/* Header Premium */}
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 sm:p-10 mb-8 border border-slate-700 shadow-2xl shadow-emerald-900/10 isolate animate-fade-in-up">
+        {/* Dekorasi BG Artistik */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
+        <div className="absolute -bottom-24 left-1/3 w-64 h-64 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+              <Activity className="w-8 h-8 text-emerald-300" />
+            </div>
+            <div>
+              <p className="text-emerald-200 font-medium text-xs tracking-widest uppercase mb-1">Pusat Komando Admin</p>
+              <h1 className="text-3xl font-black text-white tracking-tight">Analytics Dashboard</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all">
+              <Calendar className="w-4 h-4" /> 30 Hari Terakhir
+            </button>
+            <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
+              <Download className="w-4 h-4" /> Export Report
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      {/* Grid Statistik Utma */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { icon: <Package className="w-5 h-5" />, label: 'Produk', value: products.length, color: 'from-emerald-500 to-green-600' },
-          { icon: <Tags className="w-5 h-5" />, label: 'Kategori', value: categories.length, color: 'from-blue-500 to-indigo-600' },
-          { icon: <BarChart2 className="w-5 h-5" />, label: 'Total Stok', value: totalStock.toLocaleString('id-ID'), color: 'from-amber-500 to-orange-600' },
-          { icon: <DollarSign className="w-5 h-5" />, label: 'Nilai Stok', value: `Rp ${(totalValue / 1000000).toFixed(1)}M`, color: 'from-purple-500 to-pink-600' },
+          { icon: TrendingUp, title: 'Total Pendapatan', val: `Rp ${stats.gross_revenue.toLocaleString('id-ID')}`, pct: '+12.4%', isPos: true },
+          { icon: Users, title: 'Total Pengguna', val: stats.total_users.toLocaleString(), pct: '+5%', isPos: true },
+          { icon: Store, title: 'Penjual Aktif', val: stats.total_sellers.toLocaleString(), pct: '+2%', isPos: true },
+          { icon: PackageCheck, title: 'Sukses Kirim', val: '98.2%', pct: '-1.5%', isPos: false },
         ].map((s, i) => (
-          <div key={i} className={`stat-card bg-white rounded-2xl p-5 border border-gray-100 card-hover animate-fade-in-up stagger-${i + 1} group cursor-default`}>
-            <div className={`w-10 h-10 bg-gradient-to-br ${s.color} rounded-xl flex items-center justify-center text-white text-sm mb-2 shadow-sm group-hover:scale-110 transition-transform duration-300`}>{s.icon}</div>
-            <p className="text-xl font-bold text-gray-800">{s.value}</p>
-            <p className="text-xs text-gray-400">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 animate-fade-in-up">
-        {[
-          { key: 'products', label: `Produk (${products.length})`, icon: <Package className="w-4 h-4 inline mr-1.5" /> },
-          { key: 'categories', label: `Kategori (${categories.length})`, icon: <Tags className="w-4 h-4 inline mr-1.5" /> },
-          { key: 'analytics', label: `Analisis Data`, icon: <BarChart2 className="w-4 h-4 inline mr-1.5" /> },
-        ].map(t => (
-          <button 
-            key={t.key} 
-            onClick={() => setTab(t.key)} 
-            className={`relative px-5 py-2.5 rounded-xl font-medium text-sm cursor-pointer transition-colors duration-300 ${tab === t.key ? 'text-white' : 'text-gray-600 hover:text-amber-600'}`}
+          <motion.div 
+            key={i} 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: i * 0.05 }} 
+            className="group relative bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300"
           >
-            {tab === t.key && (
-              <motion.div 
-                layoutId="adminTabIndicator" 
-                className="absolute inset-0 bg-gradient-to-r from-amber-500 to-red-500 rounded-xl shadow-md shadow-amber-200 -z-10" 
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }} 
-              />
-            )}
-            <span className="relative z-10 flex items-center">{t.icon}{t.label}</span>
-          </button>
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <s.icon className="w-6 h-6" />
+              </div>
+              <span className={`text-xs font-bold px-2 py-1 rounded-lg ${s.isPos ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                {s.pct}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">{s.title}</p>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white">{s.val}</h3>
+            </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Products Tab */}
-      {tab === 'products' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-          <div className="flex justify-between items-center p-5 border-b border-gray-50">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2"><Package className="w-5 h-5 text-emerald-500" /> Semua Produk</h3>
-            <button onClick={() => { setProdForm({ name: '', description: '', price: '', stock: '', id_category: '', image_url: '' }); setEditingProd(null); setShowProdForm(!showProdForm); setImageFile(null); }} className="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:shadow-lg transition-all cursor-pointer flex items-center gap-1">
-              {showProdForm ? '✕ Batal' : <><Plus className="w-4 h-4" /> Tambah</>}
-            </button>
+      {/* Main Charts & Categories */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tren Pendapatan</h3>
+              <p className="text-sm text-gray-500 dark:text-slate-400">Arus finansial bulanan seluruh ekosistem</p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> PENDAPATAN GROSS
+            </div>
           </div>
-          {showProdForm && (
-            <form onSubmit={submitProd} className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col gap-5 animate-fade-in-down">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5 focus-within:text-emerald-500 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Nama Produk</label>
-                  <input required placeholder="Contoh: Kemeja Formal" value={prodForm.name} onChange={e => setProdForm({ ...prodForm, name: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
-                </div>
-                
-                <div className="space-y-1.5 focus-within:text-emerald-500 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Kategori</label>
-                  <div className="relative">
-                    <select required value={prodForm.id_category} onChange={e => setProdForm({ ...prodForm, id_category: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white appearance-none">
-                      <option value="" className="dark:bg-slate-800 text-gray-500">Pilih Kategori</option>
-                      {categories.map(c => <option key={c.id_category} value={c.id_category} className="dark:bg-slate-800">{c.name}</option>)}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
-                  </div>
-                </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-200 dark:text-slate-700" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `Rp${v/1000}k`} />
+                <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', background: 'var(--surface-container-lowest)' }} itemStyle={{ color: '#10b981', fontWeight: 800 }} />
+                <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-                <div className="space-y-1.5 focus-within:text-emerald-500 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Harga (Rp)</label>
-                  <input required type="number" min="1" placeholder="250000" value={prodForm.price} onChange={e => setProdForm({ ...prodForm, price: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm flex flex-col">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Kategori Teratas</h3>
+          <div className="flex-1 space-y-5">
+            {topCats.map((c, i) => (
+              <div key={i} className="group">
+                <div className="flex justify-between text-sm font-semibold mb-2">
+                  <span className="text-gray-900 dark:text-gray-200">{c.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{c.percentage}%</span>
                 </div>
-
-                <div className="space-y-1.5 focus-within:text-emerald-500 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Stok Tersedia</label>
-                  <input required type="number" min="0" placeholder="50" value={prodForm.stock} onChange={e => setProdForm({ ...prodForm, stock: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2 focus-within:text-emerald-500 group">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-emerald-500 transition-colors">Deskripsi Produk</label>
-                  <textarea placeholder="Tulis deskripsi detail produk..." value={prodForm.description} onChange={e => setProdForm({ ...prodForm, description: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" rows={3} />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Foto Produk</label>
-                  <ImageDropzone valueUrl={prodForm.image_url} onImageChange={setImageFile} />
+                <div className="w-full h-2.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${c.percentage}%` }} 
+                    transition={{ duration: 1, delay: i * 0.1 }}
+                    className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full group-hover:scale-y-110 transition-transform origin-left" 
+                  />
                 </div>
               </div>
-              <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 shadow-[0_4px_20px_rgba(16,185,129,0.25)] text-white px-5 py-3.5 rounded-xl text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-all mt-2">{editingProd ? '💾 Update Produk' : '✅ Simpan Produk'}</button>
-            </form>
-          )}
-          {products.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center"><Package className="w-16 h-16 text-gray-300 mb-4 animate-bounce-in" /><p className="text-gray-400">Belum ada produk</p></div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider">
-                  <tr><th className="px-5 py-3 text-left">Produk</th><th className="px-5 py-3 text-left">Kategori</th><th className="px-5 py-3 text-right">Harga</th><th className="px-5 py-3 text-right">Stok</th><th className="px-5 py-3 text-right">Aksi</th></tr>
-                </thead>
-                <tbody>{products.map((p, i) => (
-                  <tr key={p.id_product} className={`border-t border-gray-50 hover:bg-primary-50/30 transition-colors animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
-                    <td className="px-5 py-3"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center"><Package className="w-4 h-4 text-emerald-600" /></div><span className="font-medium">{p.name}</span></div></td>
-                    <td className="px-5 py-3 text-gray-400 text-xs">{p.category?.name || '-'}</td>
-                    <td className="px-5 py-3 text-right font-semibold text-primary-700">Rp {p.price?.toLocaleString('id-ID')}</td>
-                    <td className="px-5 py-3 text-right">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.stock > 10 ? 'bg-green-50 text-green-600' : p.stock > 0 ? 'bg-yellow-50 text-yellow-600' : 'bg-red-50 text-red-600'}`}>{p.stock}</span>
-                    </td>
-                    <td className="px-5 py-3 text-right space-x-2">
-                      <button onClick={() => { setProdForm({ name: p.name, description: p.description || '', price: p.price, stock: p.stock, id_category: p.id_category, image_url: p.image_url || '' }); setEditingProd(p.id_product); setShowProdForm(true); }} className="text-primary-600 hover:text-primary-800 hover:underline cursor-pointer text-xs font-medium transition-colors">Edit</button>
-                      <button onClick={() => delProd(p.id_product)} className="text-red-400 hover:text-red-600 hover:underline cursor-pointer text-xs font-medium transition-colors">Hapus</button>
-                    </td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
+            ))}
+          </div>
+          <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 flex gap-3 items-start">
+            <Zap className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+            <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300 leading-snug">
+              <strong>Insight:</strong> Kategori sayuran daun terus mendominasi. Sediakan promo diskon bundel untuk meningkatkan penjualan silang produk lainnya.
+            </p>
+          </div>
         </motion.div>
-      )}
+      </div>
 
-      {/* Categories Tab */}
-      {tab === 'categories' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-          <div className="flex justify-between items-center p-5 border-b border-gray-50">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2"><Tags className="w-5 h-5 text-blue-500" /> Semua Kategori</h3>
-            <button onClick={() => { setForm({ name: '' }); setEditing(null); setShowForm(!showForm); }} className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:shadow-lg transition-all cursor-pointer flex items-center gap-1">
-              {showForm ? '✕ Batal' : <><Plus className="w-4 h-4" /> Tambah</>}
+      {/* Sistem Logs & Live Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="p-6 flex justify-between items-center border-b border-gray-100 dark:border-slate-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Log Sistem Utama</h3>
+            <button className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors uppercase tracking-wider">
+              Lihat Semua
             </button>
           </div>
-          {showForm && (
-            <form onSubmit={submitCat} className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-end gap-3 animate-fade-in-down">
-              <div className="flex-1 w-full space-y-1.5 focus-within:text-blue-500 group">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">Nama Kategori</label>
-                <input required placeholder="Contoh: Sayuran Hijau" value={form.name} onChange={e => setForm({ name: e.target.value })} className="w-full border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-slate-50 dark:bg-[#131c31] transition-all font-medium text-gray-900 dark:text-white placeholder-gray-400" />
-              </div>
-              <button type="submit" className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 shadow-[0_4px_20px_rgba(59,130,246,0.25)] text-white px-6 py-2.5 rounded-xl text-sm font-bold cursor-pointer hover:-translate-y-0.5 transition-all">{editing ? '💾 Update' : '✅ Simpan'}</button>
-            </form>
-          )}
-          {categories.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center"><Tags className="w-16 h-16 text-gray-300 mb-4 animate-bounce-in" /><p className="text-gray-400">Belum ada kategori</p></div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {categories.map((c, i) => (
-                <div key={c.id_category} className={`px-5 py-4 flex justify-between items-center hover:bg-blue-50/30 transition-colors animate-fade-in-up stagger-${Math.min(i + 1, 8)} group`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform"><Tags className="w-4 h-4" /></div>
-                    <div>
-                      <span className="font-medium text-gray-800">{c.name}</span>
-                      {c.description && <p className="text-xs text-gray-400">{c.description}</p>}
-                    </div>
-                  </div>
-                  <div className="space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => { setForm({ name: c.name }); setEditing(c.id_category); setShowForm(true); }} className="text-blue-600 text-sm cursor-pointer hover:underline font-medium">Edit</button>
-                    <button onClick={() => delCat(c.id_category)} className="text-red-400 text-sm cursor-pointer hover:underline font-medium">Hapus</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Analytics Tab */}
-      {tab === 'analytics' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Chart 1: Bar Chart */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-amber-500" /> Stok per Kategori</h3>
-              {categoryStats.length > 0 ? (
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={categoryStats} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                      <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Bar dataKey="totalStock" name="Total Stok" fill="#10b981" radius={[6, 6, 0, 0]}>
-                        {categoryStats.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-80 flex items-center justify-center text-gray-400">Data tidak cukup</div>
-              )}
-            </div>
-
-            {/* Chart 2: Pie Chart */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2"><DollarSign className="w-5 h-5 text-purple-500" /> Nilai Aset Kategori</h3>
-              {categoryStats.length > 0 ? (
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={categoryStats} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={2} stroke="none">
-                        {categoryStats.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#64748b' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-80 flex items-center justify-center text-gray-400">Data tidak cukup</div>
-              )}
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4">Peristiwa</th>
+                  <th className="px-6 py-4">User / IP</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-right">Waktu</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50 font-medium text-gray-900 dark:text-gray-300">
+                {logs.map((log, i) => {
+                  const isErr = log.status === 'ERROR' || log.status === 'FAILED';
+                  const isWarn = log.status === 'WARNING';
+                  const badgeBg = isErr ? 'bg-rose-100 dark:bg-rose-900/30' : isWarn ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30';
+                  const badgeText = isErr ? 'text-rose-600 dark:text-rose-400' : isWarn ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400';
+                  const Icon = isErr ? AlertTriangle : isWarn ? AlertCircle : CheckCircle;
+                  return (
+                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-750 transition-colors">
+                      <td className="px-6 py-4 flex items-center gap-3">
+                         <Icon className={`w-4 h-4 ${badgeText}`} /> {log.event}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{log.user_ip}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2.5 py-1 ${badgeBg} ${badgeText} text-xs font-bold rounded-full`}>
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right text-gray-500 dark:text-slate-400 font-mono text-xs">
+                        {new Date(log.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        </motion.div>
-      )}
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 relative z-10">Aktivitas Live</h3>
+          <div className="space-y-6 relative z-10">
+            <div className="absolute -left-1 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-slate-700 rounded-full" />
+            {feedItems.map((feed, i) => (
+              <div key={i} className="flex gap-4 relative">
+                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border-2 border-white dark:border-slate-800 flex items-center justify-center shrink-0 -ml-[19px] z-10 text-emerald-500 shadow-sm">
+                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse-soft" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{feed.title}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{feed.description}</p>
+                  <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">
+                    {new Date(feed.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

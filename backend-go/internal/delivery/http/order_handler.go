@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
 type OrderHandler struct {
@@ -29,12 +30,16 @@ func NewOrderHandler(r *gin.RouterGroup, uc domain.OrderUsecase) {
 
 func (h *OrderHandler) Checkout(c *gin.Context) {
 	// Di-set oleh Auth Middleware
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	var req struct {
 		VoucherCode string `json:"voucher_code"`
@@ -44,23 +49,24 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 	order, err := h.orderUsecase.Checkout(uid, req.VoucherCode)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrConflict(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Checkout berhasil. Silakan lakukan pembayaran.",
-		"order":   order,
-	})
+	response.Success(c, http.StatusCreated, "Checkout berhasil. Silakan lakukan pembayaran.", order)
 }
 
 func (h *OrderHandler) InstantCheckout(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 
 	var req struct {
 		ProductID   string  `json:"product_id" binding:"required"`
@@ -70,64 +76,69 @@ func (h *OrderHandler) InstantCheckout(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Validasi input gagal: pastikan format produk dan kuantitas valid"})
+		response.Error(c, response.ErrBadRequest("Validasi input gagal: pastikan format produk dan kuantitas valid"))
 		return
 	}
 
 	order, err := h.orderUsecase.InstantCheckout(uid, req.ProductID, req.VariantID, req.Quantity, req.VoucherCode)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrConflict(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Beli Langsung berhasil. Silakan bayar pesanan Anda.",
-		"order":   order,
-	})
+	response.Success(c, http.StatusCreated, "Beli Langsung berhasil. Silakan bayar pesanan Anda.", order)
 }
 
 func (h *OrderHandler) GetMyOrders(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	
 	orders, err := h.orderUsecase.GetMyOrders(uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrInternal(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": orders})
+	response.Success(c, http.StatusOK, "Berhasil memuat pesanan", orders)
 }
 
 func (h *OrderHandler) GetOrderDetail(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	uidVal, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	uid := userID.(string)
+	uid, ok := uidVal.(string)
+	if !ok {
+		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
+		return
+	}
 	orderID := c.Param("id")
 
 	order, err := h.orderUsecase.GetOrderDetail(uid, orderID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrNotFound(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": order})
+	response.Success(c, http.StatusOK, "Berhasil memuat detail pesanan", order)
 }
 
 func (h *OrderHandler) SimulatePayment(c *gin.Context) {
 	orderID := c.Param("id")
 
 	if err := h.orderUsecase.PayOrder(orderID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.Error(c, response.ErrBadRequest(err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Pembayaran disimulasikan sukses! Status sekarang PAID."})
+	response.Success(c, http.StatusOK, "Pembayaran disimulasikan sukses! Status sekarang PAID.", nil)
 }

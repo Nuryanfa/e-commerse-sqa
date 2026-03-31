@@ -1,38 +1,55 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { ArrowLeft, ClipboardSignature, CreditCard, Truck, CheckCircle, Leaf, RefreshCw, Loader2, Clock, ShieldAlert } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, CheckCircle, Package, Truck, Home, MapPin, Phone, ShieldAlert, CreditCard, ShoppingBag, Loader2, ArrowRight } from 'lucide-react';
 
 export default function OrderDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const toast = useToast();
 
-  const fetchOrder = () => { api.get(`/orders/${id}`).then(r => setOrder(r.data.data)).catch(() => navigate('/orders')).finally(() => setLoading(false)); };
-  useEffect(() => { fetchOrder(); }, [id]);
+  const fetchOrderAndRecent = async () => {
+    try {
+      setLoading(true);
+      const [orderRes, allOrdersRes] = await Promise.all([
+        api.get(`/orders/${id}`),
+        api.get('/orders?limit=4') // fetch recent for sidebar
+      ]);
+      setOrder(orderRes.data.data);
+      if (allOrdersRes.data.data) {
+        setRecentOrders(allOrdersRes.data.data.filter(o => o.id_order !== id).slice(0, 3));
+      }
+    } catch (err) {
+      toast.error('Gagal memuat pesanan');
+      navigate('/orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchOrderAndRecent(); }, [id]);
 
   const pay = async () => {
     setPaying(true);
-    try { await api.post(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrder(); }
+    try { await api.post(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrderAndRecent(); }
     catch (err) { toast.error(err.response?.data?.error || 'Gagal bayar'); }
     setPaying(false);
   };
 
   const createDispute = async () => {
-    const reason = prompt("Sertakan alasan singkat mengapa Anda mengajukan klaim perbaikan / pembatalan pesanan ini:");
+    const reason = prompt("Sertakan alasan singkat mengapa Anda mengajukan komplain pesanan ini:");
     if (!reason) return;
-    
     setPaying(true);
     const formData = new FormData();
     formData.append('reason', reason);
-    // TODO: integrasi form untuk unggah foto bukti
-    
     try {
       const res = await api.post(`/disputes/${id}`, formData);
       toast.success(res.data.message);
@@ -43,128 +60,252 @@ export default function OrderDetail() {
     setPaying(false);
   };
 
-  const statusSteps = [
-    { id: 'PENDING', title: 'Pesanan Dibuat', desc: 'Menunggu pembayaran', icon: <ClipboardSignature className="w-5 h-5" /> },
-    { id: 'PAID', title: 'Pembayaran Dikonfirmasi', desc: 'Pesanan sedang diproses', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'SHIPPED', title: 'Dalam Perjalanan', desc: 'Pesanan diantar kurir', icon: <Truck className="w-5 h-5" /> },
-    { id: 'DELIVERED', title: 'Selesai', desc: 'Pesanan diterima', icon: <CheckCircle className="w-5 h-5" /> },
-  ];
-  const statuses = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED'];
-
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8"><div className="h-96 skeleton" /></div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto px-4 py-8 flex gap-8">
+      <div className="flex-1 space-y-4"><div className="h-64 skeleton" /><div className="h-96 skeleton" /></div>
+      <div className="w-1/3 hidden lg:block space-y-4"><div className="h-full skeleton" /></div>
+    </div>
+  );
   if (!order) return null;
 
-  const currentIdx = statuses.indexOf(order.status);
+  const orderStatuses = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED'];
+  const currentIdx = orderStatuses.indexOf(order.status) >= 0 ? orderStatuses.indexOf(order.status) : 0;
+  
+  const getStatusLabel = (s) => {
+    switch(s) {
+      case 'PENDING': return 'Menunggu';
+      case 'PAID': return 'Diproses';
+      case 'SHIPPED': return 'Dikirim';
+      case 'DELIVERED': return 'Selesai';
+      case 'DISPUTED': return 'Diklaim';
+      default: return s;
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8" style={{ background: 'var(--surface-base)' }}>
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium mb-6 cursor-pointer transition-all duration-300 hover:-translate-x-1" style={{ color: 'var(--text-secondary)' }}>
-        <ArrowLeft className="w-4 h-4" /> Kembali
-      </button>
-
-      <div className="card-organic p-8 animate-fade-in-up">
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>Order #{order.id_order?.slice(0, 8)}</p>
-            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-              <Clock className="w-3.5 h-3.5" /> {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-          {order.status === 'DISPUTED' && (
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 font-mono tracking-widest flex items-center gap-1">
-              <ShieldAlert className="w-4 h-4" /> BERSENGKETA
-            </span>
-          )}
+    <div className="bg-gray-50/50 dark:bg-slate-900 min-h-screen py-8 pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div className="mb-6 flex items-center justify-between">
+          <button onClick={() => navigate('/orders')} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer">
+            <ArrowLeft className="w-4 h-4" /> Daftar Pesanan
+          </button>
         </div>
 
-        {/* Timeline */}
-        <div className="relative pl-8 mb-10">
-          <div className="absolute left-[18px] top-2 bottom-2 w-0.5 rounded-full" style={{ background: 'var(--border-primary)' }} />
-          {statusSteps.map((step, i) => {
-            const isActive = i <= currentIdx;
-            const isCurrent = i === currentIdx;
-            return (
-              <div key={step.id} className={`relative flex gap-5 mb-8 last:mb-0 animate-fade-in-up stagger-${i + 1}`}>
-                <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-base shadow-sm transition-all duration-500 z-10 ${
-                  isActive ? (isCurrent ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white ring-4 ring-emerald-50 dark:ring-emerald-900/30 scale-110' : 'bg-emerald-600 text-white')
-                  : ''
-                }`} style={!isActive ? { background: 'var(--surface-card)', border: '2px solid var(--border-primary)', color: 'var(--text-muted)' } : {}}>
-                  <span className={!isActive ? 'grayscale opacity-40' : ''}>{step.icon}</span>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content (Left Column) */}
+          <div className="flex-1 space-y-6">
+            
+            {/* Active Order Card */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card-organic p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-10">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                      {order.status === 'SHIPPED' ? 'ACTIVE ORDER' : order.status}
+                    </span>
+                    {order.status === 'DISPUTED' && (
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex items-center gap-1">
+                        <ShieldAlert className="w-3.5 h-3.5" /> BERSENGKETA
+                      </span>
+                    )}
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Order #{order.id_order?.slice(0, 8).toUpperCase()}</h1>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+                    Placed on {new Date(order.created_at).toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric'})} • {new Date(order.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' })}
+                  </p>
                 </div>
-                <div className={`pt-1 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-30'}`}>
-                  <h4 className="font-bold text-sm" style={{ color: isActive ? 'var(--text-heading)' : 'var(--text-muted)' }}>{step.title}</h4>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{step.desc}</p>
+                {order.status !== 'DELIVERED' && order.status !== 'DISPUTED' && (
+                  <div className="sm:text-right">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Estimated Delivery</p>
+                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">Hari ini, 15:00 WIB</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Horizontal Timeline */}
+              <div className="relative mb-12 isolate px-2">
+                {/* Connecting Line */}
+                <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 dark:bg-slate-800 -translate-y-1/2 -z-10 rounded-full" />
+                <div className="absolute top-1/2 left-0 h-1 bg-emerald-500 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 ease-out" 
+                     style={{ width: `${Math.min(100, (currentIdx / 3) * 100)}%` }} />
+
+                <div className="flex justify-between relative z-10 w-full">
+                  {[
+                    { id: 'PENDING', label: 'Confirmed', icon: CheckCircle },
+                    { id: 'PAID', label: 'Prepared', icon: Package },
+                    { id: 'SHIPPED', label: 'On the Way', icon: Truck },
+                    { id: 'DELIVERED', label: 'Received', icon: Home }
+                  ].map((step, i) => {
+                    const isActive = i <= currentIdx;
+                    const Icon = step.icon;
+                    return (
+                      <div key={step.id} className="flex flex-col items-center gap-3">
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                          isActive 
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                            : 'bg-white dark:bg-slate-900 text-gray-300 dark:text-gray-600 border-2 border-gray-100 dark:border-slate-800'
+                        }`}>
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* Items */}
-        <div className="mb-8">
-          <h4 className="font-bold text-sm mb-3" style={{ color: 'var(--text-heading)' }}>Daftar Belanja</h4>
-          <div className="space-y-2">
-            {order.items?.map(item => (
-              <div key={item.id_order_item} className="flex items-center gap-4 p-4 rounded-2xl transition-colors duration-300 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10" style={{ border: '1px solid var(--border-light)' }}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'var(--surface-muted)' }}>
-                  {item.product?.image_url ? <img src={item.product.image_url} className="w-full h-full object-cover rounded-2xl" /> : <Leaf className="w-6 h-6 text-emerald-600 opacity-80" />}
+              {/* Lower Section Grid: Map/Courier & Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                
+                {/* Courier / Map Widget */}
+                {order.status === 'SHIPPED' || order.status === 'DELIVERED' ? (
+                  <div className="relative w-full h-64 bg-gray-100 dark:bg-slate-800 rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-700 isolate group">
+                    {/* Simulated Map Background */}
+                    <div className="absolute inset-0 opacity-40 dark:opacity-20 flex items-center justify-center p-4" style={{ backgroundImage: 'radial-gradient(#d1d5db 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+                       <MapPin className="w-8 h-8 text-emerald-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    
+                    {/* Courier Overlay Plate */}
+                    <div className="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between shadow-lg border border-white/50 dark:border-slate-700/50 transition-transform duration-300 group-hover:-translate-y-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+                          <img src={`https://ui-avatars.com/api/?name=${order.id_courier ? 'Kurir' : 'Anto'}&background=10b981&color=fff`} alt="Courier" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Your Courier</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{order.courier?.nama || 'Ahmad Rizky'}</p>
+                        </div>
+                      </div>
+                      <button className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 hover:bg-emerald-600 transition-colors cursor-pointer">
+                        <Phone className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-3xl overflow-hidden border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center p-6 text-center">
+                    <Package className="w-12 h-12 text-emerald-300 dark:text-emerald-700 mb-4 animate-bounce" />
+                    <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-1">Pesanan Sedang Disiapkan</h3>
+                    <p className="text-xs text-emerald-600/70 dark:text-emerald-500/70">Toko sedang mengemas pesanan organik Anda.</p>
+                  </div>
+                )}
+
+                {/* Order Summary Widget */}
+                <div className="bg-white dark:bg-slate-800/50 rounded-3xl p-6 border border-gray-100 dark:border-slate-700/50 shadow-sm flex flex-col h-full">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Order Summary</h3>
+                  
+                  {/* Items list truncated */}
+                  <div className="space-y-4 mb-6 flex-1">
+                    {order.items?.slice(0,2).map(item => (
+                      <div key={item.id_order_item} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                             {item.product?.image_url ? <img src={item.product.image_url} alt="" className="w-full h-full object-cover rounded-xl" /> : <Package className="w-5 h-5 text-gray-300"/>}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{item.product?.name || 'Sayur Organik'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.quantity} kg x Rp {item.price_at_purchase.toLocaleString('id-ID')}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white shrink-0">Rp {(item.price_at_purchase * item.quantity).toLocaleString('id-ID')}</p>
+                      </div>
+                    ))}
+                    {order.items?.length > 2 && (
+                      <p className="text-xs font-bold text-gray-400 text-center pt-2">+ {order.items.length - 2} item lainnya</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 border-t border-gray-100 dark:border-slate-700 pt-4 mb-4">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Rp {order.total_amount?.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">Delivery Fee</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Rp 0</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-50 dark:border-slate-700/50">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">Total</span>
+                      <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">Rp {order.total_amount?.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 w-full mt-auto">
+                    {order.status === 'PENDING' ? (
+                       <button onClick={pay} disabled={paying} className="flex-1 btn-primary text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
+                         {paying ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CreditCard className="w-4 h-4"/> Bayar Sekarang</>}
+                       </button>
+                    ) : (
+                       <>
+                         <button onClick={createDispute} className="flex-1 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                            <ShieldAlert className="w-3.5 h-3.5"/> Bantuan
+                         </button>
+                         <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold py-3 rounded-xl shadow-md shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-600 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                            <ArrowRight className="w-3.5 h-3.5" /> Invoice Detail
+                         </button>
+                       </>
+                    )}
+                  </div>
+
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm" style={{ color: 'var(--text-heading)' }}>{item.product?.name || 'Produk'}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.quantity}x @ Rp {item.price_at_purchase?.toLocaleString('id-ID')}</p>
-                </div>
-                <p className="font-black text-sm" style={{ color: 'var(--text-accent)' }}>Rp {(item.price_at_purchase * item.quantity).toLocaleString('id-ID')}</p>
               </div>
-            ))}
-          </div>
-        </div>
+            </motion.div>
 
-        {/* Total */}
-        <div className="flex justify-between items-center p-6 -mx-8 -mb-8 rounded-b-[19px]" style={{ background: 'var(--surface-muted)', borderTop: '1px solid var(--border-light)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Total Pembayaran</p>
-          <p className="text-2xl font-black" style={{ color: 'var(--text-accent)' }}>Rp {order.total_amount?.toLocaleString('id-ID')}</p>
+          </div>
+
+          {/* Sidebar (Right Column) */}
+          <div className="w-full lg:w-80 space-y-6">
+            
+            {/* Recent Orders Widget */}
+            <div className="bg-gray-100/50 dark:bg-slate-800/30 rounded-3xl p-6 border border-gray-100 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-5">Recent Orders</h3>
+              
+              <div className="space-y-4">
+                {recentOrders.length === 0 ? (
+                  <p className="text-xs text-gray-500">Belum ada riwayat lain.</p>
+                ) : (
+                  recentOrders.map(ro => (
+                    <Link to={`/orders/${ro.id_order}`} key={ro.id_order} className="flex items-start gap-3 group block">
+                      <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 flex items-center justify-center shadow-sm group-hover:border-emerald-500 transition-colors shrink-0">
+                        <ShoppingBag className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <p className="text-xs font-bold text-gray-900 dark:text-white truncate">#{ro.id_order.slice(0,8).toUpperCase()}</p>
+                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
+                            ro.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
+                            ro.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                            ro.status === 'DISPUTED' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-200 text-gray-600'
+                          }`}>
+                            {getStatusLabel(ro.status)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 truncate mb-1">
+                          {new Date(ro.created_at).toLocaleDateString()} • {ro.items?.length || 0} items
+                        </p>
+                        <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Rp {ro.total_amount?.toLocaleString('id-ID')}</p>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-gray-200 dark:border-slate-700">
+                <Link to="/orders" className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-center gap-1 transition-colors">
+                  View All History <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+
+
+          </div>
         </div>
       </div>
-
-      {order.status === 'PENDING' && user?.role === 'pembeli' && (
-        <button onClick={pay} disabled={paying} className="w-full mt-6 btn-primary py-4 text-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-md">
-          {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />} {paying ? 'Memproses...' : 'Bayar Sekarang'}
-        </button>
-      )}
-
-      {/* Tombol Invoice */}
-      {order.status !== 'PENDING' && (
-        <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="w-full mt-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 font-bold py-3.5 rounded-2xl transition-all shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2 text-sm">
-          <ClipboardSignature className="w-4 h-4" /> Tampilkan Invoice
-        </button>
-      )}
-
-      {/* Jika Pesanan Sudah Diterima / Dalam Pengiriman: Tombol Komplain */}
-      {(order.status === 'DELIVERED' || order.status === 'SHIPPED') && user?.role === 'pembeli' && (
-         <button onClick={createDispute} disabled={paying} className="w-full mt-6 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-bold py-3.5 rounded-2xl transition-all shadow-sm cursor-pointer hover:bg-amber-100 hover:text-amber-700 disabled:opacity-50 flex items-center justify-center gap-2 text-sm">
-           {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />} {paying ? 'Menyambungkan ke Mediasi...' : 'Barang Rusak? Ajukan Komplain Sengketa'}
-         </button>
-      )}
-
-      {order.status === 'DELIVERED' && user?.role === 'pembeli' && (
-        <button onClick={async () => {
-          setPaying(true);
-          try {
-            await Promise.all(order.items.map(item => 
-              api.post('/cart', { id_product: item.id_product, quantity: item.quantity })
-            ));
-            toast.success('Berhasil menambahkan ulang ke keranjang!', 4000, {
-              label: 'Lihat Keranjang ➔',
-              onClick: () => navigate('/cart')
-            });
-          } catch (err) {
-            toast.error('Beberapa sayur gagal ditambahkan (Mungkin stok habis)');
-          }
-          setPaying(false);
-        }} disabled={paying} className="w-full mt-6 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-300 font-bold py-4 rounded-2xl transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2">
-          {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />} {paying ? 'Memproses...' : 'Beli Ulang Pesanan Ini'}
-        </button>
-      )}
     </div>
   );
 }

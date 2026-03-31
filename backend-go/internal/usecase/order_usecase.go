@@ -324,7 +324,7 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 		newStatus = "PAID"
 	case "deny", "cancel", "expire":
 		newStatus = "CANCELLED"
-		// TODO: PENTING: Restorasi / Kembalikan Stok jika Dibatalkan (Akan dikerjakan di Ticket 31)
+		// Stock restoration is handled natively within CancelOrderTransaction
 	case "pending":
 		newStatus = "PENDING"
 	default:
@@ -333,7 +333,13 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 	}
 
 	if newStatus != "" {
-		err := u.orderRepo.UpdateStatus(orderID, newStatus)
+		var err error
+		if newStatus == "CANCELLED" {
+			err = u.orderRepo.CancelOrderTransaction(orderID)
+		} else {
+			err = u.orderRepo.UpdateStatus(orderID, newStatus)
+		}
+		
 		if err == nil && u.auditLogRepo != nil {
 			_ = u.auditLogRepo.Insert(&domain.AuditLog{
 				ID:        uuid.New().String(),

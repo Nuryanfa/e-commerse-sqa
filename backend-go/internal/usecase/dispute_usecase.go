@@ -43,7 +43,7 @@ func (u *disputeUseCase) OpenDispute(orderID, buyerID, reason, imageURL string) 
 	}
 
 	// Sengketa hanya bisa dibuka jika pesanan sudah dikirim atau diterima (belum direview mutlak)
-	if order.Status != "SHIPPED" && order.Status != "DELIVERED" {
+	if order.Status != domain.OrderStatusShipped && order.Status != domain.OrderStatusDelivered {
 		return nil, errors.New("sengketa hanya dapat diajukan pada pesanan yang sedang/telah dikirim")
 	}
 
@@ -59,7 +59,7 @@ func (u *disputeUseCase) OpenDispute(orderID, buyerID, reason, imageURL string) 
 		OrderID:   orderID,
 		BuyerID:   buyerID,
 		Reason:    reason,
-		Status:    "OPEN",
+		Status:    domain.DisputeStatusOpen,
 		ImageURL:  imageURL,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -71,7 +71,7 @@ func (u *disputeUseCase) OpenDispute(orderID, buyerID, reason, imageURL string) 
 	}
 
 	// Mengunci status pesanan menjadi DISPUTED (opsional, tapi disarankan)
-	_ = u.orderRepo.UpdateStatus(orderID, "DISPUTED")
+	_ = u.orderRepo.UpdateStatus(orderID, domain.OrderStatusDisputed)
 
 	return dispute, nil
 }
@@ -97,7 +97,7 @@ func (u *disputeUseCase) AddReply(disputeID, senderID, message string) (*domain.
 		return nil, errors.New("sengketa tidak ditemukan")
 	}
 
-	if dispute.Status != "OPEN" {
+	if dispute.Status != domain.DisputeStatusOpen {
 		return nil, errors.New("tidak dapat mengirim pesan, sengketa ini sudah ditutup")
 	}
 
@@ -115,14 +115,14 @@ func (u *disputeUseCase) AddReply(disputeID, senderID, message string) (*domain.
 	}
 
 	// Update waktu Dispute
-	_ = u.disputeRepo.UpdateDisputeStatus(disputeID, "OPEN", "") // hanya trigger updated_at di DB gorm
+	_ = u.disputeRepo.UpdateDisputeStatus(disputeID, domain.DisputeStatusOpen, "") // hanya trigger updated_at di DB gorm
 
 	return msg, nil
 }
 
 func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote string) error {
 	// Decision harus valid
-	if decision != "REFUNDED" && decision != "REJECTED" && decision != "RESOLVED_PARTIAL" && decision != "APPROVED_FOR_RETURN" {
+	if decision != domain.DisputeStatusRefunded && decision != domain.DisputeStatusRejected && decision != domain.DisputeStatusResolvedPartial && decision != domain.DisputeStatusApprovedForReturn {
 		return errors.New("status putusan tidak valid")
 	}
 
@@ -131,7 +131,7 @@ func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote 
 		return errors.New("sengketa tidak ditemukan")
 	}
 
-	if dispute.Status != "OPEN" && dispute.Status != "RETURNED" {
+	if dispute.Status != domain.DisputeStatusOpen && dispute.Status != domain.DisputeStatusReturned {
 		return errors.New("sengketa sudah tidak bisa diubah karena bukan berstatus OPEN atau RETURNED")
 	}
 
@@ -142,10 +142,10 @@ func (u *disputeUseCase) ResolveDispute(disputeID, adminID, decision, adminNote 
 	}
 
 	// 2. Tindakan Lanjutan pada Order
-	if decision == "REFUNDED" {
-		_ = u.orderRepo.UpdateStatus(dispute.OrderID, "CANCELLED") // Barang batal, uang kembali
-	} else if decision == "REJECTED" {
-		_ = u.orderRepo.UpdateStatus(dispute.OrderID, "DELIVERED") // Komplain ditolak admin, transaksi dianggap sah selesai
+	if decision == domain.DisputeStatusRefunded {
+		_ = u.orderRepo.UpdateStatus(dispute.OrderID, domain.OrderStatusCancelled) // Barang batal, uang kembali
+	} else if decision == domain.DisputeStatusRejected {
+		_ = u.orderRepo.UpdateStatus(dispute.OrderID, domain.OrderStatusDelivered) // Komplain ditolak admin, transaksi dianggap sah selesai
 	}
 
 	return nil
@@ -157,7 +157,7 @@ func (u *disputeUseCase) AssignReturnCourier(disputeID, courierID string) error 
 		return errors.New("sengketa tidak ditemukan")
 	}
 
-	if dispute.Status != "APPROVED_FOR_RETURN" {
+	if dispute.Status != domain.DisputeStatusApprovedForReturn {
 		return errors.New("sengketa ini tidak sedang menantikan kurir untuk retur")
 	}
 
@@ -170,9 +170,9 @@ func (u *disputeUseCase) MarkReturnDelivered(disputeID, courierID string) error 
 		return errors.New("sengketa tidak ditemukan")
 	}
 
-	if dispute.Status != "RETURNING" || dispute.CourierID == nil || *dispute.CourierID != courierID {
+	if dispute.Status != domain.DisputeStatusReturning || dispute.CourierID == nil || *dispute.CourierID != courierID {
 		return errors.New("akses ditolak atau status sengketa tidak sesuai")
 	}
 
-	return u.disputeRepo.UpdateDisputeStatus(disputeID, "RETURNED", "Barang Retur telah diserahkan kembali ke Supplier oleh Kurir")
+	return u.disputeRepo.UpdateDisputeStatus(disputeID, domain.DisputeStatusReturned, "Barang Retur telah diserahkan kembali ke Supplier oleh Kurir")
 }

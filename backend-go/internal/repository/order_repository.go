@@ -410,6 +410,47 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 	return canceledCount, err
 }
 
+// CancelOrderTransaction membatalkan pesanan (CANCELLED) dan memulihkan stok.
+func (r *orderRepository) CancelOrderTransaction(orderID string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var order domain.Order
+		if err := tx.Preload("Items").Where("id_order = ?", orderID).First(&order).Error; err != nil {
+			return err
+		}
+
+		if order.Status == "CANCELLED" || order.Status == "EXPIRED" {
+			return nil // sudah dibatalkan sebelumnya
+		}
+
+		if err := tx.Model(&order).Update("status", "CANCELLED").Error; err != nil {
+			return err
+		}
+
+		for _, item := range order.Items {
+			if item.VariantID != nil {
+				if err := tx.Model(&domain.ProductVariant{}).
+					Where("id_variant = ?", *item.VariantID).
+					Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+					return fmt.Errorf("gagal restorasi stok varian %s: %w", *item.VariantID, err)
+				}
+			} else {
+				if err := tx.Model(&domain.Product{}).
+					Where("id_product = ?", item.ProductID).
+					Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+					return fmt.Errorf("gagal restorasi stok produk %s: %w", item.ProductID, err)
+				}
+			}
+		}
+		
+		// Jika ada voucher dikembalikan (Opsional)
+		if order.VoucherCode != nil {
+			tx.Model(&domain.Voucher{}).Where("code = ?", *order.VoucherCode).Update("used_count", gorm.Expr("used_count - ?", 1))
+		}
+
+		return nil
+	})
+}
+
 
 // BatchUpdateStatus memperbarui status lebih dari satu Order ID berbarengan (Bulk)
 func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) error {
