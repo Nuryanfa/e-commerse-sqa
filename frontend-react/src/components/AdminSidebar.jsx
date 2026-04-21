@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Store, Truck, 
   MessageSquareWarning, Settings, LogOut, ChevronLeft, ChevronRight, Activity, DollarSign
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const { pathname } = useLocation();
@@ -120,7 +120,6 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
           <button
             onClick={onToggleCollapse}
             style={{
-              display: 'none', // Hidden on mobile
               alignItems: 'center', gap: collapsed ? '0' : '0.875rem',
               padding: collapsed ? '0.75rem' : '0.75rem 1rem',
               borderRadius: 'var(--radius-md)', background: 'transparent',
@@ -128,7 +127,8 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
               fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.875rem',
               justifyContent: collapsed ? 'center' : 'flex-start', width: '100%'
             }}
-            className="lg:flex hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            className="hidden lg:flex hover:bg-slate-50 dark:hover:bg-slate-800/50"
+
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>Collapse</span>}

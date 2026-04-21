@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { motion } from 'framer-motion';
 import { Leaf, ShoppingCart, ArrowRight, CheckCircle2, Truck, Shield } from 'lucide-react';
 import api from '../services/api';

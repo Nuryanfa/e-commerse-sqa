@@ -13,6 +13,20 @@ type AppError struct {
 	Detail  string `json:"detail,omitempty"` // Hanya tampil jika ada
 }
 
+// JSONResponse represents a standard success response (for Swagger docs)
+type JSONResponse struct {
+	Status  string      `json:"status" example:"success"`
+	Message string      `json:"message" example:"Deskripsi pesan sukses"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+// JSONError represents a standard error response (for Swagger docs)
+type JSONError struct {
+	Status  string `json:"status" example:"error"`
+	Message string `json:"message" example:"Deskripsi pesan error"`
+	Detail  string `json:"detail,omitempty" example:"Detail kesalahan teknis"`
+}
+
 // --- Pre-defined Errors ---
 
 func ErrBadRequest(detail string) *AppError {

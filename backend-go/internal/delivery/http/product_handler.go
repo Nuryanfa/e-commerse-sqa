@@ -73,13 +73,37 @@ func (h *ProductHandler) parseProductRequest(c *gin.Context, req *domain.Product
 			}
 		}
 
-		if req.Name == "" || req.CategoryID == "" || req.Price <= 0 || req.Stock < 0 {
-			return errors.New("validasi gagal: pastikan semua field wajib terisi dengan benar")
+		if req.Name == "" || req.CategoryID == "" {
+			return errors.New("validasi gagal: nama dan ID kategori wajib diisi")
 		}
+		
+		// [SQA] Boundary Value Analysis for Products
+		if req.Price < 100 || req.Price > 100000000 {
+			return errors.New("validasi gagal: harga produk harus wajar (Rp 100 - Rp 100.000.000)")
+		}
+		if req.Stock < 0 || req.Stock > 10000 {
+			return errors.New("validasi gagal: batas maksimum stok adalah 10.000 unit per input")
+		}
+		
 		return nil
 	}
 
-	return c.ShouldBindJSON(req)
+	// [SQA BUG-007] JSON path: terapkan validasi BVA yang sama dengan multipart
+	if err := c.ShouldBindJSON(req); err != nil {
+		return errors.New("format JSON tidak valid: " + err.Error())
+	}
+
+	if req.Name == "" || req.CategoryID == "" {
+		return errors.New("validasi gagal: nama dan ID kategori wajib diisi")
+	}
+	if req.Price < 100 || req.Price > 100000000 {
+		return errors.New("validasi gagal: harga produk harus wajar (Rp 100 - Rp 100.000.000)")
+	}
+	if req.Stock < 0 || req.Stock > 10000 {
+		return errors.New("validasi gagal: batas maksimum stok adalah 10.000 unit per input")
+	}
+
+	return nil
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {
@@ -97,6 +121,14 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "Produk berhasil dibuat", req)
 }
 
+// FindAll godoc
+// @Summary Daftar Semua Produk
+// @Description Mengambil seluruh katalog produk yang tersedia di sistem (Dilengkapi Caching).
+// @Tags Produk
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.JSONResponse "Berhasil memuat daftar produk"
+// @Router /products [get]
 func (h *ProductHandler) FindAll(c *gin.Context) {
 	products, err := h.productUsecase.FindAll()
 	if err != nil {
@@ -106,6 +138,16 @@ func (h *ProductHandler) FindAll(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Berhasil memuat daftar produk", products)
 }
 
+// FindByID godoc
+// @Summary Detail Produk
+// @Description Mengambil informasi produk secara mendalam berdasarkan ID.
+// @Tags Produk
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Produk"
+// @Success 200 {object} response.JSONResponse "Berhasil memuat detail produk"
+// @Failure 404 {object} response.JSONResponse "Produk Tidak Ditemukan"
+// @Router /products/{id} [get]
 func (h *ProductHandler) FindByID(c *gin.Context) {
 	id := c.Param("id")
 	product, err := h.productUsecase.FindByID(id)

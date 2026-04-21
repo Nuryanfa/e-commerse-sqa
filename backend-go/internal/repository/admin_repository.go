@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
@@ -130,22 +131,98 @@ func (r *adminRepository) GetSellers() ([]domain.SellerWithStats, error) {
 		return nil, err
 	}
 
+	if len(sellers) == 0 {
+		return []domain.SellerWithStats{}, nil
+	}
+
+	sellerIDs := make([]string, len(sellers))
+	for i, s := range sellers {
+		sellerIDs[i] = s.ID
+	}
+
+	// [SQA FIX]: Batch count products using GROUP BY to solve N+1 Query Problem
+	type sellerProductCount struct {
+		SupplierID string
+		Total      int
+	}
+	var counts []sellerProductCount
+	r.db.Model(&domain.Product{}).
+		Select("supplier_id, count(*) as total").
+		Where("supplier_id IN ?", sellerIDs).
+		Group("supplier_id").
+		Scan(&counts)
+
+	countMap := make(map[string]int)
+	for _, c := range counts {
+		countMap[c.SupplierID] = c.Total
+	}
+
 	var result []domain.SellerWithStats
 	for _, s := range sellers {
-		// Hitung jumlah produk untuk setiap seller
-		var productCount int64
-		r.db.Model(&domain.Product{}).Where("supplier_id = ?", s.ID).Count(&productCount)
-
 		result = append(result, domain.SellerWithStats{
 			ID:        s.ID,
-			StoreName: s.Nama,
+			StoreName: s.Nama, // Mock StoreName
 			OwnerName: s.Nama,
-			Status:    "Verified", // Default mock
-			Products:  int(productCount),
+			Status:    "Verified", // Mock Status
+			Products:  countMap[s.ID],
 			Rating:    4.8, // Mock average rating
 			Category:  "Fresh Produce",
 			CreatedAt: s.CreatedAt,
 		})
 	}
 	return result, nil
+}
+
+func (r *adminRepository) GetPaidOrders() ([]domain.OrderSummary, error) {
+	type row struct {
+		ID          string
+		BuyerName   string
+		TotalAmount float64
+		Status      string
+		CourierID   *string
+		CourierName *string
+		CreatedAt   time.Time
+	}
+	var rows []row
+	err := r.db.Table("orders").
+		Select(`orders.id_order AS id, users.nama AS buyer_name,
+			orders.total_amount, orders.status, orders.courier_id,
+			couriers.nama AS courier_name, orders.created_at`).
+		Joins("LEFT JOIN users ON users.id_user = orders.id_user").
+		Joins("LEFT JOIN users couriers ON couriers.id_user = orders.courier_id").
+		Where("orders.status IN ?", []string{"PAID", "PROCESSED", "SHIPPED"}).
+		Where("orders.deleted_at IS NULL").
+		Order("orders.created_at DESC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.OrderSummary, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, domain.OrderSummary{
+			ID:          row.ID,
+			BuyerName:   row.BuyerName,
+			TotalAmount: row.TotalAmount,
+			Status:      row.Status,
+			CourierID:   row.CourierID,
+			CourierName: row.CourierName,
+			CreatedAt:   row.CreatedAt,
+		})
+	}
+	return result, nil
+}
+
+func (r *adminRepository) AssignCourier(orderID, courierID string) error {
+	// Verify courier exists and has courier role
+	var courier domain.User
+	if err := r.db.Where("id_user = ? AND role = ?", courierID, "courier").First(&courier).Error; err != nil {
+		return fmt.Errorf("kurir tidak ditemukan atau bukan role courier")
+	}
+	// Update the order's courier_id and set status to PROCESSED
+	return r.db.Model(&domain.Order{}).
+		Where("id_order = ? AND status = ?", orderID, "PAID").
+		Updates(map[string]interface{}{
+			"courier_id": courierID,
+			"status":     "PROCESSED",
+		}).Error
 }

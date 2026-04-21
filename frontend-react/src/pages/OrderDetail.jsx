@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/ToastContext';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, Package, Truck, Home, MapPin, Phone, ShieldAlert, CreditCard, ShoppingBag, Loader2, ArrowRight } from 'lucide-react';
@@ -38,21 +38,54 @@ export default function OrderDetail() {
   useEffect(() => { fetchOrderAndRecent(); }, [id]);
 
   const pay = async () => {
+    if (!order?.payment_token) {
+      toast.error('Token pembayaran tidak ditemukan. Silakan hubungi admin.');
+      return;
+    }
     setPaying(true);
-    try { await api.post(`/orders/${id}/pay`); toast.success('Pembayaran berhasil!'); fetchOrderAndRecent(); }
-    catch (err) { toast.error(err.response?.data?.error || 'Gagal bayar'); }
-    setPaying(false);
+    window.snap.pay(order.payment_token, {
+       onSuccess: async () => { 
+         toast.success('Pembayaran berhasil!'); 
+         try { await api.post(`/orders/${id}/pay`); } catch(e) {}
+         fetchOrderAndRecent(); setPaying(false); 
+       },
+       onPending: () => { toast.info('Menunggu Pembayaran.'); setPaying(false); },
+       onError: () => { toast.error('Gagal memproses pembayaran!'); setPaying(false); },
+       onClose: () => { toast.info('Popup ditutup.'); setPaying(false); }
+    });
   };
 
-  const createDispute = async () => {
-    const reason = prompt("Sertakan alasan singkat mengapa Anda mengajukan komplain pesanan ini:");
-    if (!reason) return;
+  const [canceling, setCanceling] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeCategory, setDisputeCategory] = useState('');
+  const [disputeDesc, setDisputeDesc] = useState('');
+
+  const cancelOrder = async () => {
+    if(!window.confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) return;
+    setCanceling(true);
+    try {
+      await api.patch(`/orders/${id}/cancel`);
+      toast.success('Pesanan berhasil dibatalkan');
+      fetchOrderAndRecent();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal membatalkan pesanan');
+    }
+    setCanceling(false);
+  };
+
+  const submitDispute = async (e) => {
+    e.preventDefault();
+    if (!disputeCategory || !disputeDesc) {
+      toast.error("Harap lengkapi jenis keluhan dan deskripsi");
+      return;
+    }
     setPaying(true);
     const formData = new FormData();
-    formData.append('reason', reason);
+    formData.append('reason', `[${disputeCategory}] ${disputeDesc}`);
     try {
-      const res = await api.post(`/disputes/${id}`, formData);
+      const res = await api.post(`/disputes/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success(res.data.message);
+      setShowDisputeModal(false);
       navigate(`/disputes/${res.data.data.id_dispute}`);
     } catch (err) {
       toast.error(err.response?.data?.error || "Gagal mengajukan komplain");
@@ -235,14 +268,21 @@ export default function OrderDetail() {
 
                   <div className="flex gap-2 w-full mt-auto">
                     {order.status === 'PENDING' ? (
-                       <button onClick={pay} disabled={paying} className="flex-1 btn-primary text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
-                         {paying ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CreditCard className="w-4 h-4"/> Bayar Sekarang</>}
-                       </button>
+                       <>
+                         <button onClick={cancelOrder} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                           {canceling ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Batalkan Pesanan'}
+                         </button>
+                         <button onClick={pay} disabled={paying} className="flex-1 btn-primary text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
+                           {paying ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CreditCard className="w-4 h-4"/> Bayar Sekarang</>}
+                         </button>
+                       </>
                     ) : (
                        <>
-                         <button onClick={createDispute} className="flex-1 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex justify-center items-center gap-1">
-                            <ShieldAlert className="w-3.5 h-3.5"/> Bantuan
-                         </button>
+                         {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && (
+                           <button onClick={() => setShowDisputeModal(true)} className="flex-1 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-bold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                             <ShieldAlert className="w-3.5 h-3.5"/> Ajukan Komplain
+                           </button>
+                         )}
                          <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold py-3 rounded-xl shadow-md shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-600 transition-colors cursor-pointer flex justify-center items-center gap-1">
                             <ArrowRight className="w-3.5 h-3.5" /> Invoice Detail
                          </button>
@@ -305,6 +345,52 @@ export default function OrderDetail() {
 
           </div>
         </div>
+
+        {/* Modal Dispute */}
+        {showDisputeModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowDisputeModal(false)}></div>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10 border border-gray-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Ajukan Komplain / Retur</h3>
+              <form onSubmit={submitDispute} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Jenis Keluhan</label>
+                  <select 
+                    value={disputeCategory}
+                    onChange={e => setDisputeCategory(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">-- Pilih Jenis Keluhan --</option>
+                    <option value="Barang tidak sesuai">Barang tidak sesuai — sayuran diretur berbeda</option>
+                    <option value="Kualitas tidak sesuai">Kualitas tidak sesuai — sayuran rusak/busuk</option>
+                    <option value="Kuantitas kurang">Kuantitas kurang — berat/jumlah tidak sesuai pesanan</option>
+                    <option value="Barang tidak sampai">Barang tidak sampai — diklaim DELIVERED tapi tidak diterima</option>
+                    <option value="Return/pengembalian barang">Return/pengembalian barang — salah satu alasan di atas</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Deskripsi Singkat</label>
+                  <textarea 
+                    value={disputeDesc}
+                    onChange={e => setDisputeDesc(e.target.value)}
+                    placeholder="Ceritakan detail keluhan Anda..."
+                    rows="3"
+                    className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 resize-none"
+                  ></textarea>
+                </div>
+                <div className="flex gap-3 pt-3">
+                  <button type="button" onClick={() => setShowDisputeModal(false)} className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold text-sm rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer">
+                    Batal
+                  </button>
+                  <button type="submit" disabled={paying} className="flex-1 py-2.5 bg-emerald-500 text-white font-bold text-sm rounded-xl hover:bg-emerald-600 transition flex justify-center items-center gap-2 cursor-pointer">
+                    {paying ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Kirim Komplain'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

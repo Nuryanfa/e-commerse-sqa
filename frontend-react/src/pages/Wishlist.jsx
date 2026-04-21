@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import ProductCard from '../components/ProductCard';
 import { Heart, Trash2, HeartHandshake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

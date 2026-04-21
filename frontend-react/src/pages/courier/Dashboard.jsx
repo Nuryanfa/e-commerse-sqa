@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { useToast } from '../../context/ToastContext';
 import { useModal } from '../../context/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,9 +26,9 @@ export default function CourierDashboard() {
       api.get('/courier/my-orders'),
       api.get('/disputes')
     ]).then(([a, m, d]) => {
-      setAvailable(a.data.data || []);
-      setMyOrders(m.data.data || []);
-      setReturnDisputes(d.data.data || []);
+      setAvailable(Array.isArray(a.data.data) ? a.data.data : (a.data.data?.data || []));
+      setMyOrders(Array.isArray(m.data.data) ? m.data.data : (m.data.data?.data || []));
+      setReturnDisputes(Array.isArray(d.data.data) ? d.data.data : (d.data.data?.data || []));
     }).catch(() => {}).finally(() => setLoading(false));
   };
   useEffect(fetchData, []);

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, CreditCard, Loader2 } from 'lucide-react';
+import { Package, Truck, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, CreditCard, Loader2, Store } from 'lucide-react';
 
 export default function SupplierDashboard() {
   const { user } = useAuth();
@@ -17,8 +17,8 @@ export default function SupplierDashboard() {
   useEffect(() => {
     Promise.all([api.get('/supplier/products'), api.get('/supplier/orders')])
       .then(([p, o]) => {
-        setProducts(p.data.data || []);
-        setOrders(o.data.data || []);
+        setProducts(Array.isArray(p.data.data) ? p.data.data : (p.data.data?.data || []));
+        setOrders(Array.isArray(o.data.data) ? o.data.data : (o.data.data?.data || []));
       })
       .catch(() => toast.error('Gagal memuat data dashboard'))
       .finally(() => setLoading(false));

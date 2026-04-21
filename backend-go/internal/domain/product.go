@@ -11,7 +11,7 @@ type Product struct {
 	Name        string    `json:"name" gorm:"column:name;index" binding:"required,min=3"`
 	Description string    `json:"description" gorm:"column:description"`
 	Price       float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
-	Stock       int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
+	Stock       int       `json:"stock" gorm:"column:stock" binding:"gte=0"` // [SQA BUG-007] Hapus 'required' agar stok=0 (habis) tetap valid
 	CategoryID  string    `json:"id_category" gorm:"column:id_category;index" binding:"required"`
 	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
 	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id;index"`
@@ -29,7 +29,7 @@ type ProductVariant struct {
 	ProductID string    `json:"id_product" gorm:"column:id_product"`
 	NameLabel string    `json:"name_label" gorm:"column:name_label" binding:"required"` // Contoh: "250g", "1 Kg"
 	Price     float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
-	Stock     int       `json:"stock" gorm:"column:stock" binding:"required,gte=0"`
+	Stock     int       `json:"stock" gorm:"column:stock" binding:"gte=0"` // [SQA BUG-007] Hapus 'required' agar stok=0 (habis) tetap valid
 	SKUCode   string    `json:"sku_code" gorm:"column:sku_code"`
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`

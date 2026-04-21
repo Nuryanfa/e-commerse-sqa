@@ -19,7 +19,24 @@ import (
 	"github.com/nuryanfa/e-commerse-sqa/internal/repository"
 	"github.com/nuryanfa/e-commerse-sqa/internal/usecase"
 	"golang.org/x/time/rate"
+
+	_ "github.com/nuryanfa/e-commerse-sqa/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title E-Commerce SQA API
+// @version 1.0
+// @description API untuk aplikasi E-Commerce bahan pangan (Sayur/Buah).
+// @contact.name API Support
+// @contact.email support@example.com
+//
+// @host localhost:8080
+// @BasePath /api/v1
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	// 1. Init Database
@@ -69,6 +86,9 @@ func main() {
 			"message": "Server berjalan dan siap!",
 		})
 	})
+
+	// Swagger Documentation Route
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Serve Static Files for Uploads
 	router.Static("/uploads", "./uploads")

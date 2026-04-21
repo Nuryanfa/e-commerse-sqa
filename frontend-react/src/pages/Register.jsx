@@ -7,6 +7,7 @@ import { User, Mail, Lock, ArrowRight, AlertCircle, Leaf, ShoppingCart, Tractor,
 export default function Register() {
   const [nama,     setNama]     = useState('');
   const [email,    setEmail]    = useState('');
+  const [phone,    setPhone]    = useState('');
   const [password, setPassword] = useState('');
   const [role,     setRole]     = useState('pembeli');
   const [error,    setError]    = useState('');
@@ -18,11 +19,33 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const phoneRegex = /^(\+62|62|0)8[1-9][0-9]{6,10}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('Nomor HP tidak valid. Format: 08xx atau +628xx');
+      setLoading(false);
+      controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
+      return;
+    }
+
+    if (nama.length < 3 || nama.length > 100) {
+      setError('Panjang nama minimal 3 karakter dan maksimal 100 karakter.');
+      setLoading(false);
+      controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
+      return;
+    }
+
+    if (password.length < 8 || password.length > 64) {
+      setError('Panjang kata sandi minimal 8 karakter dan maksimal 64 karakter.');
+      setLoading(false);
+      controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
+      return;
+    }
+
     try {
-      await api.post('/auth/register', { nama, email, password, role });
+      await api.post('/auth/register', { nama, email, password, role, phone });
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.error || 'Pendaftaran gagal. Silakan coba lagi.');
+      setError(err.response?.data?.message || err.response?.data?.detail || 'Pendaftaran gagal. Silakan coba lagi.');
       controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
     }
     setLoading(false);
@@ -122,34 +145,44 @@ export default function Register() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Name */}
+              {/* Name (tabIndex: 1) */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Nama Lengkap</label>
                 <div style={{ position: 'relative' }}>
                   <User style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
-                  <input type="text" required minLength={3} value={nama} onChange={e => setNama(e.target.value)} placeholder="Mis: Budi Santoso" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                  <input type="text" tabIndex="1" required value={nama} onChange={e => setNama(e.target.value)} placeholder="Mis: Budi Santoso" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
                 </div>
               </div>
 
-              {/* Email */}
+              {/* Email (tabIndex: 2) */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Alamat Email</label>
                 <div style={{ position: 'relative' }}>
                   <Mail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="anda@email.com" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                  <input type="email" tabIndex="2" required value={email} onChange={e => setEmail(e.target.value)} placeholder="anda@email.com" style={inputStyle} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                </div>
+              </div>
+              
+              {/* Phone (tabIndex: 3) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Nomor Telepon (WhatsApp)</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.875rem', fontWeight: 700, color: 'var(--outline)' }}>+62</span>
+                  <input type="tel" tabIndex="3" required value={phone} onChange={e => setPhone(e.target.value)} placeholder="81234567890" style={{ ...inputStyle, paddingLeft: '3.25rem' }} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
                 </div>
               </div>
 
-              {/* Password */}
+              {/* Password (tabIndex: 4) */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Kata Sandi</label>
                 <div style={{ position: 'relative' }}>
                   <Lock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
-                  <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimal 8 karakter" style={{ ...inputStyle }} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
+                  <input type="password" tabIndex="4" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimal 8 karakter" style={{ ...inputStyle }} onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'} onBlur={e => e.target.style.boxShadow = 'none'} />
                 </div>
               </div>
 
-              <button type="submit" disabled={loading} className="btn-primary w-full justify-center" style={{ paddingTop: '0.875rem', paddingBottom: '0.875rem', fontSize: '0.925rem' }}>
+              {/* Submit (tabIndex: 5) */}
+              <button type="submit" tabIndex="5" disabled={loading} className="btn-primary w-full justify-center" style={{ paddingTop: '0.875rem', paddingBottom: '0.875rem', fontSize: '0.925rem' }}>
                 {loading
                   ? <><span style={{ width: '1rem', height: '1rem', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} /> Membuat Akun...</>
                   : <>Daftar Sekarang <ArrowRight style={{ width: '1rem', height: '1rem' }} /></>

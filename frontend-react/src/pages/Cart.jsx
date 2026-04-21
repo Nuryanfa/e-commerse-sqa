@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useModal } from '../context/ModalContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Box, Leaf, Loader2, CheckCircle, Truck, CreditCard, ChevronRight, Lock, MapPin, Building2, User, Phone, ArrowLeft, ShieldAlert } from 'lucide-react';
 
@@ -83,11 +83,15 @@ export default function Cart() {
         payment_method: 'midtrans'
       });
       
-      const orderData = res.data.order;
+      const orderData = res.data.data;
       if (!orderData?.payment_token) throw new Error("Midtrans error. Token tidak diterima.");
       
       window.snap.pay(orderData.payment_token, {
-         onSuccess: () => { toast.success('Pembayaran berhasil!'); navigate(`/orders/${orderData.id_order}`); },
+         onSuccess: async () => { 
+           toast.success('Pembayaran berhasil!'); 
+           try { await api.post(`/orders/${orderData.id_order}/pay`); } catch(e) {}
+           navigate(`/orders/${orderData.id_order}`); 
+         },
          onPending: () => { toast.info('Pesanan Dibuat! Menunggu Pembayaran.'); navigate(`/orders/${orderData.id_order}`); },
          onError: () => toast.error('Gagal memproses pembayaran!'),
          onClose: () => { toast.info('Popup ditutup.'); navigate(`/orders/${orderData.id_order}`); }

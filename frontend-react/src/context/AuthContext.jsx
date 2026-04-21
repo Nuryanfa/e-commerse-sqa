@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ id: payload.user_id, role: payload.role });
+        setUser({ id: payload.user_id, role: payload.role, nama: payload.nama || '' });
       } catch {
         logout();
       }
@@ -22,11 +22,11 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    const newToken = res.data.token;
+    const newToken = res.data.data.token;
     localStorage.setItem('token', newToken);
     setToken(newToken);
     const payload = JSON.parse(atob(newToken.split('.')[1]));
-    setUser({ id: payload.user_id, role: payload.role });
+    setUser({ id: payload.user_id, role: payload.role, nama: payload.nama || '' });
     return payload.role;
   };
 
@@ -46,5 +46,3 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthContext);

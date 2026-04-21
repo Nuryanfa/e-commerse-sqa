@@ -42,7 +42,8 @@ export default function CommandPalette({ isOpen, onClose }) {
       setLoading(true);
       try {
         const res = await api.get(`/products/search?q=${encodeURIComponent(query)}`);
-        setResults(res.data.data || []);
+        // [SQA Fix] Menyesuaikan dengan struktur data paginasi baru
+        setResults(res.data.data?.data || []);
         setSelectedIndex(0);
       } catch (err) {
         setResults([]);

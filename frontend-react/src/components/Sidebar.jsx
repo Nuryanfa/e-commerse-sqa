@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/ThemeContext';
 import { Home, ShoppingBag, Heart, ShoppingCart, Package, BarChart2, Truck, Shield, KeyRound, UserPlus, Moon, Sun, LogOut, Leaf, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -464,3 +464,10 @@ func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) er
 	}
 	return nil
 }
+
+func (r *orderRepository) SavePaymentToken(orderID string, paymentToken string, paymentURL string) error {
+	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Updates(map[string]interface{}{
+		"payment_token": paymentToken,
+		"payment_url":   paymentURL,
+	}).Error
+}

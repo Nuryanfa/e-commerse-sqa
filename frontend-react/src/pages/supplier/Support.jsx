@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { useToast } from '../../context/ToastContext';
 import { Send, MessageCircle, HelpCircle, FileText, ChevronRight } from 'lucide-react';
 

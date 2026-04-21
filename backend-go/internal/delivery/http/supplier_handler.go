@@ -74,12 +74,36 @@ func (h *SupplierHandler) parseProductRequest(c *gin.Context, req *domain.Produc
 			}
 		}
 
-		if req.Name == "" || req.CategoryID == "" || req.Price <= 0 || req.Stock < 0 {
-			return errors.New("validasi gagal: pastikan semua field wajib terisi dengan benar")
+		if req.Name == "" || req.CategoryID == "" {
+			return errors.New("validasi gagal: nama dan ID kategori wajib diisi")
 		}
+
+		// [SQA] Boundary Value Analysis for Supplier Products
+		if req.Price < 100 || req.Price > 100000000 {
+			return errors.New("validasi gagal: harga produk harus wajar (Rp 100 - Rp 100.000.000)")
+		}
+		if req.Stock < 0 || req.Stock > 10000 {
+			return errors.New("validasi gagal: batas maksimum stok adalah 10.000 unit per input")
+		}
+
 		return nil
 	}
-	return c.ShouldBindJSON(req)
+	// [SQA BUG-007] JSON path: terapkan validasi BVA yang sama dengan multipart
+	if err := c.ShouldBindJSON(req); err != nil {
+		return errors.New("format JSON tidak valid: " + err.Error())
+	}
+
+	if req.Name == "" || req.CategoryID == "" {
+		return errors.New("validasi gagal: nama dan ID kategori wajib diisi")
+	}
+	if req.Price < 100 || req.Price > 100000000 {
+		return errors.New("validasi gagal: harga produk harus wajar (Rp 100 - Rp 100.000.000)")
+	}
+	if req.Stock < 0 || req.Stock > 10000 {
+		return errors.New("validasi gagal: batas maksimum stok adalah 10.000 unit per input")
+	}
+
+	return nil
 }
 
 func (h *SupplierHandler) CreateProduct(c *gin.Context) {
@@ -153,11 +177,11 @@ func (h *SupplierHandler) BatchProcessOrders(c *gin.Context) {
 	supplierID := c.GetString("user_id")
 
 	var req struct {
-		OrderIDs []string `json:"order_ids" binding:"required"`
+		OrderIDs []string `json:"order_ids" binding:"required,min=1,max=50"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, response.ErrBadRequest("Daftar ID Pesanan (order_ids) tidak boleh kosong"))
+		response.Error(c, response.ErrBadRequest("Daftar ID Pesanan harus minimal 1 dan maksimal 50 sekaligus"))
 		return
 	}
 

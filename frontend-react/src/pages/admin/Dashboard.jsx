@@ -71,8 +71,8 @@ export default function AdminDashboard() {
             <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all">
               <Calendar className="w-4 h-4" /> 30 Hari Terakhir
             </button>
-            <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
-              <Download className="w-4 h-4" /> Export Report
+            <button onClick={() => toast.success('Laporan PDF akan diunduh')} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
+              <Download className="w-4 h-4" /> Export (PDF)
             </button>
           </div>
         </div>

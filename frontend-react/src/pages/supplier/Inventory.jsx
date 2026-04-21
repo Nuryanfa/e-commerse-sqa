@@ -32,7 +32,10 @@ export default function SupplierInventory() {
   const fetch = () => {
     setLoading(true);
     Promise.all([api.get('/supplier/products'), api.get('/categories')])
-      .then(([p, c]) => { setProducts(p.data.data || []); setCategories(c.data.data || []); })
+      .then(([p, c]) => { 
+        setProducts(Array.isArray(p.data.data) ? p.data.data : (p.data.data?.data || [])); 
+        setCategories(Array.isArray(c.data.data) ? c.data.data : (c.data.data?.data || [])); 
+      })
       .catch(() => toast.error('Gagal memuat produk'))
       .finally(() => setLoading(false));
   };

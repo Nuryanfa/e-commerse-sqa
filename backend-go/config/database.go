@@ -36,3 +36,4 @@ func InitDB() *gorm.DB {
 	log.Println("Koneksi ke PostgreSQL berhasil!")
 	return db
 }
+

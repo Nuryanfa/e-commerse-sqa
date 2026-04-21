@@ -1,4 +1,4 @@
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/ThemeContext';
 import { Search, Bell, Moon, Sun, Menu } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -52,7 +52,7 @@ export default function AdminNavbar({ onToggleSidebar }) {
             <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 600, color: 'var(--outline)', textTransform: 'uppercase' }}>{isAdmin ? 'SUPERUSER' : 'SELLER'}</p>
           </div>
           <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.875rem' }}>
-            {user?.nama?.charAt(0).toUpperCase() || (isAdmin ? 'A' : 'S')}
+            {user?.nama?.charAt(0)?.toUpperCase() || (isAdmin ? 'A' : 'S')}
           </div>
         </div>
       </div>

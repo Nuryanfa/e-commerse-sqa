@@ -1,8 +1,10 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -83,6 +85,7 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
+		u.orderRepo.SavePaymentToken(order.ID, snapResp.Token, snapResp.RedirectURL)
 	} else if snapErr != nil {
 		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token (Checkout): %v\n", snapErr)
 	}
@@ -111,6 +114,7 @@ func (u *orderUsecase) InstantCheckout(userID string, productID string, variantI
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
+		u.orderRepo.SavePaymentToken(order.ID, snapResp.Token, snapResp.RedirectURL)
 	} else if snapErr != nil {
 		fmt.Printf("[MIDTRANS ERROR] Gagal generate Snap Token (InstantCheckout): %v\n", snapErr)
 	}
@@ -132,6 +136,16 @@ func (u *orderUsecase) GetOrderDetail(userID string, orderID string) (*domain.Or
 		return nil, errors.New("akses ditolak. Order ini bukan milik anda")
 	}
 
+	if order.Status == "PENDING" && order.PaymentToken != nil {
+		errSync := u.SyncMidtransStatus(orderID)
+		if errSync == nil {
+			refreshedOrder, errRef := u.orderRepo.FindByID(orderID)
+			if errRef == nil {
+				order = refreshedOrder
+			}
+		}
+	}
+
 	return order, nil
 }
 
@@ -146,6 +160,23 @@ func (u *orderUsecase) PayOrder(orderID string) error {
 	}
 
 	return u.orderRepo.UpdateStatus(orderID, "PAID")
+}
+
+func (u *orderUsecase) CancelOrder(userID string, orderID string) error {
+	order, err := u.orderRepo.FindByID(orderID)
+	if err != nil {
+		return err
+	}
+
+	if order.UserID != userID {
+		return errors.New("akses ditolak. Pesanan ini bukan milik Anda")
+	}
+
+	if order.Status != "PENDING" {
+		return errors.New("hanya pesanan PENDING (belum dibayar) yang dapat dibatalkan")
+	}
+
+	return u.orderRepo.CancelOrderTransaction(orderID)
 }
 
 // --- Courier Methods ---
@@ -297,6 +328,33 @@ func (u *orderUsecase) BatchProcessSupplierOrders(supplierID string, orderIDs []
 }
 
 // --- Webhook Logik ---
+
+func (u *orderUsecase) SyncMidtransStatus(orderID string) error {
+	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
+	if serverKey == "" {
+		return nil // skip if no key
+	}
+	
+	// Create request manually to avoid dealing with Midtrans SDK version conflicts
+	url := "https://api.sandbox.midtrans.com/v2/" + orderID + "/status"
+	req, _ := http.NewRequest("GET", url, nil)
+	req.SetBasicAuth(serverKey, "")
+	
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode == 200 {
+		var payload map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err == nil {
+			return u.ProcessPaymentWebhook(payload)
+		}
+	}
+	return nil
+}
 
 func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) error {
 	orderID, ok := payload["order_id"].(string)

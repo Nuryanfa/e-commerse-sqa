@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/ToastContext';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -237,46 +237,6 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Inspirasi Resep (Recipe Cards) */}
-      <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 border-t border-gray-100 dark:border-slate-800">
-        <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-8 tracking-tight">Inspirasi Olahan {product.name.split(' ')[0] || 'Sayur'}</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-auto lg:h-[400px]">
-           {/* Card Kiri Besar */}
-           <div className="lg:col-span-1 h-[300px] md:h-full relative rounded-3xl overflow-hidden group cursor-pointer isolate">
-             <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/10 transition-colors z-10" />
-             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10" />
-             <img src="https://images.unsplash.com/photo-1546069901-d5bfd2cbfb1f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Recipe 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-             <div className="absolute bottom-6 left-6 right-6 z-20">
-                <span className="bg-emerald-500 text-white text-[9px] font-black tracking-widest px-2.5 py-1 uppercase rounded-md mb-3 inline-block">Resep Utama</span>
-                <h3 className="text-xl font-bold text-white leading-snug">{product.name.split(' ')[0] || 'Sayur'} Detox Salad with Almonds</h3>
-             </div>
-           </div>
-
-           {/* Stack Kanan */}
-           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-              <div className="h-[200px] lg:h-full relative rounded-3xl overflow-hidden group cursor-pointer border border-gray-100 dark:border-slate-800 isolate">
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                 <img src="https://images.unsplash.com/photo-1628194689611-37d45749f7ba?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" alt="Recipe 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                 <h3 className="absolute bottom-5 left-5 right-5 z-20 text-white font-bold text-lg leading-tight lg:text-base">Morning {product.name.split(' ')[0] || 'Sayur'} Smoothie</h3>
-              </div>
-              <div className="grid grid-rows-2 gap-6 h-[400px] lg:h-full">
-                 <div className="relative rounded-3xl overflow-hidden group cursor-pointer border border-gray-100 dark:border-slate-800 isolate">
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                   <img src="https://images.unsplash.com/photo-1625938146369-adc83368bda7?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="Recipe 3" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                   <h3 className="absolute bottom-4 left-4 right-4 z-20 text-white font-bold text-base leading-tight w-2/3">Oven-Baked Crispy Chips</h3>
-                 </div>
-                 <div className="bg-slate-50 dark:bg-slate-800/80 rounded-3xl border border-gray-200 dark:border-slate-700 flex flex-col items-center justify-center p-6 text-center group cursor-pointer hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors">
-                   <div className="w-12 h-12 bg-white dark:bg-slate-700 rounded-full flex items-center justify-center shadow-sm mb-3">
-                     <BookOpen className="w-5 h-5 text-emerald-500" />
-                   </div>
-                   <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">12+ Resep Lainnya</h3>
-                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight group-hover:underline">Eksplor Sekarang</span>
-                 </div>
-              </div>
-           </div>
-        </div>
-      </div>
 
       {/* Ulasan Pembeli (Buyer Reviews Array) */}
       <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 border-t border-gray-100 dark:border-slate-800 relative">

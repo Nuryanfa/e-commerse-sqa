@@ -59,12 +59,25 @@ type SellerWithStats struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// OrderSummary for admin logistics view
+type OrderSummary struct {
+	ID          string     `json:"id_order"`
+	BuyerName   string     `json:"buyer_name"`
+	TotalAmount float64    `json:"total_amount"`
+	Status      string     `json:"status"`
+	CourierID   *string    `json:"courier_id"`
+	CourierName *string    `json:"courier_name"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
 // AdminUsecase Interface
 type AdminUsecase interface {
 	GetDashboardStats() (AdminDashboardStats, error)
 	GetUsers() ([]UserWithStats, error)
 	GetSellers() ([]SellerWithStats, error)
 	GetSystemLogs() ([]SystemLog, error)
+	GetPaidOrders() ([]OrderSummary, error)
+	AssignCourier(orderID, courierID string) error
 }
 
 // AdminRepository Interface
@@ -78,4 +91,6 @@ type AdminRepository interface {
 	GetRecentLiveFeed() ([]LiveFeedItem, error)
 	GetUsers() ([]UserWithStats, error)
 	GetSellers() ([]SellerWithStats, error)
+	GetPaidOrders() ([]OrderSummary, error)
+	AssignCourier(orderID, courierID string) error
 }

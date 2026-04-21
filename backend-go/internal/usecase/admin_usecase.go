@@ -45,3 +45,11 @@ func (u *adminUsecase) GetSellers() ([]domain.SellerWithStats, error) {
 func (u *adminUsecase) GetSystemLogs() ([]domain.SystemLog, error) {
 	return u.adminRepo.GetRecentLogs()
 }
+
+func (u *adminUsecase) GetPaidOrders() ([]domain.OrderSummary, error) {
+	return u.adminRepo.GetPaidOrders()
+}
+
+func (u *adminUsecase) AssignCourier(orderID, courierID string) error {
+	return u.adminRepo.AssignCourier(orderID, courierID)
+}

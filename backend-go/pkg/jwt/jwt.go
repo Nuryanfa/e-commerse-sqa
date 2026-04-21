@@ -21,10 +21,11 @@ func getSecretKey() []byte {
 }
 
 // GenerateToken creates a new JWT token for a user ID and role with a 24-hour expiration.
-func GenerateToken(userID, role string) (string, error) {
+func GenerateToken(userID, role, nama string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
 		"role":    role,
+		"nama":    nama,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 

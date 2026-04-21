@@ -154,7 +154,7 @@ func getToken(email, password string) string {
 	body := map[string]string{"email": email, "password": password}
 	jsonBytes, _ := json.Marshal(body)
 
-	resp, err := http.Post(baseURL+"/api/users/login", "application/json", bytes.NewReader(jsonBytes))
+	resp, err := http.Post(baseURL+"/api/v1/auth/login", "application/json", bytes.NewReader(jsonBytes))
 	if err != nil {
 		fmt.Printf("❌ Gagal login: %v\n", err)
 		return ""
@@ -164,7 +164,14 @@ func getToken(email, password string) string {
 	var result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&result)
 
-	token, ok := result["token"].(string)
+	// Since we are using standard pkg/response format, token is in data.token
+	dataObj, okData := result["data"].(map[string]interface{})
+	if !okData {
+		fmt.Println("❌ Response data tidak sesuai format pkg/response")
+		return ""
+	}
+
+	token, ok := dataObj["token"].(string)
 	if !ok {
 		fmt.Println("❌ Token tidak ditemukan di response login")
 		return ""
@@ -180,24 +187,18 @@ func main() {
 	fmt.Println()
 
 	// --- Test 1: Public GET endpoint (tanpa auth) ---
-	fmt.Println("📡 Test 1: GET /api/products (Public — 500 requests, 50 concurrent)")
-	r1 := runLoadTest("GET", "/api/products", nil, nil, 500, 50)
+	fmt.Println("📡 Test 1: GET /api/v1/products (Public — 500 requests, 50 concurrent)")
+	r1 := runLoadTest("GET", "/api/v1/products", nil, nil, 500, 50)
 	r1.Print()
 
 	// --- Test 2: Public GET endpoint (high load) ---
-	fmt.Println("📡 Test 2: GET /api/products (Public — 1000 requests, 100 concurrent)")
-	r2 := runLoadTest("GET", "/api/products", nil, nil, 1000, 100)
+	fmt.Println("📡 Test 2: GET /api/v1/products (Public — 1000 requests, 100 concurrent)")
+	r2 := runLoadTest("GET", "/api/v1/products", nil, nil, 1000, 100)
 	r2.Print()
-
-	// --- Test 3: Login endpoint (auth stress) ---
-	fmt.Println("📡 Test 3: POST /api/users/login (Auth — 200 requests, 50 concurrent)")
-	loginBody := map[string]string{"email": "pembeli@ecommerce.com", "password": "password123"}
-	r3 := runLoadTest("POST", "/api/users/login", nil, loginBody, 200, 50)
-	r3.Print()
 
 	// --- Ambil token untuk test berikutnya ---
 	fmt.Println("🔑 Mengambil JWT token untuk testing endpoint yang dilindungi...")
-	token := getToken("pembeli@ecommerce.com", "password123")
+	token := getToken("admin@ecommerce.com", "password123") // Make sure to use a valid robust test user
 	if token == "" {
 		fmt.Println("❌ Gagal mendapatkan token. Pastikan server berjalan dan database sudah di-seed.")
 		return
@@ -205,18 +206,24 @@ func main() {
 	fmt.Println("✅ Token diperoleh!")
 	fmt.Println()
 
+	// --- Test 3: Login endpoint (auth stress) ---
+	fmt.Println("📡 Test 3: POST /api/v1/auth/login (Auth — 200 requests, 50 concurrent)")
+	loginBody := map[string]string{"email": "pembeli@ecommerce.com", "password": "password123"}
+	r3 := runLoadTest("POST", "/api/v1/auth/login", nil, loginBody, 200, 50)
+	r3.Print()
+
 	authHeaders := map[string]string{
 		"Authorization": "Bearer " + token,
 	}
 
 	// --- Test 4: Protected GET (View Cart) ---
-	fmt.Println("📡 Test 4: GET /api/cart (Auth — 500 requests, 50 concurrent)")
-	r4 := runLoadTest("GET", "/api/cart", authHeaders, nil, 500, 50)
+	fmt.Println("📡 Test 4: GET /api/v1/cart (Auth — 500 requests, 50 concurrent)")
+	r4 := runLoadTest("GET", "/api/v1/cart", authHeaders, nil, 500, 50)
 	r4.Print()
 
 	// --- Test 5: Health Check (baseline) ---
-	fmt.Println("📡 Test 5: GET /api/health (Baseline — 2000 requests, 200 concurrent)")
-	r5 := runLoadTest("GET", "/api/health", nil, nil, 2000, 200)
+	fmt.Println("📡 Test 5: GET /api/v1/health (Baseline — 2000 requests, 200 concurrent)")
+	r5 := runLoadTest("GET", "/api/v1/health", nil, nil, 2000, 200)
 	r5.Print()
 
 	// --- SUMMARY ---

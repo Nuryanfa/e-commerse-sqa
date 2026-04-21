@@ -21,8 +21,8 @@ export default function SupplierAnalytics() {
   useEffect(() => {
     Promise.all([api.get('/supplier/orders'), api.get('/supplier/products')])
       .then(([oRes, pRes]) => {
-        const orders = oRes.data.data || [];
-        const products= pRes.data.data || [];
+        const orders = Array.isArray(oRes.data.data) ? oRes.data.data : (oRes.data.data?.data || []);
+        const products = Array.isArray(pRes.data.data) ? pRes.data.data : (pRes.data.data?.data || []);
         
         // Mock trends based on existing orders
         const revMap = {};

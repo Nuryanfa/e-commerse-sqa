@@ -24,6 +24,8 @@ func NewAdminHandler(r *gin.RouterGroup, usecase domain.AdminUsecase) {
 	admin.GET("/users", handler.GetUsers)
 	admin.GET("/sellers", handler.GetSellers)
 	admin.GET("/logs", handler.GetSystemLogs)
+	admin.GET("/orders", handler.GetPaidOrders)
+	admin.PATCH("/orders/:id/assign-courier", handler.AssignCourier)
 }
 
 func (h *AdminHandler) checkAdminRole(c *gin.Context) bool {
@@ -71,4 +73,29 @@ func (h *AdminHandler) GetSystemLogs(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "Berhasil memuat system logs", logs)
+}
+
+func (h *AdminHandler) GetPaidOrders(c *gin.Context) {
+	orders, err := h.AdminUsecase.GetPaidOrders()
+	if err != nil {
+		response.Error(c, response.ErrInternal("Gagal mengambil daftar pesanan"))
+		return
+	}
+	response.Success(c, http.StatusOK, "Berhasil memuat pesanan", orders)
+}
+
+func (h *AdminHandler) AssignCourier(c *gin.Context) {
+	orderID := c.Param("id")
+	var req struct {
+		CourierID string `json:"courier_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, response.ErrBadRequest("courier_id wajib diisi"))
+		return
+	}
+	if err := h.AdminUsecase.AssignCourier(orderID, req.CourierID); err != nil {
+		response.Error(c, response.ErrBadRequest(err.Error()))
+		return
+	}
+	response.Success(c, http.StatusOK, "Kurir berhasil ditugaskan ke pesanan ini", nil)
 }

@@ -41,7 +41,7 @@ export default function SupplierOrders() {
   const fetchOrders = () => {
     setLoading(true);
     api.get('/supplier/orders')
-      .then(res => setOrders(res.data.data || []))
+      .then(res => setOrders(Array.isArray(res.data.data) ? res.data.data : (res.data.data?.data || [])))
       .catch(() => toast.error('Gagal memuat pesanan'))
       .finally(() => setLoading(false));
   };

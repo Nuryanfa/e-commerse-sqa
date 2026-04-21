@@ -55,6 +55,7 @@ type OrderRepository interface {
 	CancelOrderTransaction(orderID string) error
 	// Bulk Operations
 	BatchUpdateStatus(orderIDs []string, status string) error
+	SavePaymentToken(orderID string, paymentToken string, paymentURL string) error
 }
 
 type OrderUsecase interface {
@@ -74,6 +75,9 @@ type OrderUsecase interface {
 	BatchProcessSupplierOrders(supplierID string, orderIDs []string) error
 	// Webhook method
 	ProcessPaymentWebhook(payload map[string]interface{}) error
+	SyncMidtransStatus(orderID string) error
 	// Cronjob Task
 	ProcessCancelExpiredJobs() (int, error)
+	// Buyer methods
+	CancelOrder(userID string, orderID string) error
 }

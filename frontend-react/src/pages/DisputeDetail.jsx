@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/ToastContext';
 import { ArrowLeft, Send, ShieldAlert, CheckCircle, XCircle, Info, Image as ImageIcon } from 'lucide-react';
 

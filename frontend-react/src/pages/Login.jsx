@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { motion, useAnimation } from 'framer-motion';
 import { Mail, Lock, ArrowRight, AlertCircle, Leaf, Eye, EyeOff } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function Login() {
       else if (role === 'courier')  navigate('/courier');
       else                          navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Email atau kata sandi salah.');
+      setError(err.response?.data?.message || err.response?.data?.detail || 'Email atau kata sandi salah.');
       controls.start({ x: [0, -10, 10, -7, 7, 0], transition: { duration: 0.4 } });
     }
     setLoading(false);
@@ -103,13 +103,13 @@ export default function Login() {
           )}
 
           <motion.form onSubmit={handleSubmit} className="space-y-5" animate={controls}>
-            {/* Email */}
+            {/* Email (tabIndex: 1) */}
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', marginBottom: '0.5rem', letterSpacing: '0.025em' }}>Alamat Email</label>
               <div style={{ position: 'relative' }}>
                 <Mail style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
                 <input
-                  type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                  type="email" tabIndex="1" required value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="anda@email.com"
                   style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', color: 'var(--on-surface)', fontSize: '0.875rem', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'}
@@ -118,29 +118,30 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password (tabIndex: 2) */}
             <div>
               <div className="flex justify-between items-center" style={{ marginBottom: '0.5rem' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--on-surface-variant)', letterSpacing: '0.025em' }}>Kata Sandi</label>
-                <button type="button" style={{ fontSize: '0.78rem', color: 'var(--md-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Lupa kata sandi?</button>
+                <button type="button" tabIndex="4" style={{ fontSize: '0.78rem', color: 'var(--md-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Lupa kata sandi?</button>
               </div>
               <div style={{ position: 'relative' }}>
                 <Lock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
                 <input
-                  type={showPass ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)}
+                  type={showPass ? 'text' : 'password'} tabIndex="2" required value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   style={{ width: '100%', padding: '0.75rem 2.75rem 0.75rem 2.75rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-container)', border: 'none', color: 'var(--on-surface)', fontSize: '0.875rem', outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--md-primary)'}
                   onBlur={e => e.target.style.boxShadow = 'none'}
                 />
-                <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--outline)', display: 'flex', alignItems: 'center' }}>
+                <button type="button" tabIndex="-1" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--outline)', display: 'flex', alignItems: 'center' }}>
                   {showPass ? <EyeOff style={{ width: '1rem', height: '1rem' }} /> : <Eye style={{ width: '1rem', height: '1rem' }} />}
                 </button>
               </div>
             </div>
 
+            {/* Submit (tabIndex: 3) */}
             <button
-              type="submit" disabled={loading}
+              type="submit" tabIndex="3" disabled={loading}
               className="btn-primary w-full justify-center"
               style={{ paddingTop: '0.875rem', paddingBottom: '0.875rem', marginTop: '0.5rem', fontSize: '0.925rem' }}
             >
