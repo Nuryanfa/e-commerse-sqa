@@ -80,50 +80,7 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 			})
 		}
 
-		// 1.5 Validasi dan Pemotongan Voucher (Jika ada)
-		var discount float64
-		var appliedVoucher *string
-
-		if voucherCode != "" {
-			var voucher domain.Voucher
-			// Menggunakan Pessimistic Locking untuk mencegah Race Condition persediaan kuota Voucher
-			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("code = ? AND is_active = ?", voucherCode, true).First(&voucher).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return errors.New("kode kupon diskon tidak valid atau tidak aktif")
-				}
-				return err
-			}
-
-			// Limit Expiry
-			if voucher.ExpiryDate.Before(time.Now()) {
-				return errors.New("kupon diskon sudah kedaluwarsa")
-			}
-
-			// Limit Kuota (0 = bebas pakai, >0 = berbatas kuota)
-			if voucher.UsageLimit > 0 && voucher.UsedCount >= voucher.UsageLimit {
-				return errors.New("kuota batas pemakaian kupon diskon ini telah habis")
-			}
-
-			// Minimum Belanja Keseluruhan
-			if totalAmount < voucher.MinPurchase {
-				return fmt.Errorf("minimal pembelian tidak mencukupi, minimum kereta Rp%.2f", voucher.MinPurchase)
-			}
-
-			discount = voucher.DiscountAmount
-			totalAmount -= discount
-			if totalAmount < 0 {
-				totalAmount = 0
-			}
-
-			vc := voucher.Code
-			appliedVoucher = &vc
-
-			// Tingkatkan catatan frekuensi pakai
-			voucher.UsedCount++
-			if err := tx.Save(&voucher).Error; err != nil {
-				return err
-			}
-		}
+		// (Fitur Voucher telah dihapus sesuai permintaan, tidak ada validasi voucher di sini)
 
 		// 2. Buat Record Order utama
 		createdOrder = domain.Order{
@@ -131,8 +88,8 @@ func (r *orderRepository) CheckoutTransaction(userID string, cartItems []domain.
 			UserID:         userID,
 			TotalAmount:    totalAmount,
 			Status:         "PENDING",
-			DiscountAmount: discount,
-			VoucherCode:    appliedVoucher,
+			DiscountAmount: 0,
+			VoucherCode:    nil,
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
 		}

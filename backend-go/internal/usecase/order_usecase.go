@@ -20,6 +20,9 @@ type orderUsecase struct {
 	auditLogRepo domain.AuditLogRepository
 	emailSvc     domain.EmailService
 	userRepo     domain.UserRepository
+	// [SQA-WB] snapTokenFn dapat di-inject pada unit test untuk mensimulasikan
+	// kegagalan Midtrans (path WB-CHK-U05 / CHK-05) tanpa perlu koneksi Midtrans nyata.
+	snapTokenFn  func(orderID string, totalAmount float64) (*snap.Response, error)
 }
 
 func NewOrderUsecase(oRepo domain.OrderRepository, cRepo domain.CartRepository, aRepo domain.AuditLogRepository, emailSvc domain.EmailService, uRepo domain.UserRepository) domain.OrderUsecase {
@@ -29,6 +32,7 @@ func NewOrderUsecase(oRepo domain.OrderRepository, cRepo domain.CartRepository, 
 		auditLogRepo: aRepo,
 		emailSvc:     emailSvc,
 		userRepo:     uRepo,
+		snapTokenFn:  createSnapToken, // default: gunakan implementasi Midtrans nyata
 	}
 }
 
@@ -80,8 +84,9 @@ func (u *orderUsecase) Checkout(userID string, voucherCode string) (*domain.Orde
 		return nil, errors.New("Checkout gagal: " + err.Error())
 	}
 
-	// [B1] Gunakan helper untuk menghindari duplikasi blok Midtrans
-	snapResp, snapErr := createSnapToken(order.ID, order.TotalAmount)
+	// [B1][SQA-WB] Gunakan u.snapTokenFn (injectable) — default ke createSnapToken,
+	// dapat di-override pada unit test untuk mensimulasikan kegagalan Midtrans.
+	snapResp, snapErr := u.snapTokenFn(order.ID, order.TotalAmount)
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
@@ -109,8 +114,8 @@ func (u *orderUsecase) InstantCheckout(userID string, productID string, variantI
 		return nil, errors.New("Beli Langsung gagal: " + err.Error())
 	}
 
-	// [B1] Gunakan helper untuk menghindari duplikasi blok Midtrans
-	snapResp, snapErr := createSnapToken(order.ID, order.TotalAmount)
+	// [B1][SQA-WB] Gunakan u.snapTokenFn (injectable)
+	snapResp, snapErr := u.snapTokenFn(order.ID, order.TotalAmount)
 	if snapErr == nil && snapResp != nil {
 		order.PaymentToken = &snapResp.Token
 		order.PaymentURL = &snapResp.RedirectURL
