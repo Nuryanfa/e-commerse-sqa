@@ -27,6 +27,13 @@ jobs:
         working-directory: backend-go
         run: go mod download
 
+      - name: Install Swagger generator
+        run: go install github.com/swaggo/swag/cmd/swag@v1.16.6
+
+      - name: Generate Swagger docs
+        working-directory: backend-go
+        run: swag init -g cmd/api/main.go -o docs
+
       - name: Run Go tests
         working-directory: backend-go
         run: go test ./...
