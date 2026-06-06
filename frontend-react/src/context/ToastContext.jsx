@@ -1,11 +1,14 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const addToast = useCallback((message, type = 'info', duration = 4000, action = null) => {
     const id = Date.now();
@@ -16,11 +19,7 @@ export function ToastProvider({ children }) {
         removeToast(id);
       }, duration);
     }
-  }, []);
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [removeToast]);
 
   const toast = {
     success: (msg, dur, act) => addToast(msg, 'success', dur, act),
@@ -33,16 +32,10 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={toast}>
       {children}
       <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 p-4 pointer-events-none">
-        <AnimatePresence>
-          {toasts.map((t) => (
-            <motion.div
-              layout
+        {toasts.map((t) => (
+            <div
               key={t.id}
-              initial={{ opacity: 0, x: 100, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 100, scale: 0.8, transition: { duration: 0.2 } }}
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className={`relative overflow-hidden pointer-events-auto min-w-[320px] max-w-sm rounded-2xl shadow-xl shadow-black/5 border p-4 flex gap-3 glass transition-all hover:-translate-y-1 hover:shadow-2xl ${
+              className={`relative overflow-hidden pointer-events-auto min-w-[320px] max-w-sm rounded-2xl shadow-xl shadow-black/5 border p-4 flex gap-3 glass animate-slide-in-right transition-all hover:-translate-y-1 hover:shadow-2xl ${
                 t.type === 'success' ? 'bg-emerald-50/95 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800/60' :
                 t.type === 'error' ? 'bg-red-50/95 dark:bg-red-900/40 border-red-200 dark:border-red-800/60' :
                 t.type === 'warning' ? 'bg-amber-50/95 dark:bg-amber-900/40 border-amber-200 dark:border-amber-800/60' :
@@ -51,16 +44,14 @@ export function ToastProvider({ children }) {
             >
               {/* Progress Bar */}
               {t.duration > 0 && (
-                <motion.div
-                  initial={{ width: '100%' }}
-                  animate={{ width: '0%' }}
-                  transition={{ duration: t.duration / 1000, ease: 'linear' }}
+                <div
                   className={`absolute bottom-0 left-0 h-1 ${
                     t.type === 'success' ? 'bg-emerald-500' :
                     t.type === 'error' ? 'bg-red-500' :
                     t.type === 'warning' ? 'bg-amber-500' :
                     'bg-blue-500'
                   }`}
+                  style={{ animation: `toast-progress ${t.duration}ms linear forwards` }}
                 />
               )}
 
@@ -104,9 +95,8 @@ export function ToastProvider({ children }) {
               >
                 <X className="w-4 h-4" />
               </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );

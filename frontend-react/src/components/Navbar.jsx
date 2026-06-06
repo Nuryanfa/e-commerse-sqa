@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { useTheme } from '../context/ThemeContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingCart, User, Package, LogOut, Leaf, Heart, Moon, Sun } from 'lucide-react';
-import CommandPalette from './CommandPalette';
+
+const CommandPalette = lazy(() => import('./CommandPalette'));
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -153,13 +153,9 @@ export default function Navbar() {
                   {user?.nama?.charAt(0)?.toUpperCase() || '?'}
                 </button>
 
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
+                {dropdownOpen && (
+                    <div
+                      className="animate-scale-in"
                       style={{ position: 'absolute', right: 0, top: '2.75rem', width: '13rem', borderRadius: 'var(--radius-lg)', background: 'var(--surface-container-lowest)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)', overflow: 'hidden', zIndex: 50 }}
                     >
                       {/* User info header */}
@@ -188,9 +184,8 @@ export default function Navbar() {
                           <LogOut style={{ width: '0.875rem', height: '0.875rem' }} /> Keluar
                         </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                )}
               </div>
             ) : (
               <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', textDecoration: 'none' }}>Masuk</Link>
@@ -199,7 +194,11 @@ export default function Navbar() {
         </div>
       </header>
 
-      <CommandPalette isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      {searchOpen && (
+        <Suspense fallback={null}>
+          <CommandPalette isOpen onClose={() => setSearchOpen(false)} />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -339,3 +339,7 @@ main { animation: fade-in 0.3s ease-out; }
 /* Hide scrollbar for category pills */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}

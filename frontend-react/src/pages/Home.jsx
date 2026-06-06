@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { motion } from 'framer-motion';
 import { Leaf, ShoppingCart, ArrowRight, CheckCircle2, Truck, Shield } from 'lucide-react';
 import api from '../services/api';
 
@@ -102,7 +101,7 @@ export default function Home() {
             </div>
 
             {/* Right: Image */}
-            <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="hidden lg:block relative">
+            <div className="hidden lg:block relative">
               <div style={{ borderRadius: '1.75rem', overflow: 'hidden', position: 'relative', height: '440px' }}>
                 <img
                   src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop"
@@ -119,7 +118,7 @@ export default function Home() {
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, marginTop: '0.25rem' }}>Produk Tersedia</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -141,8 +140,8 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-              {products.map((p, i) => (
-                <motion.div key={p.id_product} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }}>
+              {products.map((p) => (
+                <div key={p.id_product}>
                   <Link to={`/products/${p.id_product}`} className="product-card block" style={{ textDecoration: 'none' }}>
                     <div className="image-wrap">
                       {p.image_url ? (
@@ -161,7 +160,7 @@ export default function Home() {
                       </p>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -174,7 +173,7 @@ export default function Home() {
       <section style={{ background: '#0a1a0f', padding: '5rem 1.5rem' }}>
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Text */}
-          <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+          <div>
             <p style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--md-primary)', marginBottom: '1.25rem' }}>Program Eksklusif</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: 'white', lineHeight: 1.15, marginBottom: '1.25rem' }}>
               Langganan Kotak<br />Sayur Mingguan
@@ -198,10 +197,10 @@ export default function Home() {
                 Pelajari Lebih Lanjut
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Image collage */}
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="hidden lg:grid" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '0.75rem', height: '380px' }}>
+          <div className="hidden lg:grid" style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '0.75rem', height: '380px' }}>
             {[
               'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?q=80&w=800&auto=format&fit=crop',
               'https://images.unsplash.com/photo-1518977676601-b53f82aba655?q=80&w=800&auto=format&fit=crop',
@@ -212,7 +211,7 @@ export default function Home() {
                 <img src={src} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -227,14 +226,14 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {whyItems.map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+              <div key={i}
                 style={{ background: 'var(--surface-container-lowest)', borderRadius: 'var(--radius-lg)', padding: '2.25rem', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }}>
                 <div style={{ width: '3rem', height: '3rem', borderRadius: 'var(--radius-md)', background: 'var(--md-primary-container)', color: 'var(--md-on-primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-heading)', marginBottom: '0.75rem' }}>{item.title}</h3>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-body)', lineHeight: 1.7 }}>{item.desc}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

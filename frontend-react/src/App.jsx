@@ -1,6 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import StoreRoute from './components/StoreRoute';
@@ -82,13 +81,10 @@ const SELLER_ROUTES      = ['/supplier'];
 const ADMIN_ROUTES       = ['/admin'];
 const BUYER_ROUTES       = ['/', '/products', '/cart', '/orders', '/wishlist', '/profile', '/login', '/register'];
 
-// Komponen route animasi
 function AnimatedRoutes() {
-  const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<RouteFallback />}>
-        <Routes location={location} key={location.pathname}>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
           <Route path="/" element={<StoreRoute><PageWrapper><Home /></PageWrapper></StoreRoute>} />
           <Route path="/products" element={<StoreRoute><PageWrapper><Products /></PageWrapper></StoreRoute>} />
           <Route path="/products/:id" element={<StoreRoute><PageWrapper><ProductDetail /></PageWrapper></StoreRoute>} />
@@ -136,9 +132,8 @@ function AnimatedRoutes() {
               </div>
             </PageWrapper>
           } />
-        </Routes>
-      </Suspense>
-    </AnimatePresence>
+      </Routes>
+    </Suspense>
   );
 }
 
