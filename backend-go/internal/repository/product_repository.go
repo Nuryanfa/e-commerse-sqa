@@ -22,7 +22,9 @@ func (r *productRepository) Create(product *domain.Product) error {
 // FindAll automatically joins/preloads the relative Category
 func (r *productRepository) FindAll() ([]domain.Product, error) {
 	var products []domain.Product
-	err := r.db.Preload("Category").Preload("Variants").Find(&products).Error
+	err := r.db.Preload("Category").Preload("Variants").
+		Where("is_active = ?", true).
+		Find(&products).Error
 	return products, err
 }
 
@@ -61,7 +63,7 @@ func (r *productRepository) GetSupplierRating(supplierID string) float64 {
 // Menggunakan ILIKE untuk pencarian case-insensitive di PostgreSQL.
 func (r *productRepository) Search(keyword string, categoryID string, limit int, offset int) ([]domain.Product, error) {
 	var products []domain.Product
-	query := r.db.Preload("Category").Preload("Variants")
+	query := r.db.Preload("Category").Preload("Variants").Where("is_active = ?", true)
 
 	if keyword != "" {
 		query = query.Where("name ILIKE ?", "%"+keyword+"%")

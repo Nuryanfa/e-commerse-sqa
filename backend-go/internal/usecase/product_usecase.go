@@ -29,6 +29,7 @@ func (u *productUsecase) Create(product *domain.Product) error {
 	}
 
 	product.ID = uuid.New().String()
+	product.IsActive = true
 	product.CreatedAt = time.Now()
 	product.UpdatedAt = time.Now()
 
@@ -105,6 +106,7 @@ func (u *productUsecase) CreateBySupplier(supplierID string, product *domain.Pro
 
 	product.ID = uuid.New().String()
 	product.SupplierID = supplierID
+	product.IsActive = true
 	product.CreatedAt = time.Now()
 	product.UpdatedAt = time.Now()
 

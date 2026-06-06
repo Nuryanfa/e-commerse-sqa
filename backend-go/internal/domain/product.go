@@ -7,17 +7,18 @@ import (
 )
 
 type Product struct {
-	ID          string    `json:"id_product" gorm:"column:id_product;primaryKey"`
-	Name        string    `json:"name" gorm:"column:name;index" binding:"required,min=3"`
-	Description string    `json:"description" gorm:"column:description"`
-	Price       float64   `json:"price" gorm:"column:price" binding:"required,gt=0"`
-	Stock       int       `json:"stock" gorm:"column:stock" binding:"gte=0"` // [SQA BUG-007] Hapus 'required' agar stok=0 (habis) tetap valid
-	CategoryID  string    `json:"id_category" gorm:"column:id_category;index" binding:"required"`
-	Category    *Category `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
-	SupplierID     string    `json:"supplier_id" gorm:"column:supplier_id;index"`
-	Supplier       *User     `json:"supplier,omitempty" gorm:"foreignKey:SupplierID;references:ID"`
-	SupplierRating float64   `json:"supplier_rating,omitempty" gorm:"-"` // Dihitung run-time
+	ID             string           `json:"id_product" gorm:"column:id_product;primaryKey"`
+	Name           string           `json:"name" gorm:"column:name;index" binding:"required,min=3"`
+	Description    string           `json:"description" gorm:"column:description"`
+	Price          float64          `json:"price" gorm:"column:price" binding:"required,gt=0"`
+	Stock          int              `json:"stock" gorm:"column:stock" binding:"gte=0"` // [SQA BUG-007] Hapus 'required' agar stok=0 (habis) tetap valid
+	CategoryID     string           `json:"id_category" gorm:"column:id_category;index" binding:"required"`
+	Category       *Category        `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
+	SupplierID     string           `json:"supplier_id" gorm:"column:supplier_id;index"`
+	Supplier       *User            `json:"supplier,omitempty" gorm:"foreignKey:SupplierID;references:ID"`
+	SupplierRating float64          `json:"supplier_rating,omitempty" gorm:"-"` // Dihitung run-time
 	ImageURL       string           `json:"image_url" gorm:"column:image_url"`
+	IsActive       bool             `json:"is_active" gorm:"column:is_active;default:true;index"`
 	CreatedAt      time.Time        `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt      time.Time        `json:"updated_at" gorm:"column:updated_at"`
 	DeletedAt      gorm.DeletedAt   `json:"-" gorm:"index;column:deleted_at"`

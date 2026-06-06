@@ -46,7 +46,15 @@ export default function ProductCard({ product, index = 0 }) {
       {/* Image Container */}
       <div className="aspect-[4/3] relative overflow-hidden bg-gray-50 dark:bg-slate-900/50">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+          <img
+            src={product.image_url}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            width="800"
+            height="600"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+          />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-emerald-200/50 dark:text-emerald-900/40 group-hover:scale-110 transition-transform duration-700">
             <Leaf className="w-12 h-12 mb-1" />
