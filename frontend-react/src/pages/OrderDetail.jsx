@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { loadMidtransSnap } from '../services/midtrans';
 import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/ToastContext';
 import { motion } from 'framer-motion';
@@ -43,7 +44,9 @@ export default function OrderDetail() {
       return;
     }
     setPaying(true);
-    window.snap.pay(order.payment_token, {
+    try {
+      const snap = await loadMidtransSnap();
+      snap.pay(order.payment_token, {
        onSuccess: async () => { 
          toast.success('Pembayaran berhasil!'); 
          try { await api.post(`/orders/${id}/pay`); } catch(e) {}
@@ -52,7 +55,11 @@ export default function OrderDetail() {
        onPending: () => { toast.info('Menunggu Pembayaran.'); setPaying(false); },
        onError: () => { toast.error('Gagal memproses pembayaran!'); setPaying(false); },
        onClose: () => { toast.info('Popup ditutup.'); setPaying(false); }
-    });
+      });
+    } catch (err) {
+      toast.error(err.message || 'Layanan pembayaran gagal dimuat.');
+      setPaying(false);
+    }
   };
 
   const [canceling, setCanceling] = useState(false);

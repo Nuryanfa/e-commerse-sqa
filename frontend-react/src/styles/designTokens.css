@@ -1,14 +1,14 @@
 /* ============================================================
    DESIGN TOKENS — Stitch "Digital Greenhouse"
    Full Material Design 3 token set, Light + Dark mode
-   (Google Fonts @import is in index.css to satisfy CSS spec)
+   Uses the native system font stack to avoid render-blocking font requests.
    ============================================================ */
 
 /* ── LIGHT MODE (default) ─────────────────────────────────── */
 :root {
   /* Typography */
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* ── Brand Gradient ─────────────────────────────────────── */
   --brand-gradient: linear-gradient(135deg, #059669 0%, #10b981 55%, #34d399 100%);

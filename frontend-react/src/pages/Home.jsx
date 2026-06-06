@@ -70,7 +70,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
             {/* Left: Copy */}
-            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div>
               {/* Tag */}
               <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full" style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-container)' }}>
                 <Leaf style={{ width: '0.875rem', height: '0.875rem' }} />
@@ -99,7 +99,7 @@ export default function Home() {
                   </Link>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Right: Image */}
             <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="hidden lg:block relative">
@@ -107,6 +107,10 @@ export default function Home() {
                 <img
                   src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop"
                   alt="Sayuran segar di keranjang"
+                  width="987"
+                  height="440"
+                  fetchPriority="high"
+                  decoding="async"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
                 {/* Floating card */}
@@ -142,7 +146,7 @@ export default function Home() {
                   <Link to={`/products/${p.id_product}`} className="product-card block" style={{ textDecoration: 'none' }}>
                     <div className="image-wrap">
                       {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} />
+                        <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" />
                       ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-container-low)' }}>
                           <Leaf style={{ width: '3rem', height: '3rem', color: 'var(--md-primary)', opacity: 0.25 }} />
@@ -205,7 +209,7 @@ export default function Home() {
               'https://images.unsplash.com/photo-1528137871618-79d2761e3fd5?q=80&w=800&auto=format&fit=crop',
             ].map((src, i) => (
               <div key={i} style={{ borderRadius: '1rem', overflow: 'hidden' }}>
-                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={src} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ))}
           </motion.div>

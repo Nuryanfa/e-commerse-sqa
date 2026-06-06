@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
+import { loadMidtransSnap } from '../services/midtrans';
 import { useToast } from '../context/ToastContext';
 import { useModal } from '../context/ModalContext';
 import { useAuth } from '../context/useAuth';
@@ -86,7 +87,8 @@ export default function Cart() {
       const orderData = res.data.data;
       if (!orderData?.payment_token) throw new Error("Midtrans error. Token tidak diterima.");
       
-      window.snap.pay(orderData.payment_token, {
+      const snap = await loadMidtransSnap();
+      snap.pay(orderData.payment_token, {
          onSuccess: async () => { 
            toast.success('Pembayaran berhasil!'); 
            try { await api.post(`/orders/${orderData.id_order}/pay`); } catch(e) {}

@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
-import SellerSidebar from './components/SellerSidebar';
-import AdminSidebar from './components/AdminSidebar';
-import AdminNavbar from './components/AdminNavbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import StoreRoute from './components/StoreRoute';
 import PageWrapper from './components/PageWrapper';
-import SplashScreen from './components/SplashScreen';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -17,33 +12,42 @@ import { ToastProvider } from './context/ToastContext';
 import { ModalProvider } from './context/ModalContext';
 
 import Home from './pages/Home';
-import Products from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Cart from './pages/Cart';
-import Orders from './pages/Orders';
-import OrderDetail from './pages/OrderDetail';
-import Invoice from './pages/Invoice';
-import DisputeDetail from './pages/DisputeDetail';
-import Wishlist from './pages/Wishlist';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminDisputes from './pages/admin/Disputes';
-import AdminRevenue from './pages/admin/Revenue';
-import AdminUsers from './pages/admin/Users';
-import AdminSellers from './pages/admin/Sellers';
-import AdminLogistics from './pages/admin/Logistics';
-import AdminLogs from './pages/admin/Logs';
-import AdminSettings from './pages/admin/Settings';
-import SupplierDashboard from './pages/supplier/Dashboard';
-import SupplierInventory from './pages/supplier/Inventory';
-import SupplierOrders from './pages/supplier/Orders';
-import SupplierAnalytics from './pages/supplier/Analytics';
-import SupplierDisputes from './pages/supplier/Disputes';
-import SupplierSettings from './pages/supplier/Settings';
-import SupplierSupport from './pages/supplier/Support';
-import CourierDashboard from './pages/courier/Dashboard';
+
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const SellerSidebar = lazy(() => import('./components/SellerSidebar'));
+const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
+const AdminNavbar = lazy(() => import('./components/AdminNavbar'));
+const Products = lazy(() => import('./pages/Products'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Orders = lazy(() => import('./pages/Orders'));
+const OrderDetail = lazy(() => import('./pages/OrderDetail'));
+const Invoice = lazy(() => import('./pages/Invoice'));
+const DisputeDetail = lazy(() => import('./pages/DisputeDetail'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Profile = lazy(() => import('./pages/Profile'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminDisputes = lazy(() => import('./pages/admin/Disputes'));
+const AdminRevenue = lazy(() => import('./pages/admin/Revenue'));
+const AdminUsers = lazy(() => import('./pages/admin/Users'));
+const AdminSellers = lazy(() => import('./pages/admin/Sellers'));
+const AdminLogistics = lazy(() => import('./pages/admin/Logistics'));
+const AdminLogs = lazy(() => import('./pages/admin/Logs'));
+const AdminSettings = lazy(() => import('./pages/admin/Settings'));
+const SupplierDashboard = lazy(() => import('./pages/supplier/Dashboard'));
+const SupplierInventory = lazy(() => import('./pages/supplier/Inventory'));
+const SupplierOrders = lazy(() => import('./pages/supplier/Orders'));
+const SupplierAnalytics = lazy(() => import('./pages/supplier/Analytics'));
+const SupplierDisputes = lazy(() => import('./pages/supplier/Disputes'));
+const SupplierSettings = lazy(() => import('./pages/supplier/Settings'));
+const SupplierSupport = lazy(() => import('./pages/supplier/Support'));
+const CourierDashboard = lazy(() => import('./pages/courier/Dashboard'));
+
+function RouteFallback() {
+  return <div className="min-h-[50vh]" aria-hidden="true" />;
+}
 
 // ScrollToTop — scrolls to top on route change
 function ScrollToTop() {
@@ -83,19 +87,20 @@ function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<StoreRoute><PageWrapper><Home /></PageWrapper></StoreRoute>} />
-        <Route path="/products" element={<StoreRoute><PageWrapper><Products /></PageWrapper></StoreRoute>} />
-        <Route path="/products/:id" element={<StoreRoute><PageWrapper><ProductDetail /></PageWrapper></StoreRoute>} />
-        <Route path="/login" element={<StoreRoute><PageWrapper><Login /></PageWrapper></StoreRoute>} />
-        <Route path="/register" element={<StoreRoute><PageWrapper><Register /></PageWrapper></StoreRoute>} />
-        <Route path="/wishlist" element={<StoreRoute><PageWrapper><Wishlist /></PageWrapper></StoreRoute>} />
-        <Route path="/cart" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
-        <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
-        <Route path="/invoice/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><Invoice /></ProtectedRoute>} />
-        <Route path="/disputes/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><PageWrapper><DisputeDetail /></PageWrapper></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
+      <Suspense fallback={<RouteFallback />}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<StoreRoute><PageWrapper><Home /></PageWrapper></StoreRoute>} />
+          <Route path="/products" element={<StoreRoute><PageWrapper><Products /></PageWrapper></StoreRoute>} />
+          <Route path="/products/:id" element={<StoreRoute><PageWrapper><ProductDetail /></PageWrapper></StoreRoute>} />
+          <Route path="/login" element={<StoreRoute><PageWrapper><Login /></PageWrapper></StoreRoute>} />
+          <Route path="/register" element={<StoreRoute><PageWrapper><Register /></PageWrapper></StoreRoute>} />
+          <Route path="/wishlist" element={<StoreRoute><PageWrapper><Wishlist /></PageWrapper></StoreRoute>} />
+          <Route path="/cart" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Cart /></PageWrapper></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Orders /></PageWrapper></ProtectedRoute>} />
+          <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><OrderDetail /></PageWrapper></ProtectedRoute>} />
+          <Route path="/invoice/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><Invoice /></ProtectedRoute>} />
+          <Route path="/disputes/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><PageWrapper><DisputeDetail /></PageWrapper></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
@@ -119,19 +124,20 @@ function AnimatedRoutes() {
         {/* Courier Routes */}
         <Route path="/courier/*" element={<ProtectedRoute allowedRoles={['courier']}><PageWrapper><CourierDashboard /></PageWrapper></ProtectedRoute>} />
         
-        <Route path="*" element={
-          <PageWrapper>
-            <div className="min-h-[60vh] flex items-center justify-center animate-fade-in-up">
-              <div className="text-center">
-                <span className="text-8xl block mb-6 animate-float">🌿</span>
-                <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-heading)' }}>404</h1>
-                <p className="text-sm mt-2 mb-6" style={{ color: 'var(--text-secondary)' }}>Halaman tidak ditemukan</p>
-                <a href="/" className="btn-primary px-6 py-2.5 text-sm inline-block">Kembali ke Beranda</a>
+          <Route path="*" element={
+            <PageWrapper>
+              <div className="min-h-[60vh] flex items-center justify-center animate-fade-in-up">
+                <div className="text-center">
+                  <span className="text-8xl block mb-6 animate-float">🌿</span>
+                  <h1 className="text-4xl font-black tracking-tight" style={{ color: 'var(--text-heading)' }}>404</h1>
+                  <p className="text-sm mt-2 mb-6" style={{ color: 'var(--text-secondary)' }}>Halaman tidak ditemukan</p>
+                  <a href="/" className="btn-primary px-6 py-2.5 text-sm inline-block">Kembali ke Beranda</a>
+                </div>
               </div>
-            </div>
-          </PageWrapper>
-        } />
-      </Routes>
+            </PageWrapper>
+          } />
+        </Routes>
+      </Suspense>
     </AnimatePresence>
   );
 }
@@ -144,11 +150,7 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
   const isAdminRoute    = ADMIN_ROUTES.some(r => location.pathname.startsWith(r));
 
   return (
-    <motion.div
-      key="app"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+    <div
       className="flex min-h-screen"
       style={{ background: isAdminRoute ? 'var(--bg)' : 'var(--bg)' }} // Can adjust admin background here if needed
     >
@@ -156,32 +158,38 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
 
       {/* Dark SellerSidebar for supplier */}
       {isSellerRoute && (
-        <SellerSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-        />
+        <Suspense fallback={null}>
+          <SellerSidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+          />
+        </Suspense>
       )}
 
       {/* AdminSidebar for admin */}
       {isAdminRoute && (
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-        />
+        <Suspense fallback={null}>
+          <AdminSidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+          />
+        </Suspense>
       )}
 
       {/* Generic Sidebar for courier */}
       {isInternalRoute && !isSellerRoute && !isAdminRoute && (
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(c => !c)}
-        />
+        <Suspense fallback={null}>
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+          />
+        </Suspense>
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -189,7 +197,11 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
         {!isInternalRoute && !isAdminRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
         
         {/* PanelNavbar (AdminNavbar) shown for admin and seller routes */}
-        {(isAdminRoute || isSellerRoute) && <AdminNavbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
+        {(isAdminRoute || isSellerRoute) && (
+          <Suspense fallback={null}>
+            <AdminNavbar onToggleSidebar={() => setSidebarOpen(o => !o)} />
+          </Suspense>
+        )}
 
         <main className="flex-1">
           <AnimatedRoutes />
@@ -197,20 +209,13 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
       </div>
 
       <ScrollToTopButton />
-    </motion.div>
+    </div>
   );
 }
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    // Tampilkan Splash Screen selama 2 detik
-    const timer = setTimeout(() => setShowSplash(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <ThemeProvider>
@@ -218,19 +223,12 @@ export default function App() {
         <ToastProvider>
           <ModalProvider>
             <BrowserRouter>
-              <AnimatePresence mode="wait">
-                {showSplash ? (
-                  <SplashScreen key="splash" />
-                ) : (
-                  <AppLayout
-                    key="app"
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                    sidebarCollapsed={sidebarCollapsed}
-                    setSidebarCollapsed={setSidebarCollapsed}
-                  />
-                )}
-              </AnimatePresence>
+              <AppLayout
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                sidebarCollapsed={sidebarCollapsed}
+                setSidebarCollapsed={setSidebarCollapsed}
+              />
             </BrowserRouter>
           </ModalProvider>
         </ToastProvider>
