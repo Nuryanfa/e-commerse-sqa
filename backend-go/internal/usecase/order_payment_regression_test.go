@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -42,7 +43,11 @@ func (r *paymentRegressionRepo) UpdateStatusIfCurrent(orderID string, currentSta
 
 func (r *paymentRegressionRepo) CancelOrderTransaction(orderID string) error {
 	r.cancelCalls++
-	r.order.Status = "CANCELLED"
+	if r.order.Status == "PAID" || r.order.Status == "PROCESSED" {
+		r.order.Status = domain.OrderStatusRefundPending
+	} else {
+		r.order.Status = "CANCELLED"
+	}
 	return nil
 }
 
@@ -118,6 +123,92 @@ func TestPaymentRegression_PendingWebhookCannotDowngradePaidOrder(t *testing.T) 
 	}
 	if repo.updateCalls != 0 || repo.conditionalCalls != 0 {
 		t.Fatalf("pending webhook must not update an already paid order")
+	}
+}
+
+func TestPaymentRegression_PaidOrderCanCancelBeforeShipping(t *testing.T) {
+	repo := &paymentRegressionRepo{
+		order: domain.Order{
+			ID:          "order-1",
+			UserID:      "buyer-1",
+			Status:      "PAID",
+			TotalAmount: 50000,
+		},
+	}
+	uc := NewOrderUsecase(repo, &MockCartRepository{}, nil, nil, nil).(*orderUsecase)
+	uc.paymentReversalFn = func(orderID string, amount float64) (string, error) {
+		if orderID != "order-1" || amount != 50000 {
+			t.Fatalf("unexpected reversal data: %s %.0f", orderID, amount)
+		}
+		return "refund", nil
+	}
+
+	if err := uc.CancelOrder("buyer-1", "order-1"); err != nil {
+		t.Fatalf("paid cancellation failed: %v", err)
+	}
+	if repo.cancelCalls != 1 {
+		t.Fatalf("expected one stock restoration transaction, got %d", repo.cancelCalls)
+	}
+}
+
+func TestPaymentRegression_ShippedOrderCannotCancel(t *testing.T) {
+	repo := &paymentRegressionRepo{
+		order: domain.Order{ID: "order-1", UserID: "buyer-1", Status: "SHIPPED"},
+	}
+	uc := NewOrderUsecase(repo, &MockCartRepository{}, nil, nil, nil)
+
+	err := uc.CancelOrder("buyer-1", "order-1")
+	if err == nil || !strings.Contains(err.Error(), "sudah dikirim") {
+		t.Fatalf("expected shipped cancellation rejection, got %v", err)
+	}
+	if repo.cancelCalls != 0 {
+		t.Fatalf("shipped order must not restore stock")
+	}
+}
+
+func TestPaymentRegression_FailedRefundKeepsPaidOrderActive(t *testing.T) {
+	repo := &paymentRegressionRepo{
+		order: domain.Order{
+			ID:          "order-1",
+			UserID:      "buyer-1",
+			Status:      "PAID",
+			TotalAmount: 50000,
+		},
+	}
+	uc := NewOrderUsecase(repo, &MockCartRepository{}, nil, nil, nil).(*orderUsecase)
+	uc.paymentReversalFn = func(orderID string, amount float64) (string, error) {
+		return "", errors.New("refund ditolak")
+	}
+
+	err := uc.CancelOrder("buyer-1", "order-1")
+	if err == nil || !strings.Contains(err.Error(), "refund ditolak") {
+		t.Fatalf("expected refund rejection, got %v", err)
+	}
+	if repo.cancelCalls != 0 || repo.order.Status != "PAID" {
+		t.Fatalf("failed refund must not cancel order or restore stock")
+	}
+}
+
+func TestPaymentRegression_ConfirmedRefundCompletesPendingRefund(t *testing.T) {
+	repo := &paymentRegressionRepo{
+		order: domain.Order{
+			ID:     "order-1",
+			UserID: "buyer-1",
+			Status: domain.OrderStatusRefundPending,
+		},
+	}
+	uc := NewOrderUsecase(repo, &MockCartRepository{}, nil, nil, nil)
+
+	err := uc.ProcessPaymentWebhook(map[string]interface{}{
+		"order_id":           "order-1",
+		"transaction_status": "refund",
+		"bank_confirmed_at":  "2026-06-09 15:00:00",
+	})
+	if err != nil {
+		t.Fatalf("confirmed refund webhook failed: %v", err)
+	}
+	if repo.order.Status != domain.OrderStatusRefunded {
+		t.Fatalf("expected REFUNDED, got %s", repo.order.Status)
 	}
 }
 

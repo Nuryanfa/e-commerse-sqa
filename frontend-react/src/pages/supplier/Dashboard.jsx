@@ -25,7 +25,7 @@ export default function SupplierDashboard() {
   }, []);
 
   const totalSales = orders
-    .filter(o => o.status !== 'CANCELLED' && o.status !== 'REFUNDED')
+    .filter(o => !['CANCELLED', 'REFUND_PENDING', 'REFUNDED'].includes(o.status))
     .reduce((sum, o) => sum + o.total_amount, 0);
   
   const activeOrders = orders.filter(o => ['PAID', 'PROCESSED', 'SHIPPED'].includes(o.status)).length;
