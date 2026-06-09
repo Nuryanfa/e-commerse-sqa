@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -67,16 +68,32 @@ func main() {
 	log.Println("Database migration berhasil.")
 
 	// 2. Setup Gin Router with Custom Middleware
-	router := gin.New() // Menggunakan gin.New() alih-alih Default() agar middleware terkontrol penuh
+	router := gin.New()                         // Menggunakan gin.New() alih-alih Default() agar middleware terkontrol penuh
 	router.Use(middleware.RecoveryMiddleware()) // Menangkap panic agar server tidak crash
 	router.Use(middleware.LoggerMiddleware())   // Logging terstruktur untuk setiap request
 
+	allowedOrigins := []string{
+		"http://localhost:5173",
+		"http://localhost:5174",
+		"https://sayursehat.site",
+		"https://www.sayursehat.site",
+	}
+	if configuredOrigins := os.Getenv("CORS_ALLOWED_ORIGINS"); configuredOrigins != "" {
+		allowedOrigins = allowedOrigins[:0]
+		for _, origin := range strings.Split(configuredOrigins, ",") {
+			if origin = strings.TrimSpace(origin); origin != "" {
+				allowedOrigins = append(allowedOrigins, origin)
+			}
+		}
+	}
+
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowOrigins:  allowedOrigins,
+		AllowMethods:  []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:  []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders: []string{"Content-Length"},
+		MaxAge:        12 * time.Hour,
 	}))
 
 	// Health Check
@@ -109,7 +126,7 @@ func main() {
 	// SQA Performance: Product repository dibungkus dengan Redis caching
 	baseProductRepo := repository.NewProductRepository(db)
 	productRepo := repository.NewCachedProductRepository(baseProductRepo, redisClient)
-    auditLogRepo := repository.NewAuditLogRepository(db)
+	auditLogRepo := repository.NewAuditLogRepository(db)
 	productUsecase := usecase.NewProductUsecase(productRepo, categoryRepo, auditLogRepo)
 
 	reviewRepo := repository.NewReviewRepository(db)
@@ -146,10 +163,10 @@ func main() {
 		deliveryHTTP.NewAdminHandler(adminRoutes, adminUsecase)
 	}
 
-	// 4b. Auth-only routes (JWT — semua role: pembeli, admin, dll)
+	// 4b. Buyer-only routes (JWT + Role "pembeli")
 	// Digunakan untuk Keranjang Belanja, Checkout, dan Riwayat Pesanan
 	authRoutes := router.Group("/api/v1")
-	authRoutes.Use(middleware.AuthMiddleware())
+	authRoutes.Use(middleware.AuthMiddleware(), middleware.RoleMiddleware("pembeli"))
 	{
 		deliveryHTTP.NewCartHandler(authRoutes, cartUsecase)
 		deliveryHTTP.NewOrderHandler(authRoutes, orderUsecase)

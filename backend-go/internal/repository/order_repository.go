@@ -274,7 +274,29 @@ func (r *orderRepository) FindByIDs(orderIDs []string) ([]domain.Order, error) {
 }
 
 func (r *orderRepository) UpdateStatus(orderID string, status string) error {
-	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Update("status", status).Error
+	updates := map[string]interface{}{
+		"status":     status,
+		"updated_at": time.Now(),
+	}
+	if status == "DELIVERED" {
+		updates["delivered_at"] = time.Now()
+	}
+	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Updates(updates).Error
+}
+
+// UpdateStatusIfCurrent mengubah status hanya jika status saat ini masih sesuai.
+// Guard ini mencegah webhook terlambat menghidupkan kembali order yang sudah dibatalkan.
+func (r *orderRepository) UpdateStatusIfCurrent(orderID string, currentStatuses []string, newStatus string) (bool, error) {
+	result := r.db.Model(&domain.Order{}).
+		Where("id_order = ? AND status IN ?", orderID, currentStatuses).
+		Updates(map[string]interface{}{
+			"status":     newStatus,
+			"updated_at": time.Now(),
+		})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
 }
 
 // FindPaidOrders mengembalikan pesanan dengan status PAID (siap diambil kurir)
@@ -287,19 +309,52 @@ func (r *orderRepository) FindPaidOrders() ([]domain.Order, error) {
 // FindProcessedOrders mengembalikan pesanan yang sudah di PROCESSED Supplier (Siap Antar)
 func (r *orderRepository) FindProcessedOrders() ([]domain.Order, error) {
 	var orders []domain.Order
-	err := r.db.Preload("Items.Product").Where("status = ?", "PROCESSED").Order("created_at desc").Find(&orders).Error
+	err := r.db.Preload("Items.Product").
+		Where("status = ? AND courier_id IS NULL", "PROCESSED").
+		Order("created_at desc").
+		Find(&orders).Error
 	return orders, err
 }
 
 // AssignCourier meng-assign kurir ke pesanan dan set status SHIPPED
 func (r *orderRepository) AssignCourier(orderID string, courierID string) error {
 	now := time.Now()
-	return r.db.Model(&domain.Order{}).Where("id_order = ?", orderID).Updates(map[string]interface{}{
-		"courier_id": courierID,
-		"status":     "SHIPPED",
-		"shipped_at": now,
-		"updated_at": now,
-	}).Error
+	result := r.db.Model(&domain.Order{}).
+		Where(
+			"id_order = ? AND status = ? AND (courier_id IS NULL OR courier_id = ?)",
+			orderID,
+			"PROCESSED",
+			courierID,
+		).
+		Updates(map[string]interface{}{
+			"courier_id": courierID,
+			"status":     "SHIPPED",
+			"shipped_at": now,
+			"updated_at": now,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return errors.New("pesanan sudah diambil kurir lain atau statusnya bukan PROCESSED")
+	}
+	return nil
+}
+
+// MarkDeliveredIfAssigned menutup pengiriman secara atomik untuk kurir pemilik tugas.
+func (r *orderRepository) MarkDeliveredIfAssigned(orderID string, courierID string) (bool, error) {
+	now := time.Now()
+	result := r.db.Model(&domain.Order{}).
+		Where("id_order = ? AND courier_id = ? AND status = ?", orderID, courierID, "SHIPPED").
+		Updates(map[string]interface{}{
+			"status":       "DELIVERED",
+			"delivered_at": now,
+			"updated_at":   now,
+		})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
 }
 
 // FindByCourierID mengembalikan pesanan milik kurir tertentu
@@ -330,14 +385,23 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 		var expiredOrders []domain.Order
 		// Cari semua order PENDING yang usianya sudah lebih lama dari cutoffTime
 		// Preload Items.Variant agar kita juga bisa mengembalikan stok varian
-		if err := tx.Preload("Items").Where("status = ? AND created_at < ?", "PENDING", cutoffTime).Find(&expiredOrders).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Items").
+			Where("status = ? AND created_at < ?", "PENDING", cutoffTime).
+			Find(&expiredOrders).Error; err != nil {
 			return err
 		}
 
 		for _, order := range expiredOrders {
 			// Ubah status order menjadi EXPIRED
-			if err := tx.Model(&order).Update("status", "EXPIRED").Error; err != nil {
-				return err
+			result := tx.Model(&domain.Order{}).
+				Where("id_order = ? AND status = ?", order.ID, "PENDING").
+				Updates(map[string]interface{}{"status": "EXPIRED", "updated_at": time.Now()})
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected != 1 {
+				continue
 			}
 
 			// [A2] Pulihkan stok untuk setiap item — bedakan antara varian dan produk biasa
@@ -371,16 +435,28 @@ func (r *orderRepository) CancelExpiredOrders(cutoffTime time.Time) (int, error)
 func (r *orderRepository) CancelOrderTransaction(orderID string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var order domain.Order
-		if err := tx.Preload("Items").Where("id_order = ?", orderID).First(&order).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Items").
+			Where("id_order = ?", orderID).
+			First(&order).Error; err != nil {
 			return err
 		}
 
 		if order.Status == "CANCELLED" || order.Status == "EXPIRED" {
 			return nil // sudah dibatalkan sebelumnya
 		}
+		if order.Status != "PENDING" {
+			return fmt.Errorf("pesanan berstatus %s tidak dapat dibatalkan", order.Status)
+		}
 
-		if err := tx.Model(&order).Update("status", "CANCELLED").Error; err != nil {
-			return err
+		result := tx.Model(&domain.Order{}).
+			Where("id_order = ? AND status = ?", orderID, "PENDING").
+			Updates(map[string]interface{}{"status": "CANCELLED", "updated_at": time.Now()})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return errors.New("status pesanan berubah; pembatalan dihentikan")
 		}
 
 		for _, item := range order.Items {
@@ -398,16 +474,19 @@ func (r *orderRepository) CancelOrderTransaction(orderID string) error {
 				}
 			}
 		}
-		
+
 		// Jika ada voucher dikembalikan (Opsional)
 		if order.VoucherCode != nil {
-			tx.Model(&domain.Voucher{}).Where("code = ?", *order.VoucherCode).Update("used_count", gorm.Expr("used_count - ?", 1))
+			if err := tx.Model(&domain.Voucher{}).
+				Where("code = ? AND used_count > 0", *order.VoucherCode).
+				Update("used_count", gorm.Expr("used_count - ?", 1)).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
 }
-
 
 // BatchUpdateStatus memperbarui status lebih dari satu Order ID berbarengan (Bulk)
 func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) error {
@@ -415,7 +494,7 @@ func (r *orderRepository) BatchUpdateStatus(orderIDs []string, status string) er
 	err := r.db.Model(&domain.Order{}).
 		Where("id_order IN ?", orderIDs).
 		Update("status", status).Error
-	
+
 	if err != nil {
 		return err
 	}

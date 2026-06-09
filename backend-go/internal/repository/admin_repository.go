@@ -218,11 +218,20 @@ func (r *adminRepository) AssignCourier(orderID, courierID string) error {
 	if err := r.db.Where("id_user = ? AND role = ?", courierID, "courier").First(&courier).Error; err != nil {
 		return fmt.Errorf("kurir tidak ditemukan atau bukan role courier")
 	}
-	// Update the order's courier_id and set status to PROCESSED
-	return r.db.Model(&domain.Order{}).
-		Where("id_order = ? AND status = ?", orderID, "PAID").
+
+	// Admin hanya menjadi dispatcher setelah supplier selesai menyiapkan pesanan.
+	// Status tetap PROCESSED sampai kurir menerima tugas dan mulai mengirim.
+	result := r.db.Model(&domain.Order{}).
+		Where("id_order = ? AND status = ? AND courier_id IS NULL", orderID, "PROCESSED").
 		Updates(map[string]interface{}{
 			"courier_id": courierID,
-			"status":     "PROCESSED",
-		}).Error
+			"updated_at": time.Now(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return fmt.Errorf("pesanan harus berstatus PROCESSED dan belum memiliki kurir")
+	}
+	return nil
 }

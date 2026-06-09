@@ -22,7 +22,7 @@ type orderUsecase struct {
 	userRepo     domain.UserRepository
 	// [SQA-WB] snapTokenFn dapat di-inject pada unit test untuk mensimulasikan
 	// kegagalan Midtrans (path WB-CHK-U05 / CHK-05) tanpa perlu koneksi Midtrans nyata.
-	snapTokenFn  func(orderID string, totalAmount float64) (*snap.Response, error)
+	snapTokenFn func(orderID string, totalAmount float64) (*snap.Response, error)
 }
 
 func NewOrderUsecase(oRepo domain.OrderRepository, cRepo domain.CartRepository, aRepo domain.AuditLogRepository, emailSvc domain.EmailService, uRepo domain.UserRepository) domain.OrderUsecase {
@@ -155,16 +155,7 @@ func (u *orderUsecase) GetOrderDetail(userID string, orderID string) (*domain.Or
 }
 
 func (u *orderUsecase) PayOrder(orderID string) error {
-	order, err := u.orderRepo.FindByID(orderID)
-	if err != nil {
-		return err
-	}
-
-	if order.Status == "PAID" {
-		return errors.New("pesanan ini sudah dibayar")
-	}
-
-	return u.orderRepo.UpdateStatus(orderID, "PAID")
+	return errors.New("status pembayaran hanya dapat diperbarui melalui verifikasi Midtrans")
 }
 
 func (u *orderUsecase) CancelOrder(userID string, orderID string) error {
@@ -175,6 +166,17 @@ func (u *orderUsecase) CancelOrder(userID string, orderID string) error {
 
 	if order.UserID != userID {
 		return errors.New("akses ditolak. Pesanan ini bukan milik Anda")
+	}
+
+	// Pastikan pembayaran yang baru selesai di Midtrans tidak dibatalkan karena
+	// webhook belum sempat tiba. Error jaringan tidak menggagalkan pembatalan;
+	// guard status atomik di repository tetap menjadi perlindungan terakhir.
+	if order.Status == "PENDING" && order.PaymentToken != nil {
+		if syncErr := u.SyncMidtransStatus(orderID); syncErr == nil {
+			if refreshed, refreshErr := u.orderRepo.FindByID(orderID); refreshErr == nil {
+				order = refreshed
+			}
+		}
 	}
 
 	if order.Status != "PENDING" {
@@ -192,7 +194,8 @@ func (u *orderUsecase) GetPaidOrders() ([]domain.Order, error) {
 	return u.orderRepo.FindProcessedOrders()
 }
 
-// AssignAndShip mengambil pesanan PAID dan set menjadi SHIPPED oleh kurir
+// AssignAndShip menerima pesanan PROCESSED dan set menjadi SHIPPED oleh kurir.
+// Pesanan dapat belum memiliki kurir atau sudah ditugaskan admin ke kurir yang sama.
 func (u *orderUsecase) AssignAndShip(orderID string, courierID string) error {
 	order, err := u.orderRepo.FindByID(orderID)
 	if err != nil {
@@ -203,7 +206,7 @@ func (u *orderUsecase) AssignAndShip(orderID string, courierID string) error {
 		return errors.New("pesanan harus berstatus PROCESSED (sudah dikemas supplier) untuk bisa diambil kurir")
 	}
 
-	if order.CourierID != nil {
+	if order.CourierID != nil && *order.CourierID != courierID {
 		return errors.New("pesanan ini sudah diambil kurir lain")
 	}
 
@@ -225,7 +228,20 @@ func (u *orderUsecase) MarkDelivered(orderID string, courierID string) error {
 		return errors.New("pesanan harus berstatus SHIPPED untuk ditandai delivered")
 	}
 
-	// [B5] Variabel `now` dan dead code `_ = now` dihapus. DeliveredAt di-set oleh repository.
+	type assignedDeliveryUpdater interface {
+		MarkDeliveredIfAssigned(orderID string, courierID string) (bool, error)
+	}
+	if updater, ok := u.orderRepo.(assignedDeliveryUpdater); ok {
+		updated, updateErr := updater.MarkDeliveredIfAssigned(orderID, courierID)
+		if updateErr != nil {
+			return updateErr
+		}
+		if !updated {
+			return errors.New("status pesanan berubah atau akses kurir tidak lagi valid")
+		}
+		return nil
+	}
+
 	return u.orderRepo.UpdateStatus(orderID, "DELIVERED")
 }
 
@@ -339,19 +355,19 @@ func (u *orderUsecase) SyncMidtransStatus(orderID string) error {
 	if serverKey == "" {
 		return nil // skip if no key
 	}
-	
+
 	// Create request manually to avoid dealing with Midtrans SDK version conflicts
 	url := "https://api.sandbox.midtrans.com/v2/" + orderID + "/status"
 	req, _ := http.NewRequest("GET", url, nil)
 	req.SetBasicAuth(serverKey, "")
-	
+
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == 200 {
 		var payload map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&payload); err == nil {
@@ -397,13 +413,43 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 
 	if newStatus != "" {
 		var err error
+		statusChanged := false
 		if newStatus == "CANCELLED" {
+			order, findErr := u.orderRepo.FindByID(orderID)
+			if findErr != nil {
+				return findErr
+			}
+			if order.Status == "CANCELLED" || order.Status == "EXPIRED" {
+				return nil
+			}
+			if order.Status != "PENDING" {
+				return nil
+			}
 			err = u.orderRepo.CancelOrderTransaction(orderID)
+			statusChanged = err == nil
+		} else if newStatus == "PAID" {
+			type conditionalStatusUpdater interface {
+				UpdateStatusIfCurrent(orderID string, currentStatuses []string, newStatus string) (bool, error)
+			}
+
+			if updater, ok := u.orderRepo.(conditionalStatusUpdater); ok {
+				statusChanged, err = updater.UpdateStatusIfCurrent(orderID, []string{"PENDING"}, "PAID")
+			} else {
+				order, findErr := u.orderRepo.FindByID(orderID)
+				if findErr != nil {
+					return findErr
+				}
+				if order.Status == "PENDING" {
+					err = u.orderRepo.UpdateStatus(orderID, "PAID")
+					statusChanged = err == nil
+				}
+			}
 		} else {
-			err = u.orderRepo.UpdateStatus(orderID, newStatus)
+			// Status pending tidak boleh menurunkan PAID/PROCESSED kembali ke PENDING.
+			return nil
 		}
-		
-		if err == nil && u.auditLogRepo != nil {
+
+		if err == nil && statusChanged && u.auditLogRepo != nil {
 			_ = u.auditLogRepo.Insert(&domain.AuditLog{
 				ID:        uuid.New().String(),
 				UserID:    "SYSTEM/MIDTRANS",
@@ -416,7 +462,7 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 		}
 
 		// [Fitur 39] Jika Pembayaran Berhasil (PAID), Luncurkan Goroutine Background Worker untuk Notifikasi Invoice!
-		if err == nil && newStatus == "PAID" && u.emailSvc != nil && u.userRepo != nil {
+		if err == nil && statusChanged && newStatus == "PAID" && u.emailSvc != nil && u.userRepo != nil {
 			go func() {
 				// Jalankan di *background thread*, biarkan HTTP Response (Midtrans) segera kembali dalam 10ms!
 				orderData, _ := u.orderRepo.FindByID(orderID)

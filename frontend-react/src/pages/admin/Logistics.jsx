@@ -11,8 +11,8 @@ const S = {
 };
 
 const STATUS_MAP = {
-  PAID:      { label: 'Menunggu Kurir', color: '#f59e0b', bg: '#fffbeb' },
-  PROCESSED: { label: 'Dikemas',        color: '#3b82f6', bg: '#eff6ff' },
+  PAID:      { label: 'Menunggu Supplier', color: '#f59e0b', bg: '#fffbeb' },
+  PROCESSED: { label: 'Siap Ditugaskan',  color: '#3b82f6', bg: '#eff6ff' },
   SHIPPED:   { label: 'Dikirim',        color: '#8b5cf6', bg: '#f5f3ff' },
   DELIVERED: { label: 'Selesai',        color: '#10b981', bg: '#ecfdf5' },
 };
@@ -75,7 +75,7 @@ export default function AdminLogistics() {
           <h1 style={{ ...S.h, fontSize: '1.75rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Truck size={24} color="#0ea5e9" /> Logistics Management
           </h1>
-          <p style={{ ...S.muted, marginTop: '0.25rem' }}>Tugaskan kurir ke pesanan yang sudah dibayar dan kelola konfigurasi pengiriman.</p>
+          <p style={{ ...S.muted, marginTop: '0.25rem' }}>Pantau pesanan dan tugaskan kurir setelah supplier selesai menyiapkannya.</p>
         </div>
         <button onClick={handleSaveConfig} style={{ ...S.btn, background: '#0ea5e9', color: 'white' }}>
           <Save size={14} /> Simpan Konfigurasi
@@ -161,7 +161,7 @@ export default function AdminLogistics() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#eff6ff', borderRadius: 8, fontSize: '0.78rem', color: '#2563eb', fontWeight: 600 }}>
                         <UserCheck size={14} /> Ditugaskan: {order.courier_name}
                       </div>
-                    ) : order.status === 'PAID' ? (
+                    ) : order.status === 'PROCESSED' ? (
                       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                         <select
                           value={selectedCourier[order.id_order] || ''}

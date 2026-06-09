@@ -63,15 +63,16 @@ func (h *WebhookHandler) MidtransNotification(c *gin.Context) {
 	// [A1] Ambil Server Key dari environment untuk verifikasi
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
 	if serverKey == "" {
-		// Di lingkungan Sandbox/Dev tanpa key, lewati verifikasi tapi catat peringatan
-		log.Printf("[WEBHOOK WARNING] MIDTRANS_SERVER_KEY tidak diset. Verifikasi signature dilewati.")
-	} else {
-		// Verifikasi tanda tangan Midtrans — tolak jika tidak cocok
-		if !verifyMidtransSignature(payload, serverKey) {
-			log.Printf("[WEBHOOK SECURITY] Signature tidak valid untuk OrderID: %v. Request ditolak.", payload["order_id"])
-			response.Error(c, response.ErrForbidden("Signature tidak valid. Akses ditolak."))
-			return
-		}
+		log.Printf("[WEBHOOK SECURITY] MIDTRANS_SERVER_KEY tidak tersedia. Request ditolak.")
+		response.Error(c, response.ErrInternal("Konfigurasi pembayaran tidak tersedia"))
+		return
+	}
+
+	// Verifikasi tanda tangan Midtrans — tolak jika tidak cocok
+	if !verifyMidtransSignature(payload, serverKey) {
+		log.Printf("[WEBHOOK SECURITY] Signature tidak valid untuk OrderID: %v. Request ditolak.", payload["order_id"])
+		response.Error(c, response.ErrForbidden("Signature tidak valid. Akses ditolak."))
+		return
 	}
 
 	log.Printf("[WEBHOOK] Notifikasi Midtrans terverifikasi untuk OrderID: %v", payload["order_id"])
