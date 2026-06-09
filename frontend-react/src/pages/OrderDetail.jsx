@@ -102,19 +102,17 @@ export default function OrderDetail() {
   };
 
   const [canceling, setCanceling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeCategory, setDisputeCategory] = useState('');
   const [disputeDesc, setDisputeDesc] = useState('');
 
   const cancelOrder = async () => {
-    const isPaidOrder = order?.status === 'PAID' || order?.status === 'PROCESSED';
-    const message = isPaidOrder
-      ? 'Pesanan sudah dibayar. Pembatalan akan mengajukan pengembalian dana dan tidak dapat dibatalkan kembali. Lanjutkan?'
-      : 'Apakah Anda yakin ingin membatalkan pesanan ini?';
-    if(!window.confirm(message)) return;
+    setShowCancelModal(false);
     setCanceling(true);
     try {
       await api.patch(`/orders/${id}/cancel`);
+      const isPaidOrder = order?.status === 'PAID' || order?.status === 'PROCESSED';
       toast.success(isPaidOrder ? 'Pembatalan diterima. Pengembalian dana sedang diproses.' : 'Pesanan berhasil dibatalkan');
       fetchOrderAndRecent();
     } catch (err) {
@@ -350,7 +348,7 @@ export default function OrderDetail() {
                   <div className="flex gap-2 w-full mt-auto">
                     {order.status === 'PENDING' ? (
                        <>
-                         <button onClick={cancelOrder} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                         <button onClick={() => setShowCancelModal(true)} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
                            {canceling ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Batalkan Pesanan'}
                          </button>
                          <button onClick={pay} disabled={paying} className="flex-1 btn-primary text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
@@ -359,7 +357,7 @@ export default function OrderDetail() {
                        </>
                     ) : ['PAID', 'PROCESSED'].includes(order.status) ? (
                        <>
-                         <button onClick={cancelOrder} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                         <button onClick={() => setShowCancelModal(true)} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
                            {canceling ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Batalkan & Ajukan Refund'}
                          </button>
                          <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold py-3 rounded-xl shadow-md shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-600 transition-colors cursor-pointer flex justify-center items-center gap-1">
@@ -435,6 +433,40 @@ export default function OrderDetail() {
 
           </div>
         </div>
+
+        {/* Modal Konfirmasi Pembatalan */}
+        {showCancelModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowCancelModal(false)}></div>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm p-6 relative z-10 border border-gray-100 dark:border-slate-800 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                <ShieldAlert className="w-7 h-7 text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                {['PAID', 'PROCESSED'].includes(order.status) ? 'Batalkan & Ajukan Refund?' : 'Batalkan Pesanan?'}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {['PAID', 'PROCESSED'].includes(order.status)
+                  ? 'Pesanan sudah dibayar. Pembatalan akan mengajukan pengembalian dana dan tidak dapat dibatalkan kembali.'
+                  : 'Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dikembalikan.'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold text-sm rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                >
+                  Tidak, Kembali
+                </button>
+                <button
+                  onClick={cancelOrder}
+                  className="flex-1 py-2.5 bg-red-500 text-white font-bold text-sm rounded-xl hover:bg-red-600 transition flex justify-center items-center gap-2 cursor-pointer"
+                >
+                  Ya, Batalkan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal Dispute */}
         {showDisputeModal && (
