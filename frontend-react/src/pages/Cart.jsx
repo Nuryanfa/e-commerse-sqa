@@ -89,10 +89,11 @@ export default function Cart() {
       
       const snap = await loadMidtransSnap();
       snap.pay(orderData.payment_token, {
-         onSuccess: async () => { 
-           toast.success('Pembayaran berhasil!'); 
-           try { await api.post(`/orders/${orderData.id_order}/pay`); } catch(e) {}
-           navigate(`/orders/${orderData.id_order}`); 
+         onSuccess: () => {
+           toast.info('Pembayaran diterima. Sedang memverifikasi status...');
+           navigate(`/orders/${orderData.id_order}`, {
+             state: { verifyPayment: true }
+           });
          },
          onPending: () => { toast.info('Pesanan Dibuat! Menunggu Pembayaran.'); navigate(`/orders/${orderData.id_order}`); },
          onError: () => toast.error('Gagal memproses pembayaran!'),

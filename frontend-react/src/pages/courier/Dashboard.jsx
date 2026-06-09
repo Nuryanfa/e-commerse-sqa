@@ -89,6 +89,7 @@ export default function CourierDashboard() {
     setReturnActioning(null);
   }
 
+  const assignedOrders = myOrders.filter(o => o.status === 'PROCESSED');
   const shippedOrders = myOrders.filter(o => o.status === 'SHIPPED');
   const deliveredOrders = myOrders.filter(o => o.status === 'DELIVERED');
   const activeReturns = returnDisputes.filter(d => d.status === 'APPROVED_FOR_RETURN' || d.status === 'RETURNING');
@@ -130,7 +131,7 @@ export default function CourierDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {[
           { icon: ListTodo, label: 'Tersedia', value: available.length, bg: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400', border: 'border-blue-100 dark:border-blue-800' },
-          { icon: Truck, label: 'Sedang Diantar', value: shippedOrders.length, bg: 'bg-indigo-50 dark:bg-indigo-900/20', textColor: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-100 dark:border-indigo-800' },
+          { icon: Truck, label: 'Tugas Aktif', value: assignedOrders.length + shippedOrders.length, bg: 'bg-indigo-50 dark:bg-indigo-900/20', textColor: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-100 dark:border-indigo-800' },
           { icon: CheckCircle, label: 'Selesai', value: deliveredOrders.length, bg: 'bg-emerald-50 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-100 dark:border-emerald-800' },
           { icon: ShieldAlert, label: 'Retur Aktif', value: activeReturns.length, bg: 'bg-rose-50 dark:bg-rose-900/20', textColor: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100 dark:border-rose-800' },
         ].map((s, i) => (
@@ -150,7 +151,7 @@ export default function CourierDashboard() {
       <div className="flex overflow-x-auto custom-scrollbar gap-2 mb-8 bg-gray-100 dark:bg-slate-800/60 p-1.5 rounded-2xl w-max animate-fade-in-up delay-200 max-w-full">
         {[
           { key: 'available', label: 'Tersedia', count: available.length, pulse: available.length > 0 },
-          { key: 'active', label: 'Sedang Kirim', count: shippedOrders.length },
+          { key: 'active', label: 'Tugas Saya', count: assignedOrders.length + shippedOrders.length },
           { key: 'done', label: 'Terkirim', count: deliveredOrders.length },
           { key: 'returns', label: 'Retur', count: activeReturns.length, pulse: activeReturns.length > 0 }
         ].map(t => (
@@ -223,13 +224,13 @@ export default function CourierDashboard() {
         {/* Active Delivery View */}
         {tab === 'active' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            {shippedOrders.length === 0 ? (
+            {assignedOrders.length + shippedOrders.length === 0 ? (
               <div className="py-20 bg-white dark:bg-slate-800/80 rounded-[2rem] border border-dashed border-gray-300 dark:border-slate-700 text-center flex flex-col items-center">
                 <Truck className="w-16 h-16 text-gray-300 dark:text-slate-600 mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Anda tidak memiliki pengiriman aktif</h3>
                 <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Ambil pekerjaan dari tab Tersedia.</p>
               </div>
-            ) : shippedOrders.map((o) => (
+            ) : [...assignedOrders, ...shippedOrders].map((o) => (
               <div key={o.id_order} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/50 p-4 sm:p-6 pb-5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm shadow-indigo-500/5">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
@@ -237,7 +238,9 @@ export default function CourierDashboard() {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                      </span>
-                     <p className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Sedang Dikirim</p>
+                     <p className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                       {o.status === 'PROCESSED' ? 'Ditugaskan Admin' : 'Sedang Dikirim'}
+                     </p>
                      <p className="text-xs font-mono text-gray-400 ml-auto">#{o.id_order?.split('-')[0]}</p>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">{o.shipping_address}</h3>
@@ -245,13 +248,23 @@ export default function CourierDashboard() {
                 </div>
                 
                 <div className="w-full md:w-auto shrink-0 border-t md:border-t-0 md:border-l border-gray-100 dark:border-slate-700 pt-4 md:pt-0 md:pl-6 flex flex-col gap-3">
-                  <button 
-                    onClick={() => deliver(o.id_order)} 
-                    disabled={delivering === o.id_order}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white px-8 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 hover:-translate-y-0.5 cursor-pointer"
-                  >
-                    {delivering === o.id_order ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Tandai Terkirim</>}
-                  </button>
+                  {o.status === 'PROCESSED' ? (
+                    <button
+                      onClick={() => ship(o.id_order)}
+                      disabled={shipping === o.id_order}
+                      className="w-full bg-slate-900 hover:bg-indigo-600 dark:bg-white dark:hover:bg-indigo-500 text-white dark:text-slate-900 px-8 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {shipping === o.id_order ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-5 h-5" /> Terima & Mulai Kirim</>}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => deliver(o.id_order)}
+                      disabled={delivering === o.id_order}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white px-8 py-3.5 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 hover:-translate-y-0.5 cursor-pointer"
+                    >
+                      {delivering === o.id_order ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Tandai Terkirim</>}
+                    </button>
+                  )}
                   <button className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 px-8 py-3 rounded-xl text-sm font-bold transition-colors cursor-pointer text-center">
                     Hubungi Pembeli
                   </button>

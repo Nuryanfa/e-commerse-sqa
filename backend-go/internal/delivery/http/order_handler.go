@@ -42,7 +42,6 @@ func NewOrderHandler(r *gin.RouterGroup, uc domain.OrderUsecase) {
 		orderGroup.POST("/instant-checkout", handler.InstantCheckout)
 		orderGroup.GET("", handler.GetMyOrders)
 		orderGroup.GET("/:id", handler.GetOrderDetail)
-		orderGroup.POST("/:id/pay", handler.SimulatePayment)
 		orderGroup.PATCH("/:id/cancel", handler.CancelOrder)
 	}
 }
@@ -109,11 +108,11 @@ func (h *OrderHandler) InstantCheckout(c *gin.Context) {
 	}
 
 	var req struct {
-		ProductID   string  `json:"product_id" binding:"required"`
-		VariantID   *string `json:"id_variant,omitempty"`
+		ProductID string  `json:"product_id" binding:"required"`
+		VariantID *string `json:"id_variant,omitempty"`
 		// [SQA] Boundary Value Analysis
-		Quantity    int     `json:"quantity" binding:"required,min=1,max=100"`
-		VoucherCode string  `json:"voucher_code"`
+		Quantity    int    `json:"quantity" binding:"required,min=1,max=100"`
+		VoucherCode string `json:"voucher_code"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -142,7 +141,7 @@ func (h *OrderHandler) GetMyOrders(c *gin.Context) {
 		response.Error(c, response.ErrUnauthorized("Sesi pengguna tidak valid"))
 		return
 	}
-	
+
 	orders, err := h.orderUsecase.GetMyOrders(uid)
 	if err != nil {
 		response.Error(c, response.ErrInternal(err.Error()))
@@ -172,17 +171,6 @@ func (h *OrderHandler) GetOrderDetail(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Berhasil memuat detail pesanan", order)
-}
-
-func (h *OrderHandler) SimulatePayment(c *gin.Context) {
-	orderID := c.Param("id")
-
-	if err := h.orderUsecase.PayOrder(orderID); err != nil {
-		response.Error(c, response.ErrBadRequest(err.Error()))
-		return
-	}
-
-	response.Success(c, http.StatusOK, "Pembayaran disimulasikan sukses! Status sekarang PAID.", nil)
 }
 
 func (h *OrderHandler) CancelOrder(c *gin.Context) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';
 import { loadMidtransSnap } from '../services/midtrans';
 import { useAuth } from '../context/useAuth';
@@ -11,32 +11,68 @@ export default function OrderDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [order, setOrder] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const toast = useToast();
 
-  const fetchOrderAndRecent = async () => {
+  const fetchOrderAndRecent = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [orderRes, allOrdersRes] = await Promise.all([
         api.get(`/orders/${id}`),
         api.get('/orders?limit=4') // fetch recent for sidebar
       ]);
-      setOrder(orderRes.data.data);
+      const loadedOrder = orderRes.data.data;
+      setOrder(loadedOrder);
       if (allOrdersRes.data.data) {
         setRecentOrders(allOrdersRes.data.data.filter(o => o.id_order !== id).slice(0, 3));
       }
+      return loadedOrder;
     } catch (err) {
       toast.error('Gagal memuat pesanan');
       navigate('/orders');
+      return null;
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchOrderAndRecent(); }, [id]);
+  useEffect(() => {
+    let disposed = false;
+
+    const loadOrder = async () => {
+      let currentOrder = await fetchOrderAndRecent();
+      if (!location.state?.verifyPayment || !currentOrder || disposed) return;
+
+      for (let attempt = 0; attempt < 6 && currentOrder.status === 'PENDING'; attempt += 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (disposed) return;
+
+        try {
+          const response = await api.get(`/orders/${id}`);
+          currentOrder = response.data.data;
+          setOrder(currentOrder);
+        } catch {
+          break;
+        }
+      }
+
+      if (!disposed) {
+        if (currentOrder.status === 'PAID' || currentOrder.status === 'PROCESSED') {
+          toast.success('Pembayaran terverifikasi. Pesanan menunggu diproses supplier.');
+        } else {
+          toast.info('Pembayaran masih diverifikasi. Status akan diperbarui otomatis.');
+        }
+        navigate(`/orders/${id}`, { replace: true, state: null });
+      }
+    };
+
+    loadOrder();
+    return () => { disposed = true; };
+  }, [id, location.state?.verifyPayment]);
 
   const pay = async () => {
     if (!order?.payment_token) {
@@ -47,10 +83,13 @@ export default function OrderDetail() {
     try {
       const snap = await loadMidtransSnap();
       snap.pay(order.payment_token, {
-       onSuccess: async () => { 
-         toast.success('Pembayaran berhasil!'); 
-         try { await api.post(`/orders/${id}/pay`); } catch(e) {}
-         fetchOrderAndRecent(); setPaying(false); 
+       onSuccess: () => {
+         toast.info('Pembayaran diterima. Sedang memverifikasi status...');
+         setPaying(false);
+         navigate(`/orders/${id}`, {
+           replace: true,
+           state: { verifyPayment: true }
+         });
        },
        onPending: () => { toast.info('Menunggu Pembayaran.'); setPaying(false); },
        onError: () => { toast.error('Gagal memproses pembayaran!'); setPaying(false); },
@@ -108,16 +147,19 @@ export default function OrderDetail() {
   );
   if (!order) return null;
 
-  const orderStatuses = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED'];
+  const orderStatuses = ['PENDING', 'PAID', 'PROCESSED', 'SHIPPED', 'DELIVERED'];
   const currentIdx = orderStatuses.indexOf(order.status) >= 0 ? orderStatuses.indexOf(order.status) : 0;
   
   const getStatusLabel = (s) => {
     switch(s) {
-      case 'PENDING': return 'Menunggu';
-      case 'PAID': return 'Diproses';
+      case 'PENDING': return 'Menunggu Pembayaran';
+      case 'PAID': return 'Pembayaran Berhasil';
+      case 'PROCESSED': return 'Diproses Supplier';
       case 'SHIPPED': return 'Dikirim';
       case 'DELIVERED': return 'Selesai';
       case 'DISPUTED': return 'Diklaim';
+      case 'CANCELLED': return 'Dibatalkan';
+      case 'EXPIRED': return 'Kedaluwarsa';
       default: return s;
     }
   };
@@ -143,7 +185,7 @@ export default function OrderDetail() {
                 <div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                      {order.status === 'SHIPPED' ? 'ACTIVE ORDER' : order.status}
+                      {getStatusLabel(order.status)}
                     </span>
                     {order.status === 'DISPUTED' && (
                       <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex items-center gap-1">
@@ -156,7 +198,7 @@ export default function OrderDetail() {
                     Placed on {new Date(order.created_at).toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric'})} • {new Date(order.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' })}
                   </p>
                 </div>
-                {order.status !== 'DELIVERED' && order.status !== 'DISPUTED' && (
+                {!['PENDING', 'CANCELLED', 'EXPIRED', 'DELIVERED', 'DISPUTED'].includes(order.status) && (
                   <div className="sm:text-right">
                     <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Estimated Delivery</p>
                     <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">Hari ini, 15:00 WIB</p>
@@ -169,12 +211,13 @@ export default function OrderDetail() {
                 {/* Connecting Line */}
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 dark:bg-slate-800 -translate-y-1/2 -z-10 rounded-full" />
                 <div className="absolute top-1/2 left-0 h-1 bg-emerald-500 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 ease-out" 
-                     style={{ width: `${Math.min(100, (currentIdx / 3) * 100)}%` }} />
+                     style={{ width: `${Math.min(100, (currentIdx / 4) * 100)}%` }} />
 
                 <div className="flex justify-between relative z-10 w-full">
                   {[
-                    { id: 'PENDING', label: 'Confirmed', icon: CheckCircle },
-                    { id: 'PAID', label: 'Prepared', icon: Package },
+                    { id: 'PENDING', label: 'Menunggu Bayar', icon: CreditCard },
+                    { id: 'PAID', label: 'Pembayaran Sah', icon: CheckCircle },
+                    { id: 'PROCESSED', label: 'Diproses Supplier', icon: Package },
                     { id: 'SHIPPED', label: 'On the Way', icon: Truck },
                     { id: 'DELIVERED', label: 'Received', icon: Home }
                   ].map((step, i) => {
@@ -224,6 +267,24 @@ export default function OrderDetail() {
                         <Phone className="w-4 h-4" />
                       </button>
                     </div>
+                  </div>
+                ) : order.status === 'PAID' ? (
+                  <div className="relative w-full h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-3xl overflow-hidden border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center p-6 text-center">
+                    <CheckCircle className="w-12 h-12 text-emerald-500 mb-4" />
+                    <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-1">Pembayaran Berhasil</h3>
+                    <p className="text-xs text-emerald-600/70 dark:text-emerald-500/70">Pembayaran telah terverifikasi. Menunggu supplier menerima dan menyiapkan pesanan.</p>
+                  </div>
+                ) : order.status === 'PENDING' ? (
+                  <div className="relative w-full h-64 bg-amber-50 dark:bg-amber-900/10 rounded-3xl overflow-hidden border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center p-6 text-center">
+                    <CreditCard className="w-12 h-12 text-amber-400 mb-4" />
+                    <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-1">Menunggu Pembayaran</h3>
+                    <p className="text-xs text-amber-700/70 dark:text-amber-500/70">Selesaikan pembayaran melalui Midtrans agar supplier dapat memproses pesanan.</p>
+                  </div>
+                ) : order.status === 'CANCELLED' || order.status === 'EXPIRED' ? (
+                  <div className="relative w-full h-64 bg-red-50 dark:bg-red-900/10 rounded-3xl overflow-hidden border border-red-100 dark:border-red-900/30 flex flex-col items-center justify-center p-6 text-center">
+                    <ShieldAlert className="w-12 h-12 text-red-400 mb-4" />
+                    <h3 className="font-bold text-red-800 dark:text-red-400 mb-1">Pesanan Dibatalkan</h3>
+                    <p className="text-xs text-red-700/70 dark:text-red-500/70">Stok produk telah dikembalikan dan pesanan ini tidak dapat dibayar lagi.</p>
                   </div>
                 ) : (
                   <div className="relative w-full h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-3xl overflow-hidden border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center p-6 text-center">
