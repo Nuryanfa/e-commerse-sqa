@@ -442,16 +442,30 @@ func (r *orderRepository) CancelOrderTransaction(orderID string) error {
 			return err
 		}
 
-		if order.Status == "CANCELLED" || order.Status == "EXPIRED" {
+		if order.Status == "CANCELLED" ||
+			order.Status == "EXPIRED" ||
+			order.Status == domain.OrderStatusRefundPending ||
+			order.Status == domain.OrderStatusRefunded {
 			return nil // sudah dibatalkan sebelumnya
 		}
-		if order.Status != "PENDING" {
+		if order.Status != "PENDING" &&
+			order.Status != domain.OrderStatusPaid &&
+			order.Status != domain.OrderStatusProcessed {
 			return fmt.Errorf("pesanan berstatus %s tidak dapat dibatalkan", order.Status)
 		}
 
+		newStatus := domain.OrderStatusCancelled
+		if order.Status == domain.OrderStatusPaid || order.Status == domain.OrderStatusProcessed {
+			newStatus = domain.OrderStatusRefundPending
+		}
+
 		result := tx.Model(&domain.Order{}).
-			Where("id_order = ? AND status = ?", orderID, "PENDING").
-			Updates(map[string]interface{}{"status": "CANCELLED", "updated_at": time.Now()})
+			Where("id_order = ? AND status = ?", orderID, order.Status).
+			Updates(map[string]interface{}{
+				"status":     newStatus,
+				"courier_id": nil,
+				"updated_at": time.Now(),
+			})
 		if result.Error != nil {
 			return result.Error
 		}

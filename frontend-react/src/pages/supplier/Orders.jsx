@@ -20,6 +20,7 @@ const StatusBadge = ({ status }) => {
     'SHIPPED':   { bg: 'rgba(139,92,246,0.1)', color: '#6d28d9', label: 'Dikirim', dot: '#8b5cf6' },
     'DELIVERED': { bg: 'rgba(22,163,74,0.1)', color: '#15803d', label: 'Selesai', dot: '#22c55e' },
     'CANCELLED': { bg: 'rgba(220,38,38,0.1)', color: '#b91c1c', label: 'Dibatalkan', dot: '#ef4444' },
+    'REFUND_PENDING': { bg: 'rgba(244,63,94,0.1)', color: '#be123c', label: 'Refund Diproses', dot: '#f43f5e' },
     'REFUNDED':  { bg: 'rgba(236,72,153,0.1)', color: '#be185d', label: 'Dikembalikan', dot: '#ec4899' },
   };
   const c = map[status] || map.PENDING;
@@ -118,6 +119,8 @@ export default function SupplierOrders() {
           <option value="PROCESSED">Sedang Diproses</option>
           <option value="SHIPPED">Dikirim</option>
           <option value="DELIVERED">Selesai</option>
+          <option value="REFUND_PENDING">Refund Diproses</option>
+          <option value="REFUNDED">Dana Dikembalikan</option>
         </select>
       </div>
 

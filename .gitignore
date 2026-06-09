@@ -2,6 +2,28 @@
 frontend-react/.env
 backend-go/.env
 
+# Dependency dan hasil build
+frontend-react/node_modules/
+frontend-react/dist/
+backend-go/sayursehat-api
+backend-go/docs/
+backend-go/tmp_bin
+backend-go/*.exe
+backend-go/*.exe~
+
+# Log dan output sementara
+*.log
+backend-go/*_out.txt
+backend-go/*_err.txt
+backend-go/loadtest_result.txt
+
+# Dump database lokal/production
+/*.dump
+/*.sql
+
+# File upload runtime
+backend-go/uploads/
+
 
 # Log Antigravity & Berkas Temporal AI
 Task
@@ -13,3 +35,12 @@ STP_UMKM*.pdf
 SUD_UMKM*.pdf
 daftar_akun.md
 test_db.go
+
+# Dokumentasi & Coverage
+dokumentasi/
+k6-test/
+blackbox_chk_report.md
+blackbox_test_report.md
+backend-go/coverage_*
+backend-go/checkout_coverage
+backend-go/*.html

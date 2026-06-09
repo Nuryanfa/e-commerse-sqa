@@ -1,11 +1,13 @@
 package usecase
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,16 +25,111 @@ type orderUsecase struct {
 	// [SQA-WB] snapTokenFn dapat di-inject pada unit test untuk mensimulasikan
 	// kegagalan Midtrans (path WB-CHK-U05 / CHK-05) tanpa perlu koneksi Midtrans nyata.
 	snapTokenFn func(orderID string, totalAmount float64) (*snap.Response, error)
+	// paymentReversalFn dapat di-inject pada test agar cancel/refund berbayar
+	// tidak memanggil Midtrans sungguhan.
+	paymentReversalFn func(orderID string, totalAmount float64) (string, error)
 }
 
 func NewOrderUsecase(oRepo domain.OrderRepository, cRepo domain.CartRepository, aRepo domain.AuditLogRepository, emailSvc domain.EmailService, uRepo domain.UserRepository) domain.OrderUsecase {
 	return &orderUsecase{
-		orderRepo:    oRepo,
-		cartRepo:     cRepo,
-		auditLogRepo: aRepo,
-		emailSvc:     emailSvc,
-		userRepo:     uRepo,
-		snapTokenFn:  createSnapToken, // default: gunakan implementasi Midtrans nyata
+		orderRepo:         oRepo,
+		cartRepo:          cRepo,
+		auditLogRepo:      aRepo,
+		emailSvc:          emailSvc,
+		userRepo:          uRepo,
+		snapTokenFn:       createSnapToken, // default: gunakan implementasi Midtrans nyata
+		paymentReversalFn: reverseMidtransPayment,
+	}
+}
+
+func midtransAPIBaseURL() string {
+	if strings.EqualFold(os.Getenv("MIDTRANS_ENV"), "production") {
+		return "https://api.midtrans.com"
+	}
+	return "https://api.sandbox.midtrans.com"
+}
+
+func sendMidtransRequest(method string, endpoint string, body interface{}) (map[string]interface{}, error) {
+	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
+	if serverKey == "" {
+		return nil, errors.New("MIDTRANS_SERVER_KEY belum dikonfigurasi")
+	}
+
+	var requestBody *bytes.Reader
+	if body == nil {
+		requestBody = bytes.NewReader(nil)
+	} else {
+		payload, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		requestBody = bytes.NewReader(payload)
+	}
+
+	req, err := http.NewRequest(method, midtransAPIBaseURL()+endpoint, requestBody)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(serverKey, "")
+	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, errors.New("respons Midtrans tidak valid")
+	}
+
+	statusCode, _ := result["status_code"].(string)
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices || !strings.HasPrefix(statusCode, "2") {
+		message, _ := result["status_message"].(string)
+		if message == "" {
+			message = fmt.Sprintf("Midtrans mengembalikan HTTP %d", resp.StatusCode)
+		}
+		return nil, errors.New(message)
+	}
+	return result, nil
+}
+
+// reverseMidtransPayment membatalkan transaksi yang belum settlement atau
+// mengajukan full refund untuk transaksi yang sudah settlement.
+func reverseMidtransPayment(orderID string, totalAmount float64) (string, error) {
+	status, err := sendMidtransRequest(http.MethodGet, "/v2/"+orderID+"/status", nil)
+	if err != nil {
+		return "", err
+	}
+
+	transactionStatus, _ := status["transaction_status"].(string)
+	switch transactionStatus {
+	case "pending", "authorize", "capture":
+		if _, err := sendMidtransRequest(http.MethodPost, "/v2/"+orderID+"/cancel", nil); err != nil {
+			return "", err
+		}
+		return "cancel", nil
+	case "settlement":
+		refundRequest := map[string]interface{}{
+			"refund_key": "cancel-" + orderID,
+			"amount":     int64(totalAmount),
+			"reason":     "Pembatalan pesanan sebelum pengiriman",
+		}
+		if _, err := sendMidtransRequest(http.MethodPost, "/v2/"+orderID+"/refund", refundRequest); err != nil {
+			return "", err
+		}
+		return "refund", nil
+	case "cancel", "deny", "expire":
+		return "cancel", nil
+	case "refund":
+		return "refund", nil
+	default:
+		return "", fmt.Errorf("transaksi Midtrans berstatus %s tidak dapat dibatalkan", transactionStatus)
 	}
 }
 
@@ -47,7 +144,11 @@ func createSnapToken(orderID string, totalAmount float64) (*snap.Response, error
 	}
 
 	var snapClient snap.Client
-	snapClient.New(serverKey, midtrans.Sandbox)
+	if strings.EqualFold(os.Getenv("MIDTRANS_ENV"), "production") {
+		snapClient.New(serverKey, midtrans.Production)
+	} else {
+		snapClient.New(serverKey, midtrans.Sandbox)
+	}
 
 	req := &snap.Request{
 		TransactionDetails: midtrans.TransactionDetails{
@@ -179,11 +280,45 @@ func (u *orderUsecase) CancelOrder(userID string, orderID string) error {
 		}
 	}
 
-	if order.Status != "PENDING" {
-		return errors.New("hanya pesanan PENDING (belum dibayar) yang dapat dibatalkan")
+	if order.Status == domain.OrderStatusCancelled ||
+		order.Status == domain.OrderStatusRefundPending ||
+		order.Status == domain.OrderStatusRefunded {
+		return nil
 	}
 
-	return u.orderRepo.CancelOrderTransaction(orderID)
+	if order.Status == domain.OrderStatusShipped || order.Status == domain.OrderStatusDelivered {
+		return errors.New("pesanan yang sudah dikirim tidak dapat dibatalkan; gunakan fitur komplain")
+	}
+
+	if order.Status != "PENDING" &&
+		order.Status != domain.OrderStatusPaid &&
+		order.Status != domain.OrderStatusProcessed {
+		return fmt.Errorf("pesanan berstatus %s tidak dapat dibatalkan", order.Status)
+	}
+
+	reversalType := ""
+	paidCancellation := order.Status == domain.OrderStatusPaid || order.Status == domain.OrderStatusProcessed
+	requiresPaymentReversal := paidCancellation || (order.Status == "PENDING" && order.PaymentToken != nil)
+	if requiresPaymentReversal {
+		if u.paymentReversalFn == nil {
+			return errors.New("layanan pembatalan pembayaran belum tersedia")
+		}
+		reversalType, err = u.paymentReversalFn(order.ID, order.TotalAmount)
+		if err != nil {
+			return errors.New("pembatalan pembayaran gagal: " + err.Error())
+		}
+	}
+
+	if err := u.orderRepo.CancelOrderTransaction(orderID); err != nil {
+		return err
+	}
+
+	// Cancel/void dikonfirmasi langsung oleh gateway. Refund settlement tetap
+	// REFUND_PENDING sampai notifikasi refund diterima.
+	if reversalType == "cancel" && paidCancellation {
+		return u.orderRepo.UpdateStatus(orderID, domain.OrderStatusRefunded)
+	}
+	return nil
 }
 
 // --- Courier Methods ---
@@ -404,6 +539,11 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 	case "deny", "cancel", "expire":
 		newStatus = "CANCELLED"
 		// Stock restoration is handled natively within CancelOrderTransaction
+	case "refund":
+		if bankConfirmedAt, _ := payload["bank_confirmed_at"].(string); bankConfirmedAt == "" {
+			return nil
+		}
+		newStatus = domain.OrderStatusRefunded
 	case "pending":
 		newStatus = "PENDING"
 	default:
@@ -414,10 +554,35 @@ func (u *orderUsecase) ProcessPaymentWebhook(payload map[string]interface{}) err
 	if newStatus != "" {
 		var err error
 		statusChanged := false
-		if newStatus == "CANCELLED" {
+		if newStatus == domain.OrderStatusRefunded {
+			type conditionalStatusUpdater interface {
+				UpdateStatusIfCurrent(orderID string, currentStatuses []string, newStatus string) (bool, error)
+			}
+			if updater, ok := u.orderRepo.(conditionalStatusUpdater); ok {
+				statusChanged, err = updater.UpdateStatusIfCurrent(
+					orderID,
+					[]string{domain.OrderStatusRefundPending},
+					domain.OrderStatusRefunded,
+				)
+			} else {
+				order, findErr := u.orderRepo.FindByID(orderID)
+				if findErr != nil {
+					return findErr
+				}
+				if order.Status == domain.OrderStatusRefundPending {
+					err = u.orderRepo.UpdateStatus(orderID, domain.OrderStatusRefunded)
+					statusChanged = err == nil
+				}
+			}
+		} else if newStatus == "CANCELLED" {
 			order, findErr := u.orderRepo.FindByID(orderID)
 			if findErr != nil {
 				return findErr
+			}
+			if order.Status == domain.OrderStatusRefundPending {
+				err = u.orderRepo.UpdateStatus(orderID, domain.OrderStatusRefunded)
+				statusChanged = err == nil
+				return err
 			}
 			if order.Status == "CANCELLED" || order.Status == "EXPIRED" {
 				return nil

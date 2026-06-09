@@ -15,9 +15,13 @@ export default function Orders() {
   const statusConfig = {
     PENDING: { bg: 'bg-amber-100', text: 'text-amber-700', icon: Clock, label: 'Menunggu Pembayaran' },
     PAID: { bg: 'bg-blue-100', text: 'text-blue-700', icon: CreditCard, label: 'Sedang Diproses' },
+    PROCESSED: { bg: 'bg-orange-100', text: 'text-orange-700', icon: Package, label: 'Disiapkan Supplier' },
     SHIPPED: { bg: 'bg-indigo-100', text: 'text-indigo-700', icon: Truck, label: 'Dalam Pengiriman' },
     DELIVERED: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle, label: 'Pesanan Selesai' },
-    DISPUTED: { bg: 'bg-red-100', text: 'text-red-700', icon: Package, label: 'Sengketa Pembeli' }
+    DISPUTED: { bg: 'bg-red-100', text: 'text-red-700', icon: Package, label: 'Sengketa Pembeli' },
+    CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-700', icon: Package, label: 'Dibatalkan' },
+    REFUND_PENDING: { bg: 'bg-rose-100', text: 'text-rose-700', icon: Clock, label: 'Refund Diproses' },
+    REFUNDED: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle, label: 'Dana Dikembalikan' }
   };
 
   const getStatus = (status) => statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-700', icon: Package, label: status };

@@ -107,11 +107,15 @@ export default function OrderDetail() {
   const [disputeDesc, setDisputeDesc] = useState('');
 
   const cancelOrder = async () => {
-    if(!window.confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) return;
+    const isPaidOrder = order?.status === 'PAID' || order?.status === 'PROCESSED';
+    const message = isPaidOrder
+      ? 'Pesanan sudah dibayar. Pembatalan akan mengajukan pengembalian dana dan tidak dapat dibatalkan kembali. Lanjutkan?'
+      : 'Apakah Anda yakin ingin membatalkan pesanan ini?';
+    if(!window.confirm(message)) return;
     setCanceling(true);
     try {
       await api.patch(`/orders/${id}/cancel`);
-      toast.success('Pesanan berhasil dibatalkan');
+      toast.success(isPaidOrder ? 'Pembatalan diterima. Pengembalian dana sedang diproses.' : 'Pesanan berhasil dibatalkan');
       fetchOrderAndRecent();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gagal membatalkan pesanan');
@@ -159,6 +163,8 @@ export default function OrderDetail() {
       case 'DELIVERED': return 'Selesai';
       case 'DISPUTED': return 'Diklaim';
       case 'CANCELLED': return 'Dibatalkan';
+      case 'REFUND_PENDING': return 'Refund Diproses';
+      case 'REFUNDED': return 'Dana Dikembalikan';
       case 'EXPIRED': return 'Kedaluwarsa';
       default: return s;
     }
@@ -280,11 +286,18 @@ export default function OrderDetail() {
                     <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-1">Menunggu Pembayaran</h3>
                     <p className="text-xs text-amber-700/70 dark:text-amber-500/70">Selesaikan pembayaran melalui Midtrans agar supplier dapat memproses pesanan.</p>
                   </div>
-                ) : order.status === 'CANCELLED' || order.status === 'EXPIRED' ? (
+                ) : ['CANCELLED', 'EXPIRED', 'REFUND_PENDING', 'REFUNDED'].includes(order.status) ? (
                   <div className="relative w-full h-64 bg-red-50 dark:bg-red-900/10 rounded-3xl overflow-hidden border border-red-100 dark:border-red-900/30 flex flex-col items-center justify-center p-6 text-center">
                     <ShieldAlert className="w-12 h-12 text-red-400 mb-4" />
-                    <h3 className="font-bold text-red-800 dark:text-red-400 mb-1">Pesanan Dibatalkan</h3>
-                    <p className="text-xs text-red-700/70 dark:text-red-500/70">Stok produk telah dikembalikan dan pesanan ini tidak dapat dibayar lagi.</p>
+                    <h3 className="font-bold text-red-800 dark:text-red-400 mb-1">
+                      {order.status === 'REFUND_PENDING' ? 'Pengembalian Dana Diproses' :
+                       order.status === 'REFUNDED' ? 'Dana Telah Dikembalikan' : 'Pesanan Dibatalkan'}
+                    </h3>
+                    <p className="text-xs text-red-700/70 dark:text-red-500/70">
+                      {order.status === 'REFUND_PENDING'
+                        ? 'Permintaan refund telah dikirim ke penyedia pembayaran. Waktu masuk dana mengikuti metode pembayaran.'
+                        : 'Stok produk telah dikembalikan dan pesanan ini tidak dapat diproses lagi.'}
+                    </p>
                   </div>
                 ) : (
                   <div className="relative w-full h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-3xl overflow-hidden border border-emerald-100 dark:border-emerald-900/30 flex flex-col items-center justify-center p-6 text-center">
@@ -342,6 +355,15 @@ export default function OrderDetail() {
                          </button>
                          <button onClick={pay} disabled={paying} className="flex-1 btn-primary text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer">
                            {paying ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CreditCard className="w-4 h-4"/> Bayar Sekarang</>}
+                         </button>
+                       </>
+                    ) : ['PAID', 'PROCESSED'].includes(order.status) ? (
+                       <>
+                         <button onClick={cancelOrder} disabled={canceling} className="flex-1 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 text-xs font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                           {canceling ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Batalkan & Ajukan Refund'}
+                         </button>
+                         <button onClick={() => window.open(`/invoice/${order.id_order}`, '_blank')} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold py-3 rounded-xl shadow-md shadow-emerald-500/20 hover:from-emerald-600 hover:to-teal-600 transition-colors cursor-pointer flex justify-center items-center gap-1">
+                           <ArrowRight className="w-3.5 h-3.5" /> Invoice Detail
                          </button>
                        </>
                     ) : (

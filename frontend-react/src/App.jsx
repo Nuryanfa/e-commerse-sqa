@@ -187,6 +187,15 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
         </Suspense>
       )}
 
+      {/* Desktop sidebars are fixed, so reserve matching space in the layout. */}
+      {isInternalRoute && (
+        <div
+          aria-hidden="true"
+          className="hidden lg:block shrink-0 transition-[width] duration-300"
+          style={{ width: sidebarCollapsed ? 80 : 260 }}
+        />
+      )}
+
       <div className="flex-1 flex flex-col min-w-0">
         {/* Navbar shown only for public/buyer routes */}
         {!isInternalRoute && !isAdminRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
