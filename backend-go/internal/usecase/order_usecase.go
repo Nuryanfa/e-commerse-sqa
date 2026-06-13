@@ -299,17 +299,21 @@ func (u *orderUsecase) CancelOrder(userID string, orderID string) error {
 	reversalType := ""
 	paidCancellation := order.Status == domain.OrderStatusPaid || order.Status == domain.OrderStatusProcessed
 	requiresPaymentReversal := paidCancellation || (order.Status == "PENDING" && order.PaymentToken != nil)
-	if requiresPaymentReversal && u.paymentReversalFn != nil {
-		reversalType, err = u.paymentReversalFn(order.ID, order.TotalAmount)
-		if err != nil {
-			// Untuk pesanan PENDING: pembayaran belum selesai, abaikan error Midtrans
-			// dan lanjutkan pembatalan di database.
-			// Untuk PAID/PROCESSED: tetap lanjutkan pembatalan, repository akan
-			// menyimpan status REFUND_PENDING agar admin bisa menangani manual.
+	if requiresPaymentReversal {
+		if u.paymentReversalFn == nil {
 			if paidCancellation {
-				fmt.Printf("[WARN] Midtrans reversal gagal untuk order %s: %v — lanjut cancel, status REFUND_PENDING\n", orderID, err)
+				return errors.New("layanan refund pembayaran belum tersedia")
 			}
-			reversalType = ""
+		} else {
+			reversalType, err = u.paymentReversalFn(order.ID, order.TotalAmount)
+			if err != nil {
+				// Pesanan PENDING tetap boleh dibatalkan lokal karena pembayaran
+				// belum sah. PAID/PROCESSED wajib berhasil direversal di gateway.
+				if paidCancellation {
+					return errors.New("pembatalan pembayaran gagal: " + err.Error())
+				}
+				reversalType = ""
+			}
 		}
 	}
 

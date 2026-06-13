@@ -166,7 +166,7 @@ func TestPaymentRegression_ShippedOrderCannotCancel(t *testing.T) {
 	}
 }
 
-func TestPaymentRegression_FailedRefundSetsRefundPending(t *testing.T) {
+func TestPaymentRegression_FailedRefundKeepsPaidOrderActive(t *testing.T) {
 	repo := &paymentRegressionRepo{
 		order: domain.Order{
 			ID:          "order-1",
@@ -181,11 +181,11 @@ func TestPaymentRegression_FailedRefundSetsRefundPending(t *testing.T) {
 	}
 
 	err := uc.CancelOrder("buyer-1", "order-1")
-	if err != nil {
-		t.Fatalf("expected successful cancellation despite refund error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "refund ditolak") {
+		t.Fatalf("expected refund rejection, got %v", err)
 	}
-	if repo.cancelCalls != 1 || repo.order.Status != domain.OrderStatusRefundPending {
-		t.Fatalf("failed refund must still cancel order and set to REFUND_PENDING for manual handling")
+	if repo.cancelCalls != 0 || repo.order.Status != domain.OrderStatusPaid {
+		t.Fatalf("failed refund must not cancel order or restore stock")
 	}
 }
 
