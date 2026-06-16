@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -9,13 +10,15 @@ import (
 )
 
 // getSecretKey returns the JWT secret from environment variables.
-// [B2] Fallback hardcoded key dihapus. JWT_SECRET WAJIB diisi di .env.
-// Jika tidak diset, server akan menghasilkan token yang tidak valid dan mudah ditolak.
+// [SQA SECURITY FIX K8] JWT_SECRET WAJIB diisi di .env dengan minimal 32 karakter.
+// Server akan CRASH jika secret tidak tersedia — mencegah penggunaan secret lemah di production.
 func getSecretKey() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Hanya untuk keperluan dev lokal tanpa .env, log peringatan keras
-		secret = "CHANGE-ME-SET-JWT_SECRET-IN-ENV"
+		log.Fatal("[FATAL SECURITY] JWT_SECRET environment variable TIDAK diset. Server menolak untuk berjalan tanpa secret yang kuat.")
+	}
+	if len(secret) < 32 {
+		log.Fatal("[FATAL SECURITY] JWT_SECRET terlalu pendek (minimal 32 karakter). Gunakan: openssl rand -base64 48")
 	}
 	return []byte(secret)
 }

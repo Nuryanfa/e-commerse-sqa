@@ -68,9 +68,14 @@ func main() {
 	log.Println("Database migration berhasil.")
 
 	// 2. Setup Gin Router with Custom Middleware
-	router := gin.New()                         // Menggunakan gin.New() alih-alih Default() agar middleware terkontrol penuh
-	router.Use(middleware.RecoveryMiddleware()) // Menangkap panic agar server tidak crash
-	router.Use(middleware.LoggerMiddleware())   // Logging terstruktur untuk setiap request
+	router := gin.New()                           // Menggunakan gin.New() alih-alih Default() agar middleware terkontrol penuh
+	router.Use(middleware.RecoveryMiddleware())   // Menangkap panic agar server tidak crash
+	router.Use(middleware.LoggerMiddleware())     // Logging terstruktur untuk setiap request
+	router.Use(middleware.SecurityHeadersMiddleware()) // [SQA SECURITY FIX] HTTP Security Headers
+
+	// [SQA SECURITY FIX K11] Global rate limiter untuk SEMUA endpoint — mencegah DDoS dan brute force massal
+	// Konfigurasi: 30 request/detik per IP dengan burst 60 (cukup untuk browsing normal)
+	router.Use(middleware.RateLimitMiddleware(rate.Every(time.Second/30), 60))
 
 	allowedOrigins := []string{
 		"http://localhost:5173",
@@ -104,8 +109,12 @@ func main() {
 		})
 	})
 
-	// Swagger Documentation Route
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// [SQA SECURITY FIX K9] Swagger Documentation — HANYA aktif di mode development
+	// Di production (GIN_MODE=release), Swagger dinonaktifkan untuk menyembunyikan surface API
+	if os.Getenv("GIN_MODE") != "release" {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		log.Println("[SECURITY WARNING] Swagger UI aktif. Set GIN_MODE=release untuk menonaktifkan di production.")
+	}
 
 	// Serve Static Files for Uploads
 	router.Static("/uploads", "./uploads")

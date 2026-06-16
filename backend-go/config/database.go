@@ -33,6 +33,15 @@ func InitDB() *gorm.DB {
 		log.Fatalf("Gagal terhubung ke database: %v", err)
 	}
 
+	// [SQA SECURITY FIX] Database Connection Pooling
+	// Mencegah server kehabisan memori atau PostgreSQL crash akibat terlalu banyak koneksi
+	sqlDB, err := db.DB()
+	if err == nil {
+		sqlDB.SetMaxIdleConns(10)                  // Maksimal koneksi menganggur
+		sqlDB.SetMaxOpenConns(100)                 // Maksimal koneksi terbuka bersamaan
+		sqlDB.SetConnMaxLifetime(time.Hour)        // Batas umur koneksi
+	}
+
 	log.Println("Koneksi ke PostgreSQL berhasil!")
 	return db
 }

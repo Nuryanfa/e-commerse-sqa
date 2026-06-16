@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
-	"time"
+
+	"github.com/nuryanfa/e-commerse-sqa/pkg/upload"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
@@ -60,13 +60,14 @@ func (h *ProductHandler) parseProductRequest(c *gin.Context, req *domain.Product
 			req.Stock = stock
 		}
 
+		// [SQA SECURITY FIX K7] Validasi file upload: whitelist ekstensi, batas ukuran, nama file aman
 		file, err := c.FormFile("image")
 		if err == nil {
-			filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
-			filepath := filepath.Join("uploads", filename)
-			if err := c.SaveUploadedFile(file, filepath); err == nil {
-				req.ImageURL = "/uploads/" + filename
+			imageURL, uploadErr := upload.ValidateAndSaveImage(c, file)
+			if uploadErr != nil {
+				return fmt.Errorf("upload gambar gagal: %v", uploadErr)
 			}
+			req.ImageURL = imageURL
 		} else {
 			if existingImage := c.PostForm("image_url"); existingImage != "" {
 				req.ImageURL = existingImage
