@@ -35,7 +35,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: sqa_redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     restart: always
     ports:
       - "127.0.0.1:6379:6379"
