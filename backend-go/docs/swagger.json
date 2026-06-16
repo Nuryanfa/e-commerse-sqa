@@ -1,0 +1,342 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API untuk aplikasi E-Commerce bahan pangan (Sayur/Buah).",
+        "title": "E-Commerce SQA API",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Melakukan autentikasi dan mendapatkan JWT Token untuk akses endpoint terproteksi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Masuk ke Sistem",
+                "parameters": [
+                    {
+                        "description": "Kredensial (email, password)",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login Berhasil",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Email atau Password Salah",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Mendaftarkan pengguna baru (Pembeli/Supplier) ke dalam sistem.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Daftar Akun Baru",
+                "parameters": [
+                    {
+                        "description": "Data Registrasi (nama, email, password, role, phone)",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Registrasi Berhasil",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validasi Gagal / Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONError"
+                        }
+                    }
+                }
+            }
+        },
+        "/cart": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil semua item yang ada di keranjang belanja pengguna saat ini.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Lihat Keranjang",
+                "responses": {
+                    "200": {
+                        "description": "Daftar Item Keranjang",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menambahkan produk (dan varian) ke dalam keranjang belanja user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Tambah ke Keranjang",
+                "parameters": [
+                    {
+                        "description": "Item Keranjang (id_product, id_variant, quantity)",
+                        "name": "cart",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Barang berhasil ditambahkan",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Gagal Input / BVA Limit Terlampaui",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONError"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/checkout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengubah seluruh isi keranjang menjadi sebuah Pesanan (Order).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pesanan"
+                ],
+                "summary": "Checkout Keranjang",
+                "parameters": [
+                    {
+                        "description": "Voucher Code (opsional)",
+                        "name": "checkout",
+                        "in": "body",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Order Berhasil Dibuat",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/instant-checkout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Melakukan pembelian cepat untuk 1 produk spesifik tanpa lewat keranjang.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pesanan"
+                ],
+                "summary": "Beli Langsung",
+                "parameters": [
+                    {
+                        "description": "Data Beli Langsung (product_id, id_variant, quantity, voucher_code)",
+                        "name": "checkout",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Order Berhasil Dibuat",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "description": "Mengambil seluruh katalog produk yang tersedia di sistem (Dilengkapi Caching).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Produk"
+                ],
+                "summary": "Daftar Semua Produk",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil memuat daftar produk",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "description": "Mengambil informasi produk secara mendalam berdasarkan ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Produk"
+                ],
+                "summary": "Detail Produk",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID Produk",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berhasil memuat detail produk",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Produk Tidak Ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/response.JSONResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "response.JSONError": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string",
+                    "example": "Detail kesalahan teknis"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Deskripsi pesan error"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "response.JSONResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string",
+                    "example": "Deskripsi pesan sukses"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

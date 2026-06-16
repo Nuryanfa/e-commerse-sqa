@@ -6,7 +6,6 @@ backend-go/.env
 frontend-react/node_modules/
 frontend-react/dist/
 backend-go/sayursehat-api
-backend-go/docs/
 backend-go/tmp_bin
 backend-go/*.exe
 backend-go/*.exe~

@@ -1,0 +1,223 @@
+basePath: /api/v1
+definitions:
+  response.JSONError:
+    properties:
+      detail:
+        example: Detail kesalahan teknis
+        type: string
+      message:
+        example: Deskripsi pesan error
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  response.JSONResponse:
+    properties:
+      data: {}
+      message:
+        example: Deskripsi pesan sukses
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API untuk aplikasi E-Commerce bahan pangan (Sayur/Buah).
+  title: E-Commerce SQA API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Melakukan autentikasi dan mendapatkan JWT Token untuk akses endpoint
+        terproteksi.
+      parameters:
+      - description: Kredensial (email, password)
+        in: body
+        name: login
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login Berhasil
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+        "401":
+          description: Email atau Password Salah
+          schema:
+            $ref: '#/definitions/response.JSONError'
+      summary: Masuk ke Sistem
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Mendaftarkan pengguna baru (Pembeli/Supplier) ke dalam sistem.
+      parameters:
+      - description: Data Registrasi (nama, email, password, role, phone)
+        in: body
+        name: register
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registrasi Berhasil
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+        "400":
+          description: Validasi Gagal / Bad Request
+          schema:
+            $ref: '#/definitions/response.JSONError'
+      summary: Daftar Akun Baru
+      tags:
+      - Authentication
+  /cart:
+    get:
+      description: Mengambil semua item yang ada di keranjang belanja pengguna saat
+        ini.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daftar Item Keranjang
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+      security:
+      - BearerAuth: []
+      summary: Lihat Keranjang
+      tags:
+      - Keranjang
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan produk (dan varian) ke dalam keranjang belanja user.
+      parameters:
+      - description: Item Keranjang (id_product, id_variant, quantity)
+        in: body
+        name: cart
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Barang berhasil ditambahkan
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+        "400":
+          description: Gagal Input / BVA Limit Terlampaui
+          schema:
+            $ref: '#/definitions/response.JSONError'
+      security:
+      - BearerAuth: []
+      summary: Tambah ke Keranjang
+      tags:
+      - Keranjang
+  /orders/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Mengubah seluruh isi keranjang menjadi sebuah Pesanan (Order).
+      parameters:
+      - description: Voucher Code (opsional)
+        in: body
+        name: checkout
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Order Berhasil Dibuat
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+      security:
+      - BearerAuth: []
+      summary: Checkout Keranjang
+      tags:
+      - Pesanan
+  /orders/instant-checkout:
+    post:
+      consumes:
+      - application/json
+      description: Melakukan pembelian cepat untuk 1 produk spesifik tanpa lewat keranjang.
+      parameters:
+      - description: Data Beli Langsung (product_id, id_variant, quantity, voucher_code)
+        in: body
+        name: checkout
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Order Berhasil Dibuat
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+      security:
+      - BearerAuth: []
+      summary: Beli Langsung
+      tags:
+      - Pesanan
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil seluruh katalog produk yang tersedia di sistem (Dilengkapi
+        Caching).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil memuat daftar produk
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+      summary: Daftar Semua Produk
+      tags:
+      - Produk
+  /products/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil informasi produk secara mendalam berdasarkan ID.
+      parameters:
+      - description: ID Produk
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil memuat detail produk
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+        "404":
+          description: Produk Tidak Ditemukan
+          schema:
+            $ref: '#/definitions/response.JSONResponse'
+      summary: Detail Produk
+      tags:
+      - Produk
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
