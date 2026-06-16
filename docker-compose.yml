@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sqa_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      TZ: Asia/Jakarta
+    ports:
+      - "127.0.0.1:5432:5432" # Hanya bisa diakses dari localhost VPS, lebih aman
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sqa_network
+
+  backend:
+    # Mengambil image dari GitHub Container Registry (GHCR)
+    image: ghcr.io/nuryanfa/e-commerse-sqa/backend:latest
+    container_name: sqa_backend
+    restart: always
+    ports:
+      - "127.0.0.1:8080:8080" # Hanya bisa diakses secara lokal oleh Nginx Reverse Proxy (Cloudflare)
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend-go/.env # Akan membaca file .env asli di VPS
+    networks:
+      - sqa_network
+
+  frontend:
+    # Mengambil image dari GitHub Container Registry (GHCR)
+    image: ghcr.io/nuryanfa/e-commerse-sqa/frontend:latest
+    container_name: sqa_frontend
+    restart: always
+    ports:
+      - "127.0.0.1:80:80" # Port 80 container di-map ke Port 80 localhost (Nginx Host)
+    networks:
+      - sqa_network
+
+networks:
+  sqa_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
