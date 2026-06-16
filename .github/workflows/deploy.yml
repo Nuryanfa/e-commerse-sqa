@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }} # Nuryanfa/e-commerse-sqa
+  IMAGE_NAME: nuryanfa/e-commerse-sqa # Harus huruf kecil semua untuk Docker
 
 jobs:
   build-and-push:
