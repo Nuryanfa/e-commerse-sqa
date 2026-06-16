@@ -1,5 +1,5 @@
 # Tahap 1: Membangun file statis React (Builder Stage)
-FROM node:18-alpine AS builder
+FROM node:alpine AS builder
 
 # Mengatur working directory
 WORKDIR /app
