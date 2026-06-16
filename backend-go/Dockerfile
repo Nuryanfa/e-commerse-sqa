@@ -1,5 +1,5 @@
 # Tahap 1: Membangun binary aplikasi (Builder Stage)
-FROM golang:1.22-alpine AS builder
+FROM golang:alpine AS builder
 
 # Mengatur environment variables untuk build Go
 ENV GO111MODULE=on \
