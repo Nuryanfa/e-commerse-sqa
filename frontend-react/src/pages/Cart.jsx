@@ -99,7 +99,10 @@ export default function Cart() {
          onError: () => toast.error('Gagal memproses pembayaran!'),
          onClose: () => { toast.info('Popup ditutup.'); navigate(`/orders/${orderData.id_order}`); }
       });
-    } catch (err) { toast.error(err.response?.data?.error || err.message || 'Gagal checkout'); }
+    } catch (err) { 
+      const errMsg = err.response?.data?.detail || err.response?.data?.message || err.message || 'Gagal checkout';
+      toast.error(errMsg); 
+    }
     setCheckingOut(false);
   };
 

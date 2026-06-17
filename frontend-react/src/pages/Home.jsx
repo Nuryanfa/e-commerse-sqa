@@ -22,14 +22,14 @@ function HomeFooter() {
             </p>
           </div>
           {[
-            { title: 'Perusahaan', links: ['Tentang Kami', 'Karier', 'Blog'] },
-            { title: 'Bantuan', links: ['Kebijakan Privasi', 'Syarat & Ketentuan', 'Bantuan', 'Kontak'] },
+            { title: 'Perusahaan', links: [{name: 'Tentang Kami', path: '/page/about'}, {name: 'Karier', path: '/page/careers'}, {name: 'Blog', path: '/page/blog'}] },
+            { title: 'Bantuan', links: [{name: 'Kebijakan Privasi', path: '/page/privacy'}, {name: 'Syarat & Ketentuan', path: '/page/terms'}, {name: 'Bantuan', path: '/page/help'}, {name: 'Kontak', path: '/page/contact'}] },
           ].map(col => (
             <div key={col.title}>
               <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.775rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.40)', marginBottom: '1rem' }}>{col.title}</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {col.links.map(l => (
-                  <li key={l}><a href="#" style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'white'} onMouseOut={e => e.target.style.color = 'rgba(255,255,255,0.65)'}>{l}</a></li>
+                  <li key={l.name}><Link to={l.path} style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'white'} onMouseOut={e => e.target.style.color = 'rgba(255,255,255,0.65)'}>{l.name}</Link></li>
                 ))}
               </ul>
             </div>

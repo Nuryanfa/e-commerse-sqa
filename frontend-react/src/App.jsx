@@ -19,6 +19,7 @@ const CourierSidebar = lazy(() => import('./components/CourierSidebar'));
 const AdminNavbar = lazy(() => import('./components/AdminNavbar'));
 const Products = lazy(() => import('./pages/Products'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const StaticPage = lazy(() => import('./pages/StaticPage'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Cart = lazy(() => import('./pages/Cart'));
@@ -101,6 +102,9 @@ function AnimatedRoutes() {
           <Route path="/disputes/:id" element={<ProtectedRoute allowedRoles={['pembeli', 'supplier', 'admin']}><PageWrapper><DisputeDetail /></PageWrapper></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute allowedRoles={['pembeli']}><PageWrapper><Profile /></PageWrapper></ProtectedRoute>} />
         
+        {/* Rute Statis & Info */}
+        <Route path="/page/:pageId" element={<PageWrapper><StaticPage /></PageWrapper>} />
+
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDashboard /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/revenue" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminRevenue /></PageWrapper></ProtectedRoute>} />
