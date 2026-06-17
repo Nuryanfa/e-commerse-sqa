@@ -60,9 +60,34 @@ export default function OrderDetail() {
   useEffect(() => {
     let disposed = false;
 
+    if (!token) {
+      const timer = setTimeout(() => {
+        if (!disposed) loadOrder();
+      }, 500);
+      return () => {
+        disposed = true;
+        clearTimeout(timer);
+      };
+    }
+
     const loadOrder = async () => {
       let currentOrder = await fetchOrderAndRecent();
       if (!location.state?.verifyPayment || !currentOrder || disposed) return;
+
+      const fetchWithRetry = async (maxAttempts = 2) => {
+        for (let i = 0; i <= maxAttempts; i++) {
+          try {
+            const resp = await api.get(`/orders/${id}`);
+            return resp.data.data;
+          } catch (e) {
+            if (e.response?.status === 401 && i < maxAttempts) {
+              await new Promise((r) => setTimeout(r, 500));
+              continue;
+            }
+            throw e;
+          }
+        }
+      };
 
       for (
         let attempt = 0;
@@ -73,8 +98,8 @@ export default function OrderDetail() {
         if (disposed) return;
 
         try {
-          const response = await api.get(`/orders/${id}`);
-          currentOrder = response.data.data;
+          const refreshed = await fetchWithRetry();
+          currentOrder = refreshed;
           setOrder(currentOrder);
         } catch {
           break;
@@ -102,7 +127,7 @@ export default function OrderDetail() {
     return () => {
       disposed = true;
     };
-  }, [id, location.state?.verifyPayment]);
+  }, [id, location.state?.verifyPayment, token]);
 
   const pay = async () => {
     if (!order?.payment_token) {

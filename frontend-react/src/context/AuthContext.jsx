@@ -9,15 +9,20 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      try {
-        // Base64URL decode
-        let base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(atob(base64));
-        setUser({ id: payload.user_id, role: payload.role, nama: payload.nama || '' });
-      } catch {
-        logout();
-      }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    try {
+      // Base64URL decode
+      let base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      setUser({ id: payload.user_id, role: payload.role, nama: payload.nama || '' });
+    } catch (e) {
+      console.error("Auth token parse error:", e);
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('auth_token');
     }
     setLoading(false);
   }, [token]);
