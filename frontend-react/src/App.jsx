@@ -15,6 +15,7 @@ import Home from './pages/Home';
 const Sidebar = lazy(() => import('./components/Sidebar'));
 const SellerSidebar = lazy(() => import('./components/SellerSidebar'));
 const AdminSidebar = lazy(() => import('./components/AdminSidebar'));
+const CourierSidebar = lazy(() => import('./components/CourierSidebar'));
 const AdminNavbar = lazy(() => import('./components/AdminNavbar'));
 const Products = lazy(() => import('./pages/Products'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
@@ -80,6 +81,7 @@ function ScrollToTopButton() {
 const INTERNAL_ROUTES    = ['/admin', '/supplier', '/courier'];
 const SELLER_ROUTES      = ['/supplier'];
 const ADMIN_ROUTES       = ['/admin'];
+const COURIER_ROUTES     = ['/courier'];
 const BUYER_ROUTES       = ['/', '/products', '/cart', '/orders', '/wishlist', '/profile', '/login', '/register'];
 
 function AnimatedRoutes() {
@@ -145,6 +147,7 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
   const isInternalRoute = INTERNAL_ROUTES.some(r => location.pathname.startsWith(r));
   const isSellerRoute   = SELLER_ROUTES.some(r => location.pathname.startsWith(r));
   const isAdminRoute    = ADMIN_ROUTES.some(r => location.pathname.startsWith(r));
+  const isCourierRoute  = COURIER_ROUTES.some(r => location.pathname.startsWith(r));
 
   return (
     <div
@@ -177,8 +180,20 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
         </Suspense>
       )}
 
-      {/* Generic Sidebar for courier */}
-      {isInternalRoute && !isSellerRoute && !isAdminRoute && (
+      {/* CourierSidebar for courier */}
+      {isCourierRoute && (
+        <Suspense fallback={null}>
+          <CourierSidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+          />
+        </Suspense>
+      )}
+
+      {/* Generic Sidebar for other internal routes (if any) */}
+      {isInternalRoute && !isSellerRoute && !isAdminRoute && !isCourierRoute && (
         <Suspense fallback={null}>
           <Sidebar
             isOpen={sidebarOpen}
@@ -200,10 +215,10 @@ function AppLayout({ sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCo
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Navbar shown only for public/buyer routes */}
-        {!isInternalRoute && !isAdminRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
+        {!isInternalRoute && !isAdminRoute && !isSellerRoute && !isCourierRoute && <Navbar onToggleSidebar={() => setSidebarOpen(o => !o)} />}
         
-        {/* PanelNavbar (AdminNavbar) shown for admin and seller routes */}
-        {(isAdminRoute || isSellerRoute) && (
+        {/* PanelNavbar (AdminNavbar) shown for admin, seller, and courier routes */}
+        {(isAdminRoute || isSellerRoute || isCourierRoute) && (
           <Suspense fallback={null}>
             <AdminNavbar onToggleSidebar={() => setSidebarOpen(o => !o)} />
           </Suspense>

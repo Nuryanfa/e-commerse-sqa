@@ -213,9 +213,7 @@ export default function OrderDetail() {
     const formData = new FormData();
     formData.append("reason", `[${disputeCategory}] ${disputeDesc}`);
     try {
-      const res = await api.post(`/disputes/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post(`/disputes/${id}`, formData);
       toast.success(res.data.message);
       setShowDisputeModal(false);
       navigate(`/disputes/${res.data.data.id_dispute}`);

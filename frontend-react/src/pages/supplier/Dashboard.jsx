@@ -104,9 +104,10 @@ export default function SupplierDashboard() {
             initial={{ opacity: 0, y: 15 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: i * 0.1 }} 
-            className="group relative bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300"
+            className="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300"
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="absolute top-0 left-0 w-2 h-full bg-indigo-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+            <div className="relative z-10 flex items-start justify-between mb-4">
                <div>
                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1.5">{s.label}</p>
                  <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${s.isAlert ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'}`}>
@@ -117,7 +118,7 @@ export default function SupplierDashboard() {
                  <s.icon className={`w-6 h-6 ${s.colorClass}`} />
                </div>
             </div>
-            <h3 className={`text-3xl font-black ${s.isAlert ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'}`}>{s.val}</h3>
+            <h3 className={`relative z-10 text-3xl font-black ${s.isAlert ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'}`}>{s.val}</h3>
           </motion.div>
         ))}
       </div>
@@ -201,23 +202,24 @@ export default function SupplierDashboard() {
               </div>
             )}
             {recentOrders.map(o => (
-              <div key={o.id_order} className="group relative bg-gray-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700/50 hover:border-indigo-500/30 transition-all flex flex-col">
-                <div className="flex justify-between items-start mb-3">
+              <div key={o.id_order} className="group relative overflow-hidden bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300 flex flex-col">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+                <div className="relative z-10 flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse-soft" />
                     <p className="font-bold text-gray-900 dark:text-white text-sm">Pemesan: {o.user?.nama || 'Tamu'}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-100 dark:border-slate-700">Baru</span>
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-800">Baru</span>
                 </div>
                 
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-gray-100 dark:border-slate-700/50 mb-3">
+                <div className="relative z-10 bg-gray-50 dark:bg-slate-900/50 p-3 rounded-xl border border-gray-100 dark:border-slate-700/50 mb-3">
                    <p className="text-xs font-mono text-gray-500 mb-1 flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> #{o.id_order?.split('-')[0].toUpperCase()}</p>
                    <p className="text-sm font-black text-gray-900 dark:text-white">Rp {o.total_amount?.toLocaleString('id-ID')}</p>
                 </div>
                 
                 <button 
                   onClick={() => processOrder(o.id_order)} 
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-transform shadow-md shadow-indigo-500/20 hover:-translate-y-0.5"
+                  className="relative z-10 w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-transform shadow-md shadow-indigo-500/20 hover:-translate-y-0.5"
                 >
                   <Package className="w-4 h-4" /> Proses Sekarang
                 </button>

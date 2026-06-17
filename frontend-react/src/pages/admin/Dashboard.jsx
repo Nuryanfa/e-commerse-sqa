@@ -126,9 +126,10 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 15 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: i * 0.05 }} 
-            className="group relative bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300"
+            className="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300"
           >
-            <div className="flex items-start justify-between mb-4">
+            <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+            <div className="relative z-10 flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <s.icon className="w-6 h-6" />
               </div>
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
                 {s.pct}
               </span>
             </div>
-            <div>
+            <div className="relative z-10">
               <p className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">{s.title}</p>
               <h3 className="text-2xl font-black text-gray-900 dark:text-white">{s.val}</h3>
             </div>
@@ -175,9 +176,10 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm flex flex-col">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Kategori Teratas</h3>
-          <div className="flex-1 space-y-5">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="group relative overflow-hidden bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-emerald-500/30 transition-all duration-300 flex flex-col">
+          <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+          <h3 className="relative z-10 text-lg font-bold text-gray-900 dark:text-white mb-6">Kategori Teratas</h3>
+          <div className="relative z-10 flex-1 space-y-5">
             {topCats.map((c, i) => (
               <div key={i} className="group">
                 <div className="flex justify-between text-sm font-semibold mb-2">
@@ -195,7 +197,7 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
-          <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 flex gap-3 items-start">
+          <div className="relative z-10 mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800 flex gap-3 items-start">
             <Zap className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
             <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300 leading-snug">
               <strong>Insight:</strong> Kategori sayuran daun terus mendominasi. Sediakan promo diskon bundel untuk meningkatkan penjualan silang produk lainnya.

@@ -59,8 +59,8 @@ export default function SupplierInventory() {
     if (form.image_url) fd.append('image_url', form.image_url);
     if (imageFile) fd.append('image', imageFile);
     try {
-      if (editing) { await api.put(`/supplier/products/${editing}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Produk diperbarui'); }
-      else         { await api.post('/supplier/products', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Produk ditambahkan'); }
+      if (editing) { await api.put(`/supplier/products/${editing}`, fd); toast.success('Produk diperbarui'); }
+      else         { await api.post('/supplier/products', fd); toast.success('Produk ditambahkan'); }
       resetForm(); fetch();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal menyimpan produk'); }
   };

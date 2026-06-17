@@ -8,6 +8,7 @@ export default function AdminNavbar({ onToggleSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isCourier = location.pathname.startsWith('/courier');
 
   return (
     <header style={{ 
@@ -48,11 +49,11 @@ export default function AdminNavbar({ onToggleSidebar }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ textAlign: 'right' }} className="hidden sm:block">
-            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--text-heading)' }}>{user?.nama || (isAdmin ? 'Admin Core' : 'Supplier Account')}</p>
-            <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 600, color: 'var(--outline)', textTransform: 'uppercase' }}>{isAdmin ? 'SUPERUSER' : 'SELLER'}</p>
+            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--text-heading)' }}>{user?.nama || (isAdmin ? 'Admin Core' : isCourier ? 'Courier Account' : 'Supplier Account')}</p>
+            <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 600, color: 'var(--outline)', textTransform: 'uppercase' }}>{isAdmin ? 'SUPERUSER' : isCourier ? 'COURIER' : 'SELLER'}</p>
           </div>
-          <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.875rem' }}>
-            {user?.nama?.charAt(0)?.toUpperCase() || (isAdmin ? 'A' : 'S')}
+          <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: isCourier ? '#4f46e5' : '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.875rem' }}>
+            {user?.nama?.charAt(0)?.toUpperCase() || (isAdmin ? 'A' : isCourier ? 'C' : 'S')}
           </div>
         </div>
       </div>
