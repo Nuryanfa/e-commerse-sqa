@@ -15,9 +15,9 @@ export default function AdminSidebar({ isOpen, onClose, collapsed, onToggleColla
     { label: 'Revenue',     path: '/admin/revenue',     icon: <DollarSign size={18} /> },
     { label: 'Users',       path: '/admin/users',       icon: <Users size={18} /> },
     { label: 'Sellers',     path: '/admin/sellers',     icon: <Store size={18} /> },
+    { label: 'Couriers',    path: '/admin/couriers',    icon: <Truck size={18} /> },
     { label: 'Logistics',   path: '/admin/logistics',   icon: <Truck size={18} /> },
     { label: 'Complaints',  path: '/admin/complaints',  icon: <MessageSquareWarning size={18} /> },
-    { label: 'System Logs', path: '/admin/logs',        icon: <Activity size={18} /> },
     { label: 'Settings',    path: '/admin/settings',    icon: <Settings size={18} /> },
   ];
 

@@ -32,6 +32,7 @@ const AdminDisputes = lazy(() => import('./pages/admin/Disputes'));
 const AdminRevenue = lazy(() => import('./pages/admin/Revenue'));
 const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminSellers = lazy(() => import('./pages/admin/Sellers'));
+const AdminCouriers = lazy(() => import('./pages/admin/Couriers'));
 const AdminLogistics = lazy(() => import('./pages/admin/Logistics'));
 const AdminLogs = lazy(() => import('./pages/admin/Logs'));
 const AdminSettings = lazy(() => import('./pages/admin/Settings'));
@@ -103,6 +104,7 @@ function AnimatedRoutes() {
         <Route path="/admin/revenue" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminRevenue /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminUsers /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/sellers" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminSellers /></PageWrapper></ProtectedRoute>} />
+        <Route path="/admin/couriers" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminCouriers /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/logistics" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminLogistics /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/complaints" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminDisputes /></PageWrapper></ProtectedRoute>} />
         <Route path="/admin/logs" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminLogs /></PageWrapper></ProtectedRoute>} />

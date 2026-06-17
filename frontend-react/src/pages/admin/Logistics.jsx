@@ -92,7 +92,6 @@ export default function AdminLogistics() {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
               <ToggleRow label="Auto-Assign Kurir Terdekat" desc="Aplikasi akan mencari kurir dengan jarak terpendek secara otomatis." active={toggles.autoAssign} onToggle={() => handleToggle('autoAssign')} />
-              <ToggleRow label="Buka Pengiriman Internasional" desc="Mengizinkan pengiriman ke luar negeri." active={toggles.international} onToggle={() => handleToggle('international')} />
               <ToggleRow label="Wajib Asuransi Pengiriman" desc="Menambahkan biaya asuransi default untuk barang di atas Rp 1.000.000." active={toggles.insurance} onToggle={() => handleToggle('insurance')} />
             </div>
           </div>
@@ -129,7 +128,7 @@ export default function AdminLogistics() {
         {/* Right: Pesanan Aktif */}
         <div style={S.card}>
           <h3 style={{ ...S.h, fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Package size={18} color="var(--outline)" /> Pesanan Menunggu Pengiriman
+            <Package size={18} color="var(--outline)" /> Aktivitas Kurir & Pengiriman
           </h3>
           {loading ? (
             <div style={{ padding: '3rem', display: 'flex', justifyContent: 'center', color: 'var(--outline)' }}>
@@ -159,28 +158,11 @@ export default function AdminLogistics() {
 
                     {order.courier_name ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#eff6ff', borderRadius: 8, fontSize: '0.78rem', color: '#2563eb', fontWeight: 600 }}>
-                        <UserCheck size={14} /> Ditugaskan: {order.courier_name}
+                        <UserCheck size={14} /> Sedang diproses oleh kurir: {order.courier_name}
                       </div>
                     ) : order.status === 'PROCESSED' ? (
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <select
-                          value={selectedCourier[order.id_order] || ''}
-                          onChange={e => setSelectedCourier(prev => ({ ...prev, [order.id_order]: e.target.value }))}
-                          style={{ flex: 1, padding: '0.4rem 0.6rem', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.8rem', background: 'var(--surface-container-lowest)', color: 'var(--text-heading)', cursor: 'pointer' }}
-                        >
-                          <option value="">— Pilih Kurir —</option>
-                          {couriers.map(c => (
-                            <option key={c.id_user || c.id} value={c.id_user || c.id}>{c.nama || c.name}</option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => handleAssign(order.id_order)}
-                          disabled={assigning === order.id_order || !selectedCourier[order.id_order]}
-                          style={{ ...S.btn, background: '#0ea5e9', color: 'white', opacity: (!selectedCourier[order.id_order] || assigning === order.id_order) ? 0.5 : 1 }}
-                        >
-                          {assigning === order.id_order ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
-                          Tugaskan
-                        </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#fef2f2', borderRadius: 8, fontSize: '0.78rem', color: '#dc2626', fontWeight: 600 }}>
+                        <Truck size={14} /> Menunggu diambil kurir di kolam orderan...
                       </div>
                     ) : null}
                   </div>

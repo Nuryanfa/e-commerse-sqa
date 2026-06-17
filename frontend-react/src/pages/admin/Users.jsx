@@ -112,7 +112,7 @@ export default function AdminUsers() {
               style={{ ...inp, paddingLeft: '2.25rem', appearance: 'none', cursor: 'pointer', paddingRight: '2rem' }}
             >
               <option value="All">Semua Role</option>
-              <option value="user">Pelanggan</option>
+              <option value="pembeli">Pelanggan</option>
               <option value="supplier">Supplier</option>
               <option value="courier">Kurir</option>
               <option value="admin">Admin</option>
@@ -145,7 +145,7 @@ export default function AdminUsers() {
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: u.role === 'admin' ? '#eef2ff' : u.role === 'supplier' ? '#dcfce7' : u.role === 'courier' ? '#ffedd5' : '#f1f5f9', color: u.role === 'admin' ? '#4f46e5' : u.role === 'supplier' ? '#16a34a' : u.role === 'courier' ? '#ea580c' : 'var(--outline)', textTransform: 'uppercase' }}>
-                      {u.role}
+                      {u.role === 'pembeli' ? 'Pelanggan' : u.role}
                     </span>
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>

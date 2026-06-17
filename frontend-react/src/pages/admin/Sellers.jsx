@@ -17,6 +17,7 @@ export default function AdminSellers() {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedSeller, setSelectedSeller] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -46,20 +47,15 @@ export default function AdminSellers() {
           <h1 style={{ ...S.h, fontSize: '1.75rem', margin: 0 }}>Manajemen Seller</h1>
           <p style={{ ...S.muted, marginTop: '0.25rem' }}>Kelola ekosistem kemitraan petani dan toko organik Anda.</p>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: '#16a34a', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.875rem', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)' }}>
-          <Shield size={15} /> Undang Seller Baru
-        </button>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
         {[
           { label: 'Total Seller', val: sellers.length.toLocaleString(), pct: 'Active', c: '#16a34a', bc: '#dcfce7' },
-          { label: 'Seller Verifikasi', val: sellers.filter(s => s.status === 'Verified').length.toLocaleString(), pct: 'Approved', c: '#0284c7', bc: '#e0f2fe' },
-          { label: 'Menunggu Verif', val: sellers.filter(s => s.status === 'Pending').length, pct: 'Urgent', c: '#ea580c', bc: '#ffedd5', isUrgent: true },
           { label: 'Rata-rata Produk', val: (sellers.reduce((sum, s) => sum + s.products, 0) / (sellers.length || 1)).toFixed(0), pct: 'Katalog', c: '#16a34a', bc: '#dcfce7' },
         ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} style={{ ...S.card, padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.03, y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} transition={{ delay: i * 0.05 }} style={{ ...S.card, padding: '1.5rem', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: s.bc, color: s.c, display:'flex', alignItems:'center', justifyContent:'center' }}><Store size={14}/></span>
               <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-full)', background: s.isUrgent ? '#fee2e2' : 'var(--surface-container)', color: s.isUrgent ? '#dc2626' : 'var(--outline)', textTransform: 'uppercase' }}>{s.pct}</span>
@@ -80,7 +76,6 @@ export default function AdminSellers() {
               <input placeholder="Cari seller..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, paddingLeft: '2.25rem' }} />
             </div>
             <button style={{ background: 'transparent', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}><Filter size={16}/> Filter</button>
-            <button style={{ background: 'transparent', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}><Share size={16}/> Ekspor CSV</button>
           </div>
         </div>
 
@@ -124,7 +119,7 @@ export default function AdminSellers() {
                     )}
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                    <button style={{ background: 'transparent', border: 'none', color: '#16a34a', cursor: 'pointer', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'var(--font-display)' }}>
+                    <button onClick={() => setSelectedSeller(s)} style={{ background: 'transparent', border: 'none', color: '#16a34a', cursor: 'pointer', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.75rem', fontFamily: 'var(--font-display)' }}>
                       Detail Profil
                     </button>
                   </td>
@@ -134,6 +129,43 @@ export default function AdminSellers() {
           </table>
         </div>
       </div>
+    {/* Modal Detail Profil */}
+      {selectedSeller && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
+            <button onClick={() => setSelectedSeller(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <XCircle size={24} />
+            </button>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl font-bold">
+                {selectedSeller.store_name?.charAt(0) || selectedSeller.owner_name?.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedSeller.store_name}</h2>
+                <p className="text-gray-500 dark:text-slate-400 font-medium">{selectedSeller.owner_name}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-500 uppercase">Kategori</span>
+                <span className="font-bold text-gray-900 dark:text-white">{selectedSeller.category || 'Sayuran'}</span>
+              </div>
+              <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-500 uppercase">Total Produk</span>
+                <span className="font-bold text-gray-900 dark:text-white">{selectedSeller.products} items</span>
+              </div>
+              <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-500 uppercase">Rating Toko</span>
+                <span className="font-bold text-amber-500 flex items-center gap-1"><Star size={16} fill="currentColor"/> {selectedSeller.rating > 0 ? selectedSeller.rating.toFixed(1) : 'Belum ada rating'}</span>
+              </div>
+              <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-500 uppercase">Status</span>
+                {getStatus(selectedSeller.status)}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

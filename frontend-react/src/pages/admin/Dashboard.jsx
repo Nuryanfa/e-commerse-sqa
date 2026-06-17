@@ -38,7 +38,7 @@ export default function AdminDashboard() {
     const element = document.getElementById('dashboard-content');
     if (!element) return;
     try {
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -81,8 +81,8 @@ export default function AdminDashboard() {
       {/* Header Premium */}
       <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 sm:p-10 mb-8 border border-slate-700 shadow-2xl shadow-emerald-900/10 isolate animate-fade-in-up">
         {/* Dekorasi BG Artistik */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
-        <div className="absolute -bottom-24 left-1/3 w-64 h-64 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
+        <div data-html2canvas-ignore="true" className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
+        <div data-html2canvas-ignore="true" className="absolute -bottom-24 left-1/3 w-64 h-64 bg-cyan-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `Rp${v/1000}k`} />
                 <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', background: 'var(--surface-container-lowest)' }} itemStyle={{ color: '#10b981', fontWeight: 800 }} />
-                <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -202,77 +202,6 @@ export default function AdminDashboard() {
             </p>
           </div>
         </motion.div>
-      </div>
-
-      {/* Sistem Logs & Live Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="p-6 flex justify-between items-center border-b border-gray-100 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Log Sistem Utama</h3>
-            <button className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors uppercase tracking-wider">
-              Lihat Semua
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-gray-50 dark:bg-slate-900/50 text-gray-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Peristiwa</th>
-                  <th className="px-6 py-4">User / IP</th>
-                  <th className="px-6 py-4 text-center">Status</th>
-                  <th className="px-6 py-4 text-right">Waktu</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50 font-medium text-gray-900 dark:text-gray-300">
-                {logs.map((log, i) => {
-                  const isErr = log.status === 'ERROR' || log.status === 'FAILED';
-                  const isWarn = log.status === 'WARNING';
-                  const badgeBg = isErr ? 'bg-rose-100 dark:bg-rose-900/30' : isWarn ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30';
-                  const badgeText = isErr ? 'text-rose-600 dark:text-rose-400' : isWarn ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400';
-                  const Icon = isErr ? AlertTriangle : isWarn ? AlertCircle : CheckCircle;
-                  return (
-                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-750 transition-colors">
-                      <td className="px-6 py-4 flex items-center gap-3">
-                         <Icon className={`w-4 h-4 ${badgeText}`} /> {log.event}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-slate-400">{log.user_ip}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`px-2.5 py-1 ${badgeBg} ${badgeText} text-xs font-bold rounded-full`}>
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-gray-500 dark:text-slate-400 font-mono text-xs">
-                        {new Date(log.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 relative z-10">Aktivitas Live</h3>
-          <div className="space-y-6 relative z-10">
-            <div className="absolute -left-1 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-slate-700 rounded-full" />
-            {feedItems.map((feed, i) => (
-              <div key={i} className="flex gap-4 relative">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border-2 border-white dark:border-slate-800 flex items-center justify-center shrink-0 -ml-[19px] z-10 text-emerald-500 shadow-sm">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse-soft" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{feed.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{feed.description}</p>
-                  <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">
-                    {new Date(feed.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
