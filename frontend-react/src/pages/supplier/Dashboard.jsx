@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, CreditCard, Loader2, Store } from 'lucide-react';
+import { Package, Truck, ChevronRight, TrendingUp, AlertTriangle, CheckCircle, CreditCard, Loader2, Store, Download } from 'lucide-react';
 
 export default function SupplierDashboard() {
   const { user } = useAuth();
@@ -24,9 +24,10 @@ export default function SupplierDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Potong 5% fee platform
   const totalSales = orders
     .filter(o => !['CANCELLED', 'REFUND_PENDING', 'REFUNDED'].includes(o.status))
-    .reduce((sum, o) => sum + o.total_amount, 0);
+    .reduce((sum, o) => sum + (o.total_amount * 0.95), 0);
   
   const activeOrders = orders.filter(o => ['PAID', 'PROCESSED', 'SHIPPED'].includes(o.status)).length;
   const stockAlerts = products.filter(p => p.stock <= 10).length;
@@ -40,13 +41,34 @@ export default function SupplierDashboard() {
       .catch((err) => toast.error(err.response?.data?.error || 'Gagal merespon pesanan'));
   };
 
+  const exportPDF = async () => {
+    toast.info('Mempersiapkan PDF...');
+    const element = document.getElementById('supplier-dashboard-content');
+    if (!element) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('Dashboard_Supplier.pdf');
+      toast.success('PDF berhasil diunduh!');
+    } catch (err) {
+      toast.error('Gagal mengekspor PDF');
+    }
+  };
+
   return (
-    <div className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen">
+    <div id="supplier-dashboard-content" className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen">
       {/* Header Premium */}
       <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-900 to-slate-900 p-8 sm:p-10 mb-8 border border-slate-700 shadow-2xl shadow-indigo-900/10 isolate animate-fade-in-up">
         {/* Dekorasi BG */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
-        <div className="absolute -bottom-24 left-1/4 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
+        <div data-html2canvas-ignore="true" className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-pulse-soft" />
+        <div data-html2canvas-ignore="true" className="absolute -bottom-24 left-1/4 w-64 h-64 bg-emerald-500 rounded-full mix-blend-screen filter blur-3xl opacity-10" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
@@ -58,9 +80,14 @@ export default function SupplierDashboard() {
               <h1 className="text-3xl font-black text-white tracking-tight">Halo, {user?.nama || 'Pengelola'}!</h1>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3.5 rounded-2xl text-center">
-            <p className="text-xs text-indigo-200 uppercase font-bold tracking-widest mb-1">Omzet Aktif (Berjalan)</p>
-            <p className="text-2xl font-black text-white font-mono">Rp {(totalSales).toLocaleString('id-ID')}</p>
+          <div className="flex items-center gap-4">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3.5 rounded-2xl text-center">
+              <p className="text-xs text-indigo-200 uppercase font-bold tracking-widest mb-1">Omzet Aktif (Berjalan)</p>
+              <p className="text-2xl font-black text-white font-mono">Rp {(totalSales).toLocaleString('id-ID')}</p>
+            </div>
+            <button onClick={exportPDF} data-html2canvas-ignore="true" className="bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex items-center justify-center cursor-pointer" title="Export PDF">
+              <Download className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </div>

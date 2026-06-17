@@ -14,7 +14,7 @@ const inp = { width: '100%', padding: '0.65rem 1rem', borderRadius: 'var(--radiu
 
 const StatusBadge = ({ status }) => {
   const map = {
-    'PENDING':   { bg: 'var(--surface-container)', color: 'var(--on-surface-variant)', label: 'Menunggu', dot: '#94a3b8' },
+    'PENDING':   { bg: 'var(--surface-container)', color: 'var(--on-surface-variant)', label: 'Menunggu Bayar', dot: '#94a3b8' },
     'PAID':      { bg: 'rgba(56,189,248,0.1)', color: '#0369a1', label: 'Dibayar', dot: '#38bdf8' },
     'PROCESSED': { bg: 'rgba(217,119,6,0.1)', color: '#d97706', label: 'Diproses', dot: '#f59e0b' },
     'SHIPPED':   { bg: 'rgba(139,92,246,0.1)', color: '#6d28d9', label: 'Dikirim', dot: '#8b5cf6' },
@@ -91,7 +91,7 @@ export default function SupplierOrders() {
       {/* Stat strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
-          { label: 'NEW ORDERS', val: newOrders, icon: <ShoppingCart size={18} />, color: '#0ea5e9', desc: 'Selesai dibayar' },
+          { label: 'PESANAN BARU', val: newOrders, icon: <ShoppingCart size={18} />, color: '#0ea5e9', desc: 'Siap diproses' },
           { label: 'PROCESSING', val: processed, icon: <Package size={18} />,      color: '#d97706', desc: 'Sedang disiapkan' },
           { label: 'TOTAL ORDERS', val: orders.length, icon: <ShoppingCart size={18} />, color: '#16a34a', desc: 'Keseluruhan' },
         ].map((s, i) => (

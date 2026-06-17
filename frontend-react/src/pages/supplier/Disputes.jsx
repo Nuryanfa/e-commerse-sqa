@@ -20,7 +20,7 @@ export default function SupplierDisputes() {
   const toast = useToast();
 
   useEffect(() => {
-    api.get('/supplier/disputes')
+    api.get('/disputes')
       .then(res => setDisputes(res.data.data || []))
       .catch(() => toast.error('Gagal memuat daftar sengketa'))
       .finally(() => setLoading(false));

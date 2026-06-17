@@ -16,6 +16,7 @@ export default function SupplierAnalytics() {
   const [trends, setTrends] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({ active: 0, customers: 0 });
   const toast = useToast();
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function SupplierAnalytics() {
         const revMap = {};
         orders.forEach(o => {
           const d = new Date(o.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short'});
-          revMap[d] = (revMap[d] || 0) + o.total_amount;
+          revMap[d] = (revMap[d] || 0) + (o.total_amount * 0.95);
         });
         const trendData = Object.entries(revMap).map(([date, revenue]) => ({ date, revenue }));
         setTrends(trendData.length > 0 ? trendData : [{date:'Jan', revenue:0}, {date:'Feb', revenue:0}]); // fallback for empty
@@ -36,6 +37,11 @@ export default function SupplierAnalytics() {
         // Top products by stock value
         const top = [...products].sort((a,b) => (b.stock*b.price) - (a.stock*a.price)).slice(0, 5);
         setTopProducts(top);
+
+        setMetrics({
+          active: orders.filter(o => ['PAID', 'PROCESSED', 'SHIPPED'].includes(o.status)).length,
+          customers: new Set(orders.map(o => o.id_user)).size || orders.length
+        });
       })
       .catch(() => toast.error('Gagal memuat analitik'))
       .finally(() => setLoading(false));
@@ -43,8 +49,29 @@ export default function SupplierAnalytics() {
 
   const totalRev = trends.reduce((sum, t) => sum + t.revenue, 0);
 
+  const exportPDF = async () => {
+    toast.info('Mempersiapkan PDF...');
+    const element = document.getElementById('analytics-content');
+    if (!element) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
+      const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('Laporan_Analytics_Supplier.pdf');
+      toast.success('PDF berhasil diunduh!');
+    } catch (err) {
+      toast.error('Gagal mengekspor PDF');
+    }
+  };
+
   return (
-    <div style={{ padding: '2.5rem 2rem', maxWidth: '75rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div id="analytics-content" style={{ padding: '2.5rem 2rem', maxWidth: '75rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
         <div>
@@ -55,7 +82,7 @@ export default function SupplierAnalytics() {
           <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container)', color: 'var(--on-surface-variant)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.875rem' }}>
             <Calendar size={15} /> Last 30 Days
           </button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: '#16a34a', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.875rem' }}>
+          <button onClick={exportPDF} data-html2canvas-ignore="true" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: '#16a34a', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.875rem' }}>
             <Download size={15} /> Export PDF
           </button>
         </div>
@@ -65,8 +92,8 @@ export default function SupplierAnalytics() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
           { label: 'TOTAL REVENUE', val: `Rp ${(totalRev/1_000_000).toFixed(1)}M`, icon: <DollarSign size={18} />, color: '#16a34a', desc: 'Active in your catalog' },
-          { label: 'ACTIVE ORDERS', val: 1248, icon: <Package size={18} />, color: '#0ea5e9', desc: 'Steady' },
-          { label: 'CUSTOMER GROWTH',val: 856, icon: <Users size={18} />, color: '#16a34a', desc: '+8.2% new users' },
+          { label: 'ACTIVE ORDERS', val: metrics.active, icon: <Package size={18} />, color: '#0ea5e9', desc: 'Pesanan berjalan' },
+          { label: 'TOTAL CUSTOMERS',val: metrics.customers, icon: <Users size={18} />, color: '#16a34a', desc: 'Pelanggan unik' },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
             style={{ ...S.card, padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -102,7 +129,7 @@ export default function SupplierAnalytics() {
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'var(--outline)', fontSize: 11 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--outline)', fontSize: 11 }} tickFormatter={v => `${(v/1000000).toFixed(0)}M`} />
                 <Tooltip cursor={{ fill: 'var(--surface-container)' }} contentStyle={{ borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--surface-container-high)', color: 'var(--text-heading)', boxShadow: 'var(--shadow-md)' }} />
-                <Bar dataKey="revenue" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#4ade80" radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
