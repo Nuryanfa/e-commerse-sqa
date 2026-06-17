@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, Calendar, Activity, CheckCircle, AlertTriangle, AlertCircle, Users, Store, TrendingUp, PackageCheck, Zap } from 'lucide-react';
-import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import api from '../../services/api';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [daysFilter, setDaysFilter] = useState(7);
   const [stats, setStats] = useState({
     gross_revenue: 0,
     total_users: 0,
@@ -18,12 +21,35 @@ export default function AdminDashboard() {
   });
   const toast = useToast();
 
-  useEffect(() => {
-    api.get('/admin/dashboard')
+  const fetchDashboard = (days) => {
+    setLoading(true);
+    api.get(`/admin/dashboard?days=${days}`)
       .then(res => setStats(res.data.data))
       .catch(() => toast.error('Gagal memuat statistik dashboard'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchDashboard(daysFilter);
+  }, [daysFilter]);
+
+  const exportPDF = async () => {
+    toast.success('Mempersiapkan PDF (Gambar Tidak Bisa Diedit)...');
+    const element = document.getElementById('dashboard-content');
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Dashboard_Laporan_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF berhasil diunduh!');
+    } catch (err) {
+      toast.error('Gagal mengekspor PDF');
+    }
+  };
 
   const chartData = stats.revenue_trends?.length > 0 ? stats.revenue_trends : [
     { name: 'Sen', revenue: 65000 }, { name: 'Sel', revenue: 75000 },
@@ -50,7 +76,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen">
+    <div id="dashboard-content" className="p-6 md:p-8 max-w-[85rem] mx-auto min-h-screen bg-white dark:bg-slate-900">
       {/* Header Premium */}
       <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-900 to-slate-900 p-8 sm:p-10 mb-8 border border-slate-700 shadow-2xl shadow-emerald-900/10 isolate animate-fade-in-up">
         {/* Dekorasi BG Artistik */}
@@ -68,10 +94,12 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all">
-              <Calendar className="w-4 h-4" /> 30 Hari Terakhir
+            <button 
+              onClick={() => setDaysFilter(daysFilter === 7 ? 30 : 7)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all">
+              <Calendar className="w-4 h-4" /> {daysFilter === 7 ? '7 Hari Terakhir' : '30 Hari Terakhir'}
             </button>
-            <button onClick={() => toast.success('Laporan PDF akan diunduh')} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
+            <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
               <Download className="w-4 h-4" /> Export (PDF)
             </button>
           </div>

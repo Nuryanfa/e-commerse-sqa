@@ -19,13 +19,39 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const toast = useToast();
 
-  useEffect(() => {
+  const fetchUsers = () => {
     api.get('/admin/users').then(res => {
       setUsers(res.data.data || []);
     }).catch(() => {
       toast.error('Gagal mengambil data user');
     }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, []);
+
+  const handleSuspend = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
+    try {
+      await api.put(`/admin/users/${id}/status`, { status: newStatus });
+      toast.success(`User berhasil di-${newStatus.toLowerCase()}`);
+      fetchUsers();
+    } catch (err) {
+      toast.error('Gagal mengupdate status user');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Yakin ingin menghapus user ini secara permanen?')) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      toast.success('User berhasil dihapus');
+      fetchUsers();
+    } catch (err) {
+      toast.error('Gagal menghapus user');
+    }
+  };
 
   const totalUsers = users.length;
   const totalSellers = users.filter(u => u.role === 'supplier').length;
@@ -119,8 +145,22 @@ export default function AdminUsers() {
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
-                      <button style={{ background: 'transparent', border: 'none', color: 'var(--outline)', cursor: 'pointer', padding: '0.25rem' }}><Edit3 size={16} /></button>
-                      <button style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '0.25rem' }}><Trash2 size={16} /></button>
+                      {u.role !== 'admin' && (
+                        <>
+                          <button 
+                            onClick={() => handleSuspend(u.id, u.status)}
+                            title={u.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                            style={{ background: 'transparent', border: 'none', color: u.status === 'Active' ? '#f59e0b' : '#16a34a', cursor: 'pointer', padding: '0.25rem' }}>
+                            <ShieldAlert size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(u.id)}
+                            title="Delete User"
+                            style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '0.25rem' }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
