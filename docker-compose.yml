@@ -50,7 +50,7 @@ services:
     container_name: sqa_frontend
     restart: always
     ports:
-      - "127.0.0.1:80:80" # Port 80 container di-map ke Port 80 localhost (Nginx Host)
+      - "0.0.0.0:80:80" # Buka port 80 secara eksplisit ke seluruh IP publik agar bisa diakses Cloudflare
     networks:
       - sqa_network
 
