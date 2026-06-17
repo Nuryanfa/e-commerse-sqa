@@ -60,16 +60,6 @@ export default function OrderDetail() {
   useEffect(() => {
     let disposed = false;
 
-    if (!token) {
-      const timer = setTimeout(() => {
-        if (!disposed) loadOrder();
-      }, 500);
-      return () => {
-        disposed = true;
-        clearTimeout(timer);
-      };
-    }
-
     const loadOrder = async () => {
       let currentOrder = await fetchOrderAndRecent();
       if (!location.state?.verifyPayment || !currentOrder || disposed) return;
@@ -122,6 +112,16 @@ export default function OrderDetail() {
         navigate(`/orders/${id}`, { replace: true, state: null });
       }
     };
+
+    if (!token) {
+      const timer = setTimeout(() => {
+        if (!disposed) loadOrder();
+      }, 500);
+      return () => {
+        disposed = true;
+        clearTimeout(timer);
+      };
+    }
 
     loadOrder();
     return () => {
