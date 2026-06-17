@@ -34,11 +34,11 @@ export default function AdminDashboard() {
   }, [daysFilter]);
 
   const exportPDF = async () => {
-    toast.success('Mempersiapkan PDF (Gambar Tidak Bisa Diedit)...');
+    toast.info('Mempersiapkan PDF...');
     const element = document.getElementById('dashboard-content');
     if (!element) return;
     try {
-      const canvas = await html2canvas(element, { scale: 2 });
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -47,7 +47,8 @@ export default function AdminDashboard() {
       pdf.save(`Dashboard_Laporan_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('PDF berhasil diunduh!');
     } catch (err) {
-      toast.error('Gagal mengekspor PDF');
+      console.error("PDF Export Error:", err);
+      toast.error('Gagal mengekspor PDF.');
     }
   };
 
@@ -94,13 +95,19 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <select
+              value={daysFilter}
+              onChange={(e) => setDaysFilter(Number(e.target.value))}
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all focus:outline-none cursor-pointer"
+            >
+              <option value={3} className="text-gray-900">3 Hari Terakhir</option>
+              <option value={7} className="text-gray-900">7 Hari Terakhir</option>
+              <option value={30} className="text-gray-900">30 Hari Terakhir</option>
+            </select>
             <button 
-              onClick={() => setDaysFilter(daysFilter === 7 ? 30 : 7)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-semibold text-sm transition-all">
-              <Calendar className="w-4 h-4" /> {daysFilter === 7 ? '7 Hari Terakhir' : '30 Hari Terakhir'}
-            </button>
-            <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25">
-              <Download className="w-4 h-4" /> Export (PDF)
+              onClick={exportPDF}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm transition-all shadow-lg shadow-emerald-500/30">
+              <Download className="w-4 h-4" /> Export PDF
             </button>
           </div>
         </div>

@@ -17,6 +17,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
   const toast = useToast();
 
   const fetchUsers = () => {
@@ -57,7 +58,11 @@ export default function AdminUsers() {
   const totalSellers = users.filter(u => u.role === 'supplier').length;
   const suspended = users.filter(u => u.status === 'Suspended').length;
 
-  const filtered = users.filter(u => u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = users.filter(u => {
+    const matchSearch = u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === 'All' ? true : u.role === roleFilter;
+    return matchSearch && matchRole;
+  });
 
   return (
     <div style={{ padding: '2.5rem 2rem', maxWidth: '80rem', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -68,12 +73,7 @@ export default function AdminUsers() {
           <p style={{ ...S.muted, marginTop: '0.25rem' }}>Manage and monitor your platform user base</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container)', color: 'var(--on-surface-variant)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.875rem' }}>
-            <Filter size={15} /> Filter
-          </button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', borderRadius: 'var(--radius-full)', background: '#16a34a', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.875rem', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)' }}>
-            <UserPlus size={15} /> Invite User
-          </button>
+          {/* Header actions can go here */}
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export default function AdminUsers() {
           { label: 'Suspended', val: suspended, icon: <ShieldAlert size={16}/>, color: '#dc2626', bg: '#fee2e2' },
           { label: 'WoW (%)', val: '+12%', icon: <TrendingUp size={16}/>, color: '#16a34a', bg: '#f0fdf4' },
         ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} style={{ ...S.card, padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.05, y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} transition={{ delay: i * 0.05 }} style={{ ...S.card, padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
             <div style={{ width: '3rem', height: '3rem', borderRadius: 'var(--radius-full)', background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {s.icon}
             </div>
@@ -99,10 +99,24 @@ export default function AdminUsers() {
 
       {/* Table Section */}
       <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <div style={{ position: 'relative', width: '20rem' }}>
             <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)' }} />
             <input placeholder="Search users by name or email..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, paddingLeft: '2.25rem' }} />
+          </div>
+          <div style={{ position: 'relative' }}>
+            <Filter style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '1rem', height: '1rem', color: 'var(--outline)', zIndex: 1 }} />
+            <select 
+              value={roleFilter} 
+              onChange={e => setRoleFilter(e.target.value)}
+              style={{ ...inp, paddingLeft: '2.25rem', appearance: 'none', cursor: 'pointer', paddingRight: '2rem' }}
+            >
+              <option value="All">Semua Role</option>
+              <option value="user">Pelanggan</option>
+              <option value="supplier">Supplier</option>
+              <option value="courier">Kurir</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
         </div>
 
@@ -130,7 +144,7 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: u.role === 'admin' ? '#eef2ff' : u.role === 'supplier' ? '#dcfce7' : '#f1f5f9', color: u.role === 'admin' ? '#4f46e5' : u.role === 'supplier' ? '#16a34a' : 'var(--outline)', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-full)', background: u.role === 'admin' ? '#eef2ff' : u.role === 'supplier' ? '#dcfce7' : u.role === 'courier' ? '#ffedd5' : '#f1f5f9', color: u.role === 'admin' ? '#4f46e5' : u.role === 'supplier' ? '#16a34a' : u.role === 'courier' ? '#ea580c' : 'var(--outline)', textTransform: 'uppercase' }}>
                       {u.role}
                     </span>
                   </td>
