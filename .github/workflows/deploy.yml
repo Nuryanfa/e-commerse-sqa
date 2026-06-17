@@ -75,7 +75,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.yml"
           target: "/var/www/e-commerse-sqa/"
 
@@ -84,7 +84,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             # Buat direktori jika belum ada
             mkdir -p /var/www/e-commerse-sqa/
