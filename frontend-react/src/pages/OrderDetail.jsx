@@ -23,7 +23,7 @@ import {
 
 export default function OrderDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [order, setOrder] = useState(null);
