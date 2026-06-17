@@ -21,7 +21,10 @@ func NewAdminHandler(r *gin.RouterGroup, usecase domain.AdminUsecase) {
 	admin := r.Group("/admin") // Inherits auth & role middlewares from adminRoutes
 
 	admin.GET("/dashboard", handler.GetDashboard)
+	admin.GET("/revenue", handler.GetRevenueDetails)
 	admin.GET("/users", handler.GetUsers)
+	admin.PUT("/users/:id/status", handler.UpdateUserStatus)
+	admin.DELETE("/users/:id", handler.DeleteUser)
 	admin.GET("/sellers", handler.GetSellers)
 	admin.GET("/logs", handler.GetSystemLogs)
 	admin.GET("/orders", handler.GetPaidOrders)
@@ -40,12 +43,33 @@ func (h *AdminHandler) checkAdminRole(c *gin.Context) bool {
 }
 
 func (h *AdminHandler) GetDashboard(c *gin.Context) {
-	stats, err := h.AdminUsecase.GetDashboardStats()
+	daysStr := c.Query("days")
+	days := 7
+	if daysStr == "30" {
+		days = 30
+	}
+
+	stats, err := h.AdminUsecase.GetDashboardStats(days)
 	if err != nil {
 		response.Error(c, response.ErrInternal("Gagal mengambil data dashboard"))
 		return
 	}
 	response.Success(c, http.StatusOK, "Berhasil memuat dashboard", stats)
+}
+
+func (h *AdminHandler) GetRevenueDetails(c *gin.Context) {
+	daysStr := c.Query("days")
+	days := 30
+	if daysStr == "7" {
+		days = 7
+	}
+
+	details, err := h.AdminUsecase.GetRevenueDetails(days)
+	if err != nil {
+		response.Error(c, response.ErrInternal("Gagal mengambil data revenue"))
+		return
+	}
+	response.Success(c, http.StatusOK, "Berhasil memuat revenue", details)
 }
 
 func (h *AdminHandler) GetUsers(c *gin.Context) {
@@ -55,6 +79,32 @@ func (h *AdminHandler) GetUsers(c *gin.Context) {
 		return
 	}
 	response.Success(c, http.StatusOK, "Berhasil memuat users", users)
+}
+
+func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
+	userID := c.Param("id")
+	var req struct {
+		Status string `json:"status" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, response.ErrBadRequest("Status wajib diisi"))
+		return
+	}
+	
+	if err := h.AdminUsecase.UpdateUserStatus(userID, req.Status); err != nil {
+		response.Error(c, response.ErrInternal("Gagal mengupdate status user"))
+		return
+	}
+	response.Success(c, http.StatusOK, "Status user berhasil diupdate", nil)
+}
+
+func (h *AdminHandler) DeleteUser(c *gin.Context) {
+	userID := c.Param("id")
+	if err := h.AdminUsecase.DeleteUser(userID); err != nil {
+		response.Error(c, response.ErrInternal("Gagal menghapus user"))
+		return
+	}
+	response.Success(c, http.StatusOK, "User berhasil dihapus", nil)
 }
 
 func (h *AdminHandler) GetSellers(c *gin.Context) {

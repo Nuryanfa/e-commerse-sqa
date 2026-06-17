@@ -16,11 +16,11 @@ func NewAdminRepository(db *gorm.DB) domain.AdminRepository {
 	return &adminRepository{db: db}
 }
 
-func (r *adminRepository) GetGrossRevenue() (float64, error) {
+func (r *adminRepository) GetGrossRevenue(days int) (float64, error) {
 	var total float64
-	// Sum total_amount of orders where status is 'DELIVERED', 'COMPLETED', or 'PAID' (or whatever counts as revenue)
 	err := r.db.Model(&domain.Order{}).
 		Where("status IN ?", []string{"PAID", "PROCESSED", "SHIPPED", "DELIVERED"}).
+		Where("created_at >= ?", time.Now().AddDate(0, 0, -days)).
 		Select("COALESCE(SUM(total_amount), 0)").Scan(&total).Error
 	return total, err
 }
@@ -37,32 +37,45 @@ func (r *adminRepository) GetTotalSellers() (int, error) {
 	return int(count), err
 }
 
-func (r *adminRepository) GetRevenueTrends() ([]domain.RevenueData, error) {
-	// Group sum of total_amount by date for the last 7 days
+func (r *adminRepository) GetRevenueTrends(days int) ([]domain.RevenueData, error) {
 	var trends []domain.RevenueData
 	err := r.db.Model(&domain.Order{}).
-		Select("DATE(created_at) as date, SUM(total_amount) as revenue").
+		Select("DATE(created_at) as date, COALESCE(SUM(total_amount), 0) as revenue").
 		Where("status IN ?", []string{"PAID", "PROCESSED", "SHIPPED", "DELIVERED"}).
-		Where("created_at >= ?", time.Now().AddDate(0, 0, -7)).
+		Where("created_at >= ?", time.Now().AddDate(0, 0, -days)).
 		Group("DATE(created_at)").
 		Order("date ASC").
 		Scan(&trends).Error
 	return trends, err
 }
 
-func (r *adminRepository) GetTopCategories() ([]domain.CategoryMetric, error) {
-	// A simple mock since calculating exactly without complex joins might be tricky, or we can do a JOIN:
+func (r *adminRepository) GetTopCategories(days int) ([]domain.CategoryMetric, error) {
 	var categories []domain.CategoryMetric
+	
+	// First get total quantity sold in the period
+	var totalQuantity float64
+	r.db.Table("order_items").
+		Joins("JOIN orders ON orders.id_order = order_items.id_order").
+		Where("orders.status IN ?", []string{"PAID", "PROCESSED", "SHIPPED", "DELIVERED"}).
+		Where("orders.created_at >= ?", time.Now().AddDate(0, 0, -days)).
+		Select("COALESCE(SUM(order_items.quantity), 1)").Scan(&totalQuantity)
+		
+	if totalQuantity == 0 {
+		totalQuantity = 1 // avoid division by zero
+	}
+
 	err := r.db.Table("order_items").
-		Select("categories.name, SUM(order_items.quantity) as percentage").
+		Select("categories.name, ROUND((SUM(order_items.quantity) * 100.0) / ?, 1) as percentage", totalQuantity).
 		Joins("JOIN products ON products.id_product = order_items.id_product").
 		Joins("JOIN categories ON categories.id_category = products.id_category").
+		Joins("JOIN orders ON orders.id_order = order_items.id_order").
+		Where("orders.status IN ?", []string{"PAID", "PROCESSED", "SHIPPED", "DELIVERED"}).
+		Where("orders.created_at >= ?", time.Now().AddDate(0, 0, -days)).
 		Group("categories.name").
 		Order("percentage DESC").
 		Limit(5).
 		Scan(&categories).Error
 
-	// Convert "percentage" from raw sum to actual percentage if needed (in usecase), here we just return the raw quantity sum.
 	return categories, err
 }
 
@@ -104,24 +117,45 @@ func (r *adminRepository) GetRecentLiveFeed() ([]domain.LiveFeedItem, error) {
 
 func (r *adminRepository) GetUsers() ([]domain.UserWithStats, error) {
 	var users []domain.User
-	err := r.db.Order("created_at DESC").Find(&users).Error
+	// Use Unscoped to include soft-deleted (suspended) users
+	err := r.db.Unscoped().Order("created_at DESC").Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
 
 	var result []domain.UserWithStats
 	for _, u := range users {
+		status := "Active"
+		if u.DeletedAt.Valid {
+			status = "Suspended"
+		}
+		
 		result = append(result, domain.UserWithStats{
 			ID:        u.ID,
 			Name:      u.Nama,
 			Email:     u.Email,
 			Role:      u.Role,
-			Status:    "Active", // Standard dummy status for active users
+			Status:    status,
 			Location:  u.Address,
 			CreatedAt: u.CreatedAt,
 		})
 	}
 	return result, nil
+}
+
+func (r *adminRepository) UpdateUserStatus(id, status string) error {
+	if status == "Suspended" {
+		// Soft delete means suspended
+		return r.db.Where("id_user = ?", id).Delete(&domain.User{}).Error
+	} else {
+		// Activate means restoring the soft delete
+		return r.db.Unscoped().Model(&domain.User{}).Where("id_user = ?", id).Update("deleted_at", nil).Error
+	}
+}
+
+func (r *adminRepository) DeleteUser(id string) error {
+	// Unscoped Delete means hard delete (permanent)
+	return r.db.Unscoped().Where("id_user = ?", id).Delete(&domain.User{}).Error
 }
 
 func (r *adminRepository) GetSellers() ([]domain.SellerWithStats, error) {

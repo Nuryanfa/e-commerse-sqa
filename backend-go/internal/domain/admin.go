@@ -72,8 +72,11 @@ type OrderSummary struct {
 
 // AdminUsecase Interface
 type AdminUsecase interface {
-	GetDashboardStats() (AdminDashboardStats, error)
+	GetDashboardStats(days int) (AdminDashboardStats, error)
+	GetRevenueDetails(days int) (map[string]interface{}, error)
 	GetUsers() ([]UserWithStats, error)
+	UpdateUserStatus(id, status string) error
+	DeleteUser(id string) error
 	GetSellers() ([]SellerWithStats, error)
 	GetSystemLogs() ([]SystemLog, error)
 	GetPaidOrders() ([]OrderSummary, error)
@@ -82,14 +85,16 @@ type AdminUsecase interface {
 
 // AdminRepository Interface
 type AdminRepository interface {
-	GetGrossRevenue() (float64, error)
+	GetGrossRevenue(days int) (float64, error)
 	GetTotalUsers() (int, error)
 	GetTotalSellers() (int, error)
-	GetRevenueTrends() ([]RevenueData, error)
-	GetTopCategories() ([]CategoryMetric, error)
+	GetRevenueTrends(days int) ([]RevenueData, error)
+	GetTopCategories(days int) ([]CategoryMetric, error)
 	GetRecentLogs() ([]SystemLog, error)
 	GetRecentLiveFeed() ([]LiveFeedItem, error)
 	GetUsers() ([]UserWithStats, error)
+	UpdateUserStatus(id, status string) error
+	DeleteUser(id string) error
 	GetSellers() ([]SellerWithStats, error)
 	GetPaidOrders() ([]OrderSummary, error)
 	AssignCourier(orderID, courierID string) error
