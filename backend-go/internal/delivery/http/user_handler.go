@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuryanfa/e-commerse-sqa/internal/domain"
 	"github.com/nuryanfa/e-commerse-sqa/internal/middleware"
+	"github.com/nuryanfa/e-commerse-sqa/pkg/alert"
 	"github.com/nuryanfa/e-commerse-sqa/pkg/response"
 )
 
@@ -143,6 +144,11 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Kirim notifikasi pendaftaran pengguna baru
+	alertMsg := fmt.Sprintf("👤 [INFO] Pengguna Baru Mendaftar!\n\nNama: %s\nEmail: %s\nRole: %s\nIP: %s", 
+		user.Nama, user.Email, user.Role, c.ClientIP())
+	alert.SendTelegramAlert(alertMsg)
+
 	response.Success(c, http.StatusCreated, "Registrasi berhasil", map[string]string{
 		"id_user": user.ID,
 		"nama":    user.Nama,
@@ -178,6 +184,13 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if err != nil {
 		response.Error(c, response.ErrUnauthorized(err.Error()))
 		return
+	}
+
+	// Kirim notifikasi jika Admin login
+	if role == "admin" {
+		alertMsg := fmt.Sprintf("🛡️ [SECURITY] Admin Login Sukses!\n\nEmail: %s\nIP: %s\nJika ini bukan Anda, segera periksa server!", 
+			loginReq.Email, c.ClientIP())
+		alert.SendTelegramAlert(alertMsg)
 	}
 
 	response.Success(c, http.StatusOK, "Login berhasil", map[string]interface{}{
